@@ -27,6 +27,7 @@ export default function useGridDrag({
   const isDragging = useRef(false);
   const lastCell = useRef<string | null>(null);
   const draftRef = useRef<Availability>({});
+  const erasing = useRef(false);
 
   function applyToCell(date: string, slot: number) {
     const cellKey = `${date}:${slot}`;
@@ -36,7 +37,7 @@ export default function useGridDrag({
     const draft = { ...draftRef.current };
     if (!draft[date]) draft[date] = {};
 
-    if (activeMode === 0) {
+    if (activeMode === 0 || erasing.current) {
       const dateCopy = { ...draft[date] };
       delete dateCopy[String(slot)];
       if (Object.keys(dateCopy).length === 0) {
@@ -57,6 +58,21 @@ export default function useGridDrag({
       isDragging.current = true;
       draftRef.current = JSON.parse(JSON.stringify(availability));
       lastCell.current = null;
+
+      // Toggle: if first cell already matches activeMode, erase instead
+      erasing.current = false;
+      if (activeMode !== 0) {
+        const cell = getCellFromPoint(x, y);
+        if (cell) {
+          const existing = availability[cell.date]?.[String(cell.slot)];
+          if (existing === activeMode) {
+            erasing.current = true;
+          }
+          applyToCell(cell.date, cell.slot);
+          return;
+        }
+      }
+
       const cell = getCellFromPoint(x, y);
       if (cell) applyToCell(cell.date, cell.slot);
     },
@@ -74,6 +90,7 @@ export default function useGridDrag({
   const handlePointerEnd = useCallback(() => {
     isDragging.current = false;
     lastCell.current = null;
+    erasing.current = false;
   }, []);
 
   const gridProps = {
