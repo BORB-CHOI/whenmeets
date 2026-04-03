@@ -1,10 +1,19 @@
 import { createHmac } from 'crypto';
 
-const SECRET = process.env.COOKIE_SECRET || 'dev-fallback-secret-change-me';
+function getSecret(): string {
+  const secret = process.env.COOKIE_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('COOKIE_SECRET 환경변수가 설정되지 않았습니다');
+    }
+    return 'dev-fallback-secret-change-me';
+  }
+  return secret;
+}
 
 /** Create HMAC-signed cookie value for event auth */
 export function signEventToken(eventId: string): string {
-  const hmac = createHmac('sha256', SECRET);
+  const hmac = createHmac('sha256', getSecret());
   hmac.update(eventId);
   return hmac.digest('hex');
 }

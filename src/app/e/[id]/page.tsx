@@ -72,7 +72,7 @@ export default function EventPage() {
 
   // Realtime subscription
   useEffect(() => {
-    if (state !== 'grid' || !event) return;
+    if (state !== 'grid') return;
 
     const supabase = createBrowserClient();
     const channel = supabase
@@ -98,7 +98,7 @@ export default function EventPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [state, eventId, event]);
+  }, [state, eventId]);
 
   // Password submit
   async function handlePasswordSubmit(e: React.FormEvent) {
