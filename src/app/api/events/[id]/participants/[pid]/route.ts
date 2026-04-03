@@ -69,3 +69,11 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true });
 }
+
+// sendBeacon always sends POST — delegate to PATCH logic
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string; pid: string }> }
+) {
+  return PATCH(request, context);
+}
