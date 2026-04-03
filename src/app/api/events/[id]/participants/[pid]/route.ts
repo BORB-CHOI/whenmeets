@@ -12,7 +12,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; pid: string }> }
 ) {
   const { id, pid } = await params;
-  const token = request.headers.get('X-Participant-Token');
+  const body = await request.json();
+
+  // Accept token from header (normal fetch) or body (sendBeacon on tab close)
+  const token = request.headers.get('X-Participant-Token') || body.token;
 
   if (!token) {
     return NextResponse.json({ error: 'Token required' }, { status: 401 });
@@ -31,7 +34,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { availability } = await request.json();
+  const { availability } = body;
 
   // Validate availability shape: Record<string, Record<string, 0|1|2>>
   if (typeof availability !== 'object' || availability === null || Array.isArray(availability)) {
