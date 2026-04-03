@@ -64,11 +64,11 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+        <button type="button" onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
           &larr;
         </button>
         <span className="font-medium text-sm">{monthLabel}</span>
-        <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+        <button type="button" onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
           &rarr;
         </button>
       </div>
@@ -90,6 +90,7 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
 
           return (
             <button
+              type="button"
               key={dateStr}
               onClick={() => !isPast && toggleDate(dateStr)}
               disabled={isPast}
