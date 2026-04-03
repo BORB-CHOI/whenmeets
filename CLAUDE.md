@@ -19,3 +19,11 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
+
+## Branch workflow
+
+Never commit directly to main. When starting any new task (feature, bugfix, refactor):
+1. Check the current branch with `git branch --show-current`
+2. If on main, create a feature branch BEFORE making any changes: `git checkout -b feat/<task-name>` or `fix/<task-name>`
+3. All work happens on the feature branch
+4. Use `/ship` to create a PR back to main
