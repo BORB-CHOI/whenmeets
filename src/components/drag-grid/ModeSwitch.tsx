@@ -20,7 +20,7 @@ export default function ModeSwitch({ activeMode, onModeChange }: ModeSwitchProps
     <div className="relative flex p-1 bg-gray-50 border border-gray-200 rounded-full">
       {/* Animated sliding indicator */}
       <div
-        className="absolute top-1 bottom-1 bg-white border border-indigo-600 rounded-full shadow-sm transition-all duration-350"
+        className="absolute top-1 bottom-1 bg-white border border-indigo-600/20 rounded-full shadow-sm transition-all duration-300 ease-in-out"
         style={{
           width: `calc(${100 / MODES.length}% - 4px)`,
           left: `calc(${(activeIndex * 100) / MODES.length}% + 2px)`,

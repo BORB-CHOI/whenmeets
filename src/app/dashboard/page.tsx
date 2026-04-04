@@ -81,7 +81,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
       <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
         대시보드
       </h1>

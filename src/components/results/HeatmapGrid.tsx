@@ -62,7 +62,7 @@ export default function HeatmapGrid({
         const highlighted = hoveredParticipantId ? isHoveredAvailable(date, slot) : false;
         return (
           <div
-            className={`w-[44px] h-[20px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
+            className={`w-[44px] h-[28px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
               ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}
               ${highlighted ? 'ring-2 ring-indigo-400 ring-inset' : ''}`}
           >

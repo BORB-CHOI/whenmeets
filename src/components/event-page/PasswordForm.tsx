@@ -47,13 +47,13 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호 입력"
           disabled={loading}
-          className="px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 disabled:opacity-50"
+          className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005] disabled:opacity-50"
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50"
+          className="h-[38px] py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50"
         >
           {loading ? '확인 중...' : '입장'}
         </button>
