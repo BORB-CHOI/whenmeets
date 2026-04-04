@@ -63,7 +63,7 @@ export default function EventForm() {
 
     const { id } = await res.json();
     window.scrollTo(0, 0);
-    router.push(`/e/${id}/results`);
+    router.push(`/e/${id}`);
   }
 
   return (
