@@ -65,14 +65,13 @@ body {
 }
 
 /* Edit mode grid cell hover ring — moving vs stopped */
-[data-grid-container][data-moving] [data-date][data-slot]:hover {
-  outline: 2px solid #111827 !important;
-  outline-offset: -2px;
-  z-index: 5;
-}
-
-[data-grid-container]:not([data-moving]) [data-date][data-slot]:hover {
+[data-grid-container] [data-date][data-slot]:hover {
   outline: 2px solid #059669 !important;
   outline-offset: -2px;
   z-index: 5;
+  transition: outline-color 0.15s ease;
+}
+
+[data-grid-container][data-moving] [data-date][data-slot]:hover {
+  outline-color: #111827 !important;
 }
