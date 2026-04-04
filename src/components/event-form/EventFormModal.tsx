@@ -178,7 +178,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(false); }}
                 placeholder="이벤트 제목"
-                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:outline-none focus:border-emerald-600 ${
+                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 ${
                   titleError ? 'border-red-500 ring ring-red-500/10' : 'border-gray-200'
                 }`}
                 maxLength={100}
@@ -240,7 +240,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                     type="checkbox"
                     checked={showTimeRange}
                     onChange={(e) => setShowTimeRange(e.target.checked)}
-                    className="rounded border-gray-300 text-emerald-600 cursor-pointer"
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                   <span className="text-sm font-medium text-gray-600">특정 시간대 지정</span>
                 </label>
@@ -293,7 +293,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="비밀번호"
-                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600"
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10"
                       />
                     </motion.div>
                   )}

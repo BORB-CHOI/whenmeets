@@ -82,7 +82,7 @@ export default function EventForm() {
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-emerald-600 ${
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 ${
             titleError
               ? 'border-red-500 ring ring-red-500/10'
               : 'border-gray-200'
@@ -153,7 +153,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-emerald-600"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10"
           />
         )}
       </div>

@@ -66,7 +66,7 @@ export default function Home() {
       </p>
       <button
         onClick={() => setShowModal(true)}
-        className="mt-8 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all text-lg cursor-pointer"
+        className="mt-8 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 transition-all text-lg cursor-pointer"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
       >
         이벤트 만들기

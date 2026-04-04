@@ -411,7 +411,7 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-600 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 resize-none"
               rows={3}
               autoFocus
             />
@@ -687,7 +687,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 transition-all"
                     autoFocus
                     maxLength={50}
                   />
