@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { fetchCalendarEvents, calendarEventsToAvailability } from '@/lib/calendar';
 import type { Availability } from '@/lib/types';
@@ -21,7 +21,8 @@ export default function CalendarImportButton({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createAuthBrowserClient();
+  const supabaseRef = useRef(createAuthBrowserClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -40,6 +41,10 @@ export default function CalendarImportButton({
   if (!isAuthenticated) return null;
 
   async function handleImport() {
+    if (!confirm('캘린더 일정을 가져오면 현재 입력한 시간이 덮어쓰기됩니다. 계속하시겠습니까?')) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 

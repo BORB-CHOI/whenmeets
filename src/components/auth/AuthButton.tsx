@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import type { User } from '@supabase/supabase-js';
 
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createAuthBrowserClient();
+  const supabaseRef = useRef(createAuthBrowserClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     // Get initial session

@@ -3,19 +3,19 @@
 import { useState, useEffect } from 'react';
 
 const COMMON_TIMEZONES = [
-  { value: 'UTC', label: 'UTC+0:00', city: 'UTC' },
-  { value: 'America/New_York', label: 'GMT-5:00', city: 'New York' },
-  { value: 'America/Chicago', label: 'GMT-6:00', city: 'Chicago' },
-  { value: 'America/Denver', label: 'GMT-7:00', city: 'Denver' },
-  { value: 'America/Los_Angeles', label: 'GMT-8:00', city: 'Los Angeles' },
-  { value: 'Europe/London', label: 'GMT+0:00', city: 'London' },
-  { value: 'Europe/Paris', label: 'GMT+1:00', city: 'Paris' },
-  { value: 'Europe/Berlin', label: 'GMT+1:00', city: 'Berlin' },
-  { value: 'Asia/Tokyo', label: 'GMT+9:00', city: 'Tokyo' },
-  { value: 'Asia/Seoul', label: 'GMT+9:00', city: 'Seoul' },
-  { value: 'Asia/Shanghai', label: 'GMT+8:00', city: 'Shanghai' },
-  { value: 'Asia/Singapore', label: 'GMT+8:00', city: 'Singapore' },
-  { value: 'Australia/Sydney', label: 'GMT+11:00', city: 'Sydney' },
+  { value: 'UTC', city: 'UTC' },
+  { value: 'America/New_York', city: 'New York' },
+  { value: 'America/Chicago', city: 'Chicago' },
+  { value: 'America/Denver', city: 'Denver' },
+  { value: 'America/Los_Angeles', city: 'Los Angeles' },
+  { value: 'Europe/London', city: 'London' },
+  { value: 'Europe/Paris', city: 'Paris' },
+  { value: 'Europe/Berlin', city: 'Berlin' },
+  { value: 'Asia/Tokyo', city: 'Tokyo' },
+  { value: 'Asia/Seoul', city: 'Seoul' },
+  { value: 'Asia/Shanghai', city: 'Shanghai' },
+  { value: 'Asia/Singapore', city: 'Singapore' },
+  { value: 'Australia/Sydney', city: 'Sydney' },
 ] as const;
 
 const STORAGE_KEY = 'whenmeets:timezone';
@@ -41,19 +41,16 @@ function getTimezoneOffsetMinutes(tz: string): number {
   return sign * (hours * 60 + minutes);
 }
 
-/** Get a display label for the current offset */
+/** Get a display label with dynamic offset (DST-aware) */
 function formatTimezoneDisplay(tz: string): string {
-  const entry = COMMON_TIMEZONES.find((t) => t.value === tz);
-  if (entry) return `${entry.label} ${entry.city}`;
-
-  // Fallback: compute from Intl
   const offset = getTimezoneOffsetMinutes(tz);
   const sign = offset >= 0 ? '+' : '-';
   const absOffset = Math.abs(offset);
   const h = Math.floor(absOffset / 60);
   const m = absOffset % 60;
   const label = m > 0 ? `GMT${sign}${h}:${String(m).padStart(2, '0')}` : `GMT${sign}${h}:00`;
-  const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? tz;
+  const entry = COMMON_TIMEZONES.find((t) => t.value === tz);
+  const city = entry?.city ?? tz.split('/').pop()?.replace(/_/g, ' ') ?? tz;
   return `${label} ${city}`;
 }
 
@@ -90,7 +87,7 @@ export default function TimezoneSelector({ onChange }: TimezoneSelectorProps) {
   if (!timezone) return null;
 
   return (
-    <div className="flex items-center gap-2 text-xs text-gray-400">
+    <div className="flex items-center gap-2 text-xs text-gray-400" title="표시 기준 시간대 (데���터에는 영향 없음)">
       <svg
         className="h-3.5 w-3.5 shrink-0"
         viewBox="0 0 24 24"
@@ -111,7 +108,7 @@ export default function TimezoneSelector({ onChange }: TimezoneSelectorProps) {
       >
         {COMMON_TIMEZONES.map((tz) => (
           <option key={tz.value} value={tz.value}>
-            {tz.label} {tz.city}
+            {formatTimezoneDisplay(tz.value)}
           </option>
         ))}
         {/* If the user's detected timezone isn't in the common list, include it */}

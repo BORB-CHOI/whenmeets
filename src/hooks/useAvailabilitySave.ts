@@ -33,6 +33,7 @@ export function useAvailabilitySave({
         });
         if (!res.ok) {
           console.error('Save failed:', res.status);
+          return; // Keep pending data so flushPending can retry on tab close
         }
         pendingAvailabilityRef.current = null;
       } catch (err) {

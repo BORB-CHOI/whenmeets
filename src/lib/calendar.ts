@@ -78,13 +78,17 @@ export function calendarEventsToAvailability(
 
   // Mark busy slots from calendar events
   for (const event of events) {
-    // Skip all-day events for now (they don't have dateTime)
+    // All-day events: mark all slots as unavailable for the full date range
     if (!event.start.dateTime || !event.end.dateTime) {
-      // All-day event: mark all slots as unavailable for that date
-      const eventDate = event.start.date;
-      if (eventDate && availability[eventDate]) {
-        for (let slot = timeStart; slot < timeEnd; slot++) {
-          availability[eventDate][String(slot)] = 0 as AvailabilityLevel;
+      const startDate = event.start.date;
+      const endDate = event.end.date; // Google Calendar: end date is exclusive
+      if (startDate) {
+        for (const date of dates) {
+          if (date >= startDate && (!endDate || date < endDate) && availability[date]) {
+            for (let slot = timeStart; slot < timeEnd; slot++) {
+              availability[date][String(slot)] = 0 as AvailabilityLevel;
+            }
+          }
         }
       }
       continue;
@@ -94,8 +98,8 @@ export function calendarEventsToAvailability(
     const end = new Date(event.end.dateTime);
 
     for (const date of dates) {
-      const dayStart = new Date(`${date}T00:00:00`);
-      const dayEnd = new Date(`${date}T23:59:59`);
+      const dayStart = new Date(`${date}T00:00:00Z`);
+      const dayEnd = new Date(`${date}T23:59:59Z`);
 
       // Check if this event overlaps with this date
       if (start > dayEnd || end < dayStart) continue;
@@ -104,11 +108,12 @@ export function calendarEventsToAvailability(
       const eventStartOnDay = start < dayStart ? dayStart : start;
       const eventEndOnDay = end > dayEnd ? dayEnd : end;
 
+      // Use UTC hours/minutes since day boundaries are UTC-anchored
       const startSlot = Math.floor(
-        (eventStartOnDay.getHours() * 60 + eventStartOnDay.getMinutes()) / 30,
+        (eventStartOnDay.getUTCHours() * 60 + eventStartOnDay.getUTCMinutes()) / 30,
       );
       const endSlot = Math.ceil(
-        (eventEndOnDay.getHours() * 60 + eventEndOnDay.getMinutes()) / 30,
+        (eventEndOnDay.getUTCHours() * 60 + eventEndOnDay.getUTCMinutes()) / 30,
       );
 
       for (let slot = Math.max(startSlot, timeStart); slot < Math.min(endSlot, timeEnd); slot++) {
