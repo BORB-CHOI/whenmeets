@@ -40,7 +40,7 @@ function ScrollPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
 
-  // Mouse drag scrolling
+  // Mouse drag scrolling (window-level so drag works outside container)
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragScrollTop = useRef(0);
@@ -49,18 +49,31 @@ function ScrollPicker({
     isDragging.current = true;
     dragStartY.current = e.clientY;
     dragScrollTop.current = containerRef.current?.scrollTop ?? 0;
-    e.preventDefault(); // prevent text selection
+    e.preventDefault();
+    e.stopPropagation();
   }
 
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!isDragging.current || !containerRef.current) return;
-    const dy = dragStartY.current - e.clientY;
-    containerRef.current.scrollTop = dragScrollTop.current + dy;
-  }
-
-  function handleMouseUp() {
-    isDragging.current = false;
-  }
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isDragging.current || !containerRef.current) return;
+      e.preventDefault();
+      const dy = dragStartY.current - e.clientY;
+      containerRef.current.scrollTop = dragScrollTop.current + dy;
+    }
+    function onMouseUp(e: MouseEvent) {
+      if (isDragging.current) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      isDragging.current = false;
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp, true); // capture phase to prevent modal close
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp, true);
+    };
+  }, []);
 
   const scrollToValue = useCallback((v: number, smooth = false) => {
     const idx = options.indexOf(v);
@@ -113,9 +126,6 @@ function ScrollPicker({
         ref={containerRef}
         onScroll={handleScroll}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
         className="h-full overflow-y-auto select-none"
         style={{
           scrollbarWidth: 'none',
