@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { EventMode } from '@/lib/types';
+import { addEventToHistory } from '@/lib/event-history';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
@@ -75,6 +76,14 @@ export default function EventFormModal({ open, onClose }: EventFormModalProps) {
     }
 
     const { id } = await res.json();
+    addEventToHistory({
+      id,
+      title: title.trim(),
+      dates,
+      role: 'creator',
+      participantCount: 0,
+      lastVisited: new Date().toISOString(),
+    });
     onClose();
     window.scrollTo(0, 0);
     router.push(`/e/${id}`);

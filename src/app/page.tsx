@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EventFormModal from '@/components/event-form/EventFormModal';
+import { getEventHistory, removeEventFromHistory, EventHistoryItem } from '@/lib/event-history';
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const [history, setHistory] = useState<EventHistoryItem[]>([]);
+  useEffect(() => { setHistory(getEventHistory()); }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
@@ -66,6 +69,51 @@ export default function Home() {
       >
         회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.
       </p>
+
+      {history.length > 0 && (
+        <div className="mt-12 w-full max-w-lg px-4" style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
+          <h2 className="text-sm font-semibold text-gray-400 mb-3">최근 이벤트</h2>
+          <div className="flex flex-col gap-2.5">
+            {history.slice(0, 5).map((item) => (
+              <a
+                key={item.id}
+                href={`/e/${item.id}`}
+                className="flex items-center justify-between min-h-14 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-gray-900 truncate">{item.title}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {item.role === 'creator' ? '내가 만듦' : '참여함'} · {item.dates.length}일
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded ${
+                    item.role === 'creator'
+                      ? 'text-indigo-600 bg-indigo-50'
+                      : 'text-emerald-600 bg-emerald-50'
+                  }`}>
+                    {item.role === 'creator' ? '관리' : '참여'}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeEventFromHistory(item.id);
+                      setHistory((h) => h.filter((x) => x.id !== item.id));
+                    }}
+                    className="p-1.5 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    title="기록에서 삭제"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <EventFormModal open={showModal} onClose={() => setShowModal(false)} />
 
