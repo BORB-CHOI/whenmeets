@@ -142,6 +142,10 @@ export default function EventPageClient({
       availability={availability}
       onAvailabilityChange={handleAvailabilityChange}
       saving={saving}
+      participants={event.participants}
+      currentParticipantId={participantId}
+      dateOnly={event.date_only}
+      mode={event.mode}
     />
   );
 }

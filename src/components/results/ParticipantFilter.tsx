@@ -4,12 +4,16 @@ interface ParticipantFilterProps {
   participants: { id: string; name: string }[];
   selectedIds: Set<string>;
   onSelectedChange: (ids: Set<string>) => void;
+  onHover?: (participantId: string) => void;
+  onHoverEnd?: () => void;
 }
 
 export default function ParticipantFilter({
   participants,
   selectedIds,
   onSelectedChange,
+  onHover,
+  onHoverEnd,
 }: ParticipantFilterProps) {
   function toggle(id: string) {
     const next = new Set(selectedIds);
@@ -45,6 +49,8 @@ export default function ParticipantFilter({
           <button
             key={p.id}
             onClick={() => toggle(p.id)}
+            onMouseEnter={() => onHover?.(p.id)}
+            onMouseLeave={() => onHoverEnd?.()}
             className={`px-3 py-1 text-sm rounded-full transition-colors
               ${selectedIds.has(p.id)
                 ? 'bg-indigo-100 text-indigo-700'
