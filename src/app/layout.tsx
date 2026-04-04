@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
@@ -48,7 +49,8 @@ export default function RootLayout({
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
         <Header />
-        <main>{children}</main>
+        <main className="min-h-[calc(100dvh-200px)]">{children}</main>
+        <Footer />
       </body>
     </html>
   );

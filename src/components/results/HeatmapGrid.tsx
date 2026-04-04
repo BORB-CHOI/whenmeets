@@ -15,7 +15,7 @@ interface HeatmapGridProps {
   bestSlots?: Set<string>;
 }
 
-const BASE_COLOR = '#4F46E5';
+const BASE_COLOR = '#6366F1'; // Indigo 500 — softer than 600
 
 function hexAlpha(alpha: number): string {
   return alpha.toString(16).padStart(2, '0').toUpperCase();
@@ -23,8 +23,8 @@ function hexAlpha(alpha: number): string {
 
 function computeCellColor(count: number, total: number): string | undefined {
   if (total === 0 || count === 0) return undefined;
-  if (count === total) return BASE_COLOR + 'FF';
-  const alpha = Math.floor((count / total) * (225 - 30) + 30);
+  if (count === total) return BASE_COLOR + 'D0'; // max ~80% opacity, not full
+  const alpha = Math.floor((count / total) * (180 - 25) + 25);
   return BASE_COLOR + hexAlpha(alpha);
 }
 
@@ -90,7 +90,7 @@ export default function HeatmapGrid({
           >
             {count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none"
-                style={{ color: count === total ? 'rgba(255,255,255,0.9)' : 'rgba(79,70,229,0.8)' }}
+                style={{ color: count === total ? 'rgba(255,255,255,0.85)' : 'rgba(99,102,241,0.7)' }}
               >
                 {count}
               </span>

@@ -5,17 +5,17 @@ import { formatDateCompact } from '@/lib/constants';
 
 export const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: '',                                        // No response yet — transparent
-  0: 'bg-red-500/50',                              // Unavailable — strong red
-  1: 'bg-[#FFE8B8]',                               // If needed — yellow (timeful)
-  2: 'bg-[#4F46E5]/[.47]',                         // Available — indigo
+  0: 'bg-red-400/40',                              // Unavailable — soft red
+  1: 'bg-amber-200/60',                            // If needed — warm yellow
+  2: 'bg-indigo-400/35',                           // Available — soft indigo
 };
 
 // Raw CSS values for direct DOM painting during drag (avoids React re-renders)
 export const CELL_CSS_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: '',
-  0: 'rgba(239,68,68,0.5)',
-  1: '#FFE8B8',
-  2: 'rgba(79,70,229,0.47)',
+  0: 'rgba(248,113,113,0.4)',   // red-400/40
+  1: 'rgba(253,230,138,0.6)',   // amber-200/60
+  2: 'rgba(129,140,248,0.35)',  // indigo-400/35
 };
 
 interface GridCellProps {
