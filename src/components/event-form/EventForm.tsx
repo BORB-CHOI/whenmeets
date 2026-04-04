@@ -67,7 +67,7 @@ export default function EventForm() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="일정 제목"
-          className="w-full px-4 py-3 text-lg border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="w-full px-4 py-3 text-lg border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
           maxLength={100}
         />
       </div>
@@ -156,7 +156,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
           />
         )}
       </div>
@@ -167,7 +167,7 @@ export default function EventForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50"
+        className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50"
       >
         {submitting ? '생성 중...' : '일정 만들기'}
       </button>

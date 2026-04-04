@@ -73,7 +73,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                 type="checkbox"
                 checked={includeIfNeeded}
                 onChange={(e) => setIncludeIfNeeded(e.target.checked)}
-                className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               &quot;되면 가능&quot; 포함
             </label>
@@ -97,11 +97,11 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
               <span>0명</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-emerald-200" />
+              <div className="w-3 h-3 rounded bg-indigo-200" />
               <span>일부</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-emerald-500" />
+              <div className="w-3 h-3 rounded bg-indigo-500" />
               <span>전원</span>
             </div>
           </div>

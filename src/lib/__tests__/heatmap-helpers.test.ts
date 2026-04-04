@@ -27,10 +27,10 @@ function getCount(
 function getColor(count: number, total: number): string {
   if (total === 0 || count === 0) return 'bg-gray-50';
   const ratio = count / total;
-  if (ratio <= 0.25) return 'bg-emerald-100';
-  if (ratio <= 0.5) return 'bg-emerald-200';
-  if (ratio <= 0.75) return 'bg-emerald-400';
-  return 'bg-emerald-500';
+  if (ratio <= 0.25) return 'bg-indigo-100';
+  if (ratio <= 0.5) return 'bg-indigo-200';
+  if (ratio <= 0.75) return 'bg-indigo-400';
+  return 'bg-indigo-500';
 }
 
 describe('getCount', () => {
@@ -83,23 +83,23 @@ describe('getColor', () => {
     expect(getColor(0, 5)).toBe('bg-gray-50');
   });
 
-  it('returns emerald-100 for ratio <= 0.25', () => {
-    expect(getColor(1, 4)).toBe('bg-emerald-100');
-    expect(getColor(1, 5)).toBe('bg-emerald-100');
+  it('returns indigo-100 for ratio <= 0.25', () => {
+    expect(getColor(1, 4)).toBe('bg-indigo-100');
+    expect(getColor(1, 5)).toBe('bg-indigo-100');
   });
 
-  it('returns emerald-200 for ratio <= 0.5', () => {
-    expect(getColor(2, 4)).toBe('bg-emerald-200');
-    expect(getColor(1, 2)).toBe('bg-emerald-200');
+  it('returns indigo-200 for ratio <= 0.5', () => {
+    expect(getColor(2, 4)).toBe('bg-indigo-200');
+    expect(getColor(1, 2)).toBe('bg-indigo-200');
   });
 
-  it('returns emerald-400 for ratio <= 0.75', () => {
-    expect(getColor(3, 4)).toBe('bg-emerald-400');
-    expect(getColor(2, 3)).toBe('bg-emerald-400');
+  it('returns indigo-400 for ratio <= 0.75', () => {
+    expect(getColor(3, 4)).toBe('bg-indigo-400');
+    expect(getColor(2, 3)).toBe('bg-indigo-400');
   });
 
-  it('returns emerald-500 for ratio > 0.75', () => {
-    expect(getColor(4, 4)).toBe('bg-emerald-500');
-    expect(getColor(4, 5)).toBe('bg-emerald-500');
+  it('returns indigo-500 for ratio > 0.75', () => {
+    expect(getColor(4, 4)).toBe('bg-indigo-500');
+    expect(getColor(4, 5)).toBe('bg-indigo-500');
   });
 });
