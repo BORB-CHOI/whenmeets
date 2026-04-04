@@ -40,6 +40,28 @@ function ScrollPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
 
+  // Mouse drag scrolling
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragScrollTop = useRef(0);
+
+  function handleMouseDown(e: React.MouseEvent) {
+    isDragging.current = true;
+    dragStartY.current = e.clientY;
+    dragScrollTop.current = containerRef.current?.scrollTop ?? 0;
+    e.preventDefault(); // prevent text selection
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!isDragging.current || !containerRef.current) return;
+    const dy = dragStartY.current - e.clientY;
+    containerRef.current.scrollTop = dragScrollTop.current + dy;
+  }
+
+  function handleMouseUp() {
+    isDragging.current = false;
+  }
+
   const scrollToValue = useCallback((v: number, smooth = false) => {
     const idx = options.indexOf(v);
     if (idx === -1 || !containerRef.current) return;
@@ -90,11 +112,16 @@ function ScrollPicker({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="h-full overflow-y-auto"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="h-full overflow-y-auto select-none"
         style={{
           scrollbarWidth: 'none',
           paddingTop: ITEM_H * halfPad,
           paddingBottom: ITEM_H * halfPad,
+          cursor: 'grab',
         }}
       >
         {options.map((opt) => {
