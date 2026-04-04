@@ -141,7 +141,8 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={onClose}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.backdropMousedown = 'true'; }}
+          onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.backdropMousedown === 'true') onClose(); (e.currentTarget as HTMLElement).dataset.backdropMousedown = ''; }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
