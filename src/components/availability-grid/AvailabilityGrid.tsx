@@ -32,13 +32,13 @@ export default function AvailabilityGrid({
       <div className="overflow-x-auto">
         <div className="inline-flex">
           {/* Time labels column */}
-          <div className="flex flex-col pt-[28px]">
+          <div className="flex flex-col pt-7">
             {slots.map((slot) => (
               <div
                 key={slot}
-                className="h-[28px] pr-2 text-[10px] text-gray-400 text-right leading-[28px] font-mono tabular-nums"
+                className="h-3.5 pr-2 text-[10px] text-gray-400 text-right leading-3.5 font-mono tabular-nums"
               >
-                {slot % 2 === 0 ? slotToTime(slot) : ''}
+                {slot % 4 === 0 ? slotToTime(slot) : ''}
               </div>
             ))}
           </div>
@@ -47,7 +47,7 @@ export default function AvailabilityGrid({
           <div className={`inline-flex${columnsProps ? ' touch-none' : ''}`} {...columnsProps}>
             {dates.map((date) => (
               <div key={date} className="flex flex-col">
-                <div className="h-[28px] text-xs font-medium text-gray-600 text-center leading-[28px]">
+                <div className="h-7 text-xs font-medium text-gray-600 text-center leading-7">
                   {formatDateCompact(date)}
                 </div>
                 {slots.map((slot) => (

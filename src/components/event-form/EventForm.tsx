@@ -10,8 +10,8 @@ export default function EventForm() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [dates, setDates] = useState<string[]>([]);
-  const [timeStart, setTimeStart] = useState(18); // 09:00
-  const [timeEnd, setTimeEnd] = useState(42);     // 21:00
+  const [timeStart, setTimeStart] = useState(36); // 09:00 (15-min slots: 9*4=36)
+  const [timeEnd, setTimeEnd] = useState(84);     // 21:00 (15-min slots: 21*4=84)
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);

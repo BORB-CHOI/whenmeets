@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { slotToTime } from '@/lib/constants';
+import { slotToTime, SLOTS_PER_HOUR } from '@/lib/constants';
 
 interface TimeRangePickerProps {
   timeStart: number;
@@ -12,7 +12,8 @@ interface TimeRangePickerProps {
 
 function generateTimeOptions(): { value: number; label: string }[] {
   const options: { value: number; label: string }[] = [];
-  for (let slot = 0; slot <= 48; slot += 2) {
+  // Show options every 30 minutes (every 2 slots at 15-min resolution)
+  for (let slot = 0; slot <= 24 * SLOTS_PER_HOUR; slot += 2) {
     options.push({ value: slot, label: slotToTime(slot) });
   }
   return options;

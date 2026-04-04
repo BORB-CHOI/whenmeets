@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
   }
 
-  // Validate time range
-  const start = time_start ?? 18;
-  const end = time_end ?? 42;
-  if (typeof start !== 'number' || typeof end !== 'number' || start < 0 || end > 48 || start >= end) {
+  // Validate time range (15-min slots: 0-96, default 09:00-21:00)
+  const start = time_start ?? 36;
+  const end = time_end ?? 84;
+  if (typeof start !== 'number' || typeof end !== 'number' || start < 0 || end > 96 || start >= end) {
     return NextResponse.json({ error: 'Invalid time range' }, { status: 400 });
   }
 

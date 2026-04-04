@@ -61,16 +61,16 @@ export default function HeatmapGrid({
 
         return (
           <div
-            className={`w-full h-7 sm:h-9 lg:h-11 border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
+            className={`w-full h-3.5 sm:h-4 lg:h-5 border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
               ${getColor(count)}
-              ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}
+              ${slot % 4 === 0 ? 'border-t border-gray-300' : slot % 2 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100/50'}
               ${isBest ? 'ring-2 ring-indigo-500 ring-inset' : ''}
               ${dimmed ? 'opacity-30' : ''}`}
             onMouseEnter={() => onCellHover?.(date, slot)}
             onMouseLeave={() => onCellHover?.(null)}
           >
-            {count > 0 && (
-              <span className={`text-[9px] font-medium ${count === total ? 'text-white' : 'text-gray-600'}`}>
+            {count > 0 && slot % 4 === 0 && (
+              <span className={`text-[8px] font-medium hidden lg:inline ${count === total ? 'text-white' : 'text-gray-600'}`}>
                 {count}
               </span>
             )}
