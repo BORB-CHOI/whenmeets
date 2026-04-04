@@ -2,11 +2,13 @@
 
 import { useCallback, useRef } from 'react';
 import { Availability, AvailabilityLevel } from '@/lib/types';
+import { CELL_CSS_COLORS } from './GridCell';
 
 interface UseGridDragOptions {
   activeMode: AvailabilityLevel;
   availability: Availability;
   onAvailabilityChange: (availability: Availability) => void;
+  onDragEnd?: (availability: Availability) => void;
 }
 
 function getCellFromPoint(x: number, y: number): { date: string; slot: string } | null {
@@ -23,6 +25,7 @@ export default function useGridDrag({
   activeMode,
   availability,
   onAvailabilityChange,
+  onDragEnd,
 }: UseGridDragOptions) {
   const isDragging = useRef(false);
   const lastCell = useRef<string | null>(null);
@@ -35,23 +38,22 @@ export default function useGridDrag({
     if (cellKey === lastCell.current) return;
     lastCell.current = cellKey;
 
-    const draft = { ...draftRef.current };
+    const draft = draftRef.current;
     if (!draft[date]) draft[date] = {};
 
     if (erasing.current) {
-      const dateCopy = { ...draft[date] };
-      delete dateCopy[slot];
-      if (Object.keys(dateCopy).length === 0) {
-        delete draft[date];
-      } else {
-        draft[date] = dateCopy;
-      }
+      delete draft[date][slot];
+      if (Object.keys(draft[date]).length === 0) delete draft[date];
     } else {
-      draft[date] = { ...draft[date], [slot]: activeMode };
+      draft[date][slot] = activeMode;
     }
 
-    draftRef.current = draft;
-    onAvailabilityChange(draft);
+    // Paint DOM directly instead of triggering React re-render
+    const cellEl = document.querySelector(`[data-date="${date}"][data-slot="${slot}"]`) as HTMLElement | null;
+    if (cellEl) {
+      const color = erasing.current ? '' : CELL_CSS_COLORS[activeMode];
+      cellEl.style.backgroundColor = color;
+    }
   }
 
   // Interpolate between two points to fill in gaps during fast mouse movement
@@ -74,7 +76,12 @@ export default function useGridDrag({
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
       isDragging.current = true;
-      draftRef.current = JSON.parse(JSON.stringify(availability));
+      // Shallow clone for draft — mutated during drag, committed on end
+      const clone: Availability = {};
+      for (const d in availability) {
+        clone[d] = { ...availability[d] };
+      }
+      draftRef.current = clone;
       lastCell.current = null;
       lastPoint.current = { x, y };
 
@@ -108,11 +115,16 @@ export default function useGridDrag({
   }, [activeMode]);
 
   const handlePointerEnd = useCallback(() => {
+    if (isDragging.current) {
+      // Commit draft to React state once on drag end
+      onAvailabilityChange({ ...draftRef.current });
+    }
     isDragging.current = false;
     lastCell.current = null;
     lastPoint.current = null;
     erasing.current = false;
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onAvailabilityChange]);
 
   const gridProps = {
     onMouseDown: (e: React.MouseEvent) => {
