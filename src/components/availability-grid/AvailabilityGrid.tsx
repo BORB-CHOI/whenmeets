@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useMemo } from 'react';
+import { ReactNode, useState, useMemo, useEffect, useRef } from 'react';
 import { generateSlots, SLOTS_PER_HOUR } from '@/lib/constants';
 
 interface AvailabilityGridProps {
@@ -40,9 +40,23 @@ export default function AvailabilityGrid({
 }: AvailabilityGridProps) {
   const slots = generateSlots(timeStart, timeEnd);
   const [page, setPage] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(GRID_WIDTH);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
+
+  useEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) {
+        const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + TIME_COL_WIDTH;
+        setContainerWidth(Math.min(GRID_WIDTH, available - TIME_COL_WIDTH - (needsPagination ? 80 : 0) - 16));
+      }
+    }
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [needsPagination]);
 
   const visibleDates = useMemo(() => {
     if (!needsPagination) return dates;
@@ -57,8 +71,8 @@ export default function AvailabilityGrid({
     <div className="flex flex-col gap-3">
       {header}
 
-      <div className="overflow-x-auto -mx-4 px-4">
-        <div className="flex items-start mx-auto" style={{ width: GRID_WIDTH + TIME_COL_WIDTH + (needsPagination ? 80 : 0), minWidth: 'min-content' }}>
+      <div className="flex justify-center" ref={containerRef}>
+        <div className="flex items-start" style={{ width: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: 40 }}>
             {slots.map((slot) => (
@@ -82,7 +96,7 @@ export default function AvailabilityGrid({
           {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
           <div
             className={`grid${columnsProps ? ' touch-none' : ''}`}
-            style={{ width: GRID_WIDTH, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
+            style={{ width: containerWidth, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
             {...columnsProps}
           >
             {/* Date headers */}
