@@ -3,10 +3,10 @@
 import { AvailabilityLevel } from '@/lib/types';
 
 const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
-  [-1]: 'bg-gray-50',         // No response yet
-  0: 'bg-gray-50',            // Unavailable (same as empty — eraser resets)
-  1: 'bg-amber-300',          // If needed
-  2: 'bg-emerald-400',        // Available
+  [-1]: 'bg-gray-50',                          // No response yet
+  0: 'bg-red-500/15',                          // Unavailable — red tint
+  1: 'bg-amber-200',                           // If needed
+  2: 'bg-indigo-600/[.47]',                    // Available
 };
 
 interface GridCellProps {

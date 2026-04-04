@@ -23,7 +23,7 @@ export default async function EventPage({ params }: Props) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <p className="text-gray-500">이벤트를 찾을 수 없습니다</p>
-        <Link href="/" className="mt-4 text-emerald-500 hover:underline">홈으로</Link>
+        <Link href="/" className="mt-4 text-indigo-600 hover:underline">홈으로</Link>
       </div>
     );
   }

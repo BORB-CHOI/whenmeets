@@ -99,7 +99,7 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
               disabled={isPast}
               className={`h-9 rounded-lg text-sm font-medium transition-colors
                 ${isPast ? 'text-gray-200 cursor-not-allowed' : ''}
-                ${isSelected ? 'bg-emerald-500 text-white' : ''}
+                ${isSelected ? 'bg-indigo-600 text-white' : ''}
                 ${!isSelected && !isPast ? 'hover:bg-gray-100 text-gray-700' : ''}`}
             >
               {day.getDate()}

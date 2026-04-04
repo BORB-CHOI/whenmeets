@@ -61,7 +61,7 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
           onChange={(e) => setName(e.target.value)}
           placeholder="이름 입력"
           disabled={loading}
-          className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+          className="px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 disabled:opacity-50"
           maxLength={50}
           autoFocus
         />
@@ -69,7 +69,7 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50"
+          className="py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50"
         >
           {loading ? '참��� 중...' : '참여하기'}
         </button>

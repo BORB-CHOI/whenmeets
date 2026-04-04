@@ -7,7 +7,7 @@ export const AVAILABILITY = {
 export const AVAILABILITY_COLORS = {
   0: 'bg-gray-100',       // Unavailable / empty
   1: 'bg-amber-300',      // If needed
-  2: 'bg-emerald-400',    // Available
+  2: 'bg-indigo-600/[.47]',  // Available
 } as const;
 
 export const MODE_LABELS = {

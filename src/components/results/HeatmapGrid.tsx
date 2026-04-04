@@ -36,10 +36,10 @@ export default function HeatmapGrid({
   function getColor(count: number): string {
     if (total === 0 || count === 0) return 'bg-gray-50';
     const ratio = count / total;
-    if (ratio <= 0.25) return 'bg-emerald-100';
-    if (ratio <= 0.5) return 'bg-emerald-200';
-    if (ratio <= 0.75) return 'bg-emerald-400';
-    return 'bg-emerald-500';
+    if (ratio <= 0.25) return 'bg-indigo-100';
+    if (ratio <= 0.5) return 'bg-indigo-200';
+    if (ratio <= 0.75) return 'bg-indigo-400';
+    return 'bg-indigo-500';
   }
 
   return (

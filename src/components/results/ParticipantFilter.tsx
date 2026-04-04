@@ -33,7 +33,7 @@ export default function ParticipantFilter({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-sm font-medium text-gray-600">참여자</span>
-        <button onClick={selectAll} className="text-xs text-emerald-500 hover:underline">
+        <button onClick={selectAll} className="text-xs text-indigo-600 hover:underline">
           전체
         </button>
         <button onClick={selectNone} className="text-xs text-gray-400 hover:underline">
@@ -47,7 +47,7 @@ export default function ParticipantFilter({
             onClick={() => toggle(p.id)}
             className={`px-3 py-1 text-sm rounded-full transition-colors
               ${selectedIds.has(p.id)
-                ? 'bg-emerald-100 text-emerald-700'
+                ? 'bg-indigo-100 text-indigo-700'
                 : 'bg-gray-100 text-gray-400'}`}
           >
             {p.name}
