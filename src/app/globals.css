@@ -65,14 +65,14 @@ body {
 }
 
 /* Edit mode grid cell hover ring — moving vs stopped */
-.grid[data-moving] [data-date][data-slot]:hover {
-  outline: 2px solid #111827;
-  outline-offset: -1px;
+[data-grid-container][data-moving] [data-date][data-slot]:hover {
+  outline: 2px solid #111827 !important;
+  outline-offset: -2px;
   z-index: 5;
 }
 
-.grid:not([data-moving]) [data-date][data-slot]:hover {
-  outline: 2px solid #059669;
-  outline-offset: -1px;
+[data-grid-container]:not([data-moving]) [data-date][data-slot]:hover {
+  outline: 2px solid #059669 !important;
+  outline-offset: -2px;
   z-index: 5;
 }
