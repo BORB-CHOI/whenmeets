@@ -10,6 +10,7 @@ import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
 import { generateSlots } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import PasswordForm from './PasswordForm';
+import { addEventToHistory } from '@/lib/event-history';
 import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
@@ -286,6 +287,15 @@ export default function EventPageClient({
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
       }
+
+      addEventToHistory({
+        id: eventId,
+        title: event.title,
+        dates: event.dates,
+        role: 'participant',
+        participantCount: event.participants.length,
+        lastVisited: new Date().toISOString(),
+      });
 
       setShowNameModal(false);
       setNameInput('');
