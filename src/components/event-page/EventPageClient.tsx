@@ -556,6 +556,20 @@ export default function EventPageClient({
                 </div>
               </div>
 
+              {/* Participant list in edit mode */}
+              {event.participants.length > 0 && (
+                <div className="mb-5">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                    응답자 ({event.participants.length})
+                  </h3>
+                  <ParticipantFilter
+                    participants={event.participants}
+                    selectedIds={new Set(event.participants.map(p => p.id))}
+                    onSelectedChange={() => {}}
+                  />
+                </div>
+              )}
+
               {/* Calendar import */}
               <div className="mb-5">
                 <CalendarImportButton
