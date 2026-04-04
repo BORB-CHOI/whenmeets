@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
-
-function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
 
 export async function PATCH(
   request: NextRequest,
@@ -14,24 +9,25 @@ export async function PATCH(
   const { id, pid } = await params;
   const body = await request.json();
 
-  // Accept token from header (normal fetch) or body (sendBeacon on tab close)
-  const token = request.headers.get('X-Participant-Token') || body.token;
-
-  if (!token) {
-    return NextResponse.json({ error: 'Token required' }, { status: 401 });
-  }
-
   const supabase = createServerClient();
 
   const { data: participant } = await supabase
     .from('participants')
-    .select('id, token')
+    .select('id, password_hash')
     .eq('id', pid)
     .eq('event_id', id)
     .single();
 
-  if (!participant || !safeCompare(participant.token, token)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!participant) {
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+  }
+
+  // If participant has a password, verify it
+  if (participant.password_hash) {
+    const { password } = body;
+    if (!password || !(await bcrypt.compare(password, participant.password_hash))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   const { availability } = body;

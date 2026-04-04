@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
-
-function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { name } = await request.json();
+  const { name, password } = await request.json();
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
-  if (name.trim().length > 50) {
+  const trimmedName = name.trim();
+
+  if (trimmedName.length > 50) {
     return NextResponse.json({ error: 'Name is too long' }, { status: 400 });
   }
 
@@ -43,33 +40,89 @@ export async function POST(
     }
   }
 
-  // Use eq instead of ilike to prevent pattern injection (%, _)
-  // Case-insensitive matching handled by collation or application logic
+  // Check for existing participant with same name
   const { data: existing } = await supabase
     .from('participants')
-    .select('id, token')
+    .select('id, name, password_hash')
     .eq('event_id', id)
-    .eq('name', name.trim())
+    .eq('name', trimmedName)
     .single();
 
   if (existing) {
-    // Name already taken — client must provide their stored token to reclaim.
-    // Never return the token here; that would let anyone hijack by guessing a name.
-    const clientToken = request.headers.get('X-Participant-Token');
-    if (clientToken && safeCompare(clientToken, existing.token)) {
+    if (existing.password_hash) {
+      // Has password — verify it
+      if (password && await bcrypt.compare(password, existing.password_hash)) {
+        return NextResponse.json({
+          id: existing.id,
+          name: existing.name,
+          existing: true,
+        });
+      }
+      // Wrong or missing password — auto-number the new name
+      const { data: similar } = await supabase
+        .from('participants')
+        .select('name')
+        .eq('event_id', id)
+        .like('name', `${trimmedName}-%`);
+
+      let nextNum = 2;
+      if (similar && similar.length > 0) {
+        for (const p of similar) {
+          const suffix = p.name.replace(`${trimmedName}-`, '');
+          const num = parseInt(suffix, 10);
+          if (!isNaN(num) && num >= nextNum) {
+            nextNum = num + 1;
+          }
+        }
+      }
+
+      const numberedName = `${trimmedName}-${nextNum}`;
+      const insertData: Record<string, unknown> = {
+        event_id: id,
+        name: numberedName,
+        availability: {},
+        password_hash: password ? await bcrypt.hash(password, 10) : null,
+      };
+
+      // Try to get authenticated user (optional)
+      let userId: string | null = null;
+      try {
+        const authClient = await createAuthServerClient();
+        const { data: { user } } = await authClient.auth.getUser();
+        userId = user?.id ?? null;
+      } catch {
+        // Auth is optional
+      }
+      if (userId) insertData.user_id = userId;
+
+      const { data: participant, error } = await supabase
+        .from('participants')
+        .insert(insertData)
+        .select('id, name')
+        .single();
+
+      if (error) {
+        console.error('Participant creation failed:', error.message);
+        return NextResponse.json({ error: '참여 등록에 실패했습니다' }, { status: 500 });
+      }
+
       return NextResponse.json({
-        id: existing.id,
-        token: existing.token,
-        existing: true,
-      });
+        id: participant!.id,
+        name: participant!.name,
+        existing: false,
+        numbered: true,
+      }, { status: 201 });
     }
-    return NextResponse.json(
-      { error: '이미 사용 중인 이름입니다' },
-      { status: 409 }
-    );
+
+    // No password — anyone can access
+    return NextResponse.json({
+      id: existing.id,
+      name: existing.name,
+      existing: true,
+    });
   }
 
-  // Try to get authenticated user (optional)
+  // New participant
   let userId: string | null = null;
   try {
     const authClient = await createAuthServerClient();
@@ -81,8 +134,9 @@ export async function POST(
 
   const insertData: Record<string, unknown> = {
     event_id: id,
-    name: name.trim(),
+    name: trimmedName,
     availability: {},
+    password_hash: password ? await bcrypt.hash(password, 10) : null,
   };
   if (userId) {
     insertData.user_id = userId;
@@ -91,11 +145,10 @@ export async function POST(
   const { data: participant, error } = await supabase
     .from('participants')
     .insert(insertData)
-    .select('id, token')
+    .select('id, name')
     .single();
 
   if (error) {
-    // Handle unique constraint violation (race condition: name taken between check and insert)
     if (error.code === '23505') {
       return NextResponse.json(
         { error: '이미 사용 중인 이름입니다' },
@@ -108,7 +161,7 @@ export async function POST(
 
   return NextResponse.json({
     id: participant!.id,
-    token: participant!.token,
+    name: participant!.name,
     existing: false,
   }, { status: 201 });
 }
