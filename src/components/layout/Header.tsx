@@ -16,7 +16,7 @@ export default async function Header() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-lg font-extrabold tracking-tight text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer"
+            className="text-lg font-extrabold tracking-tight text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer py-2"
           >
             WhenMeets
           </Link>
