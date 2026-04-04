@@ -178,7 +178,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(false); }}
                 placeholder="이벤트 제목"
-                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 ${
+                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 ${
                   titleError ? 'border-red-500 ring ring-red-500/10' : 'border-gray-200'
                 }`}
                 maxLength={100}
@@ -207,7 +207,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                       onClick={() => { setDateSelectionMode('calendar'); setDates([]); }}
                       className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                         dateSelectionMode === 'calendar'
-                          ? 'bg-indigo-100 text-indigo-700 font-medium'
+                          ? 'bg-emerald-100 text-emerald-700 font-medium'
                           : 'text-gray-400 hover:text-gray-600'
                       }`}
                     >
@@ -218,7 +218,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                       onClick={() => { setDateSelectionMode('days_of_week'); setDates([]); }}
                       className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
                         dateSelectionMode === 'days_of_week'
-                          ? 'bg-indigo-100 text-indigo-700 font-medium'
+                          ? 'bg-emerald-100 text-emerald-700 font-medium'
                           : 'text-gray-400 hover:text-gray-600'
                       }`}
                     >
@@ -240,7 +240,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                     type="checkbox"
                     checked={showTimeRange}
                     onChange={(e) => setShowTimeRange(e.target.checked)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                   <span className="text-sm font-medium text-gray-600">특정 시간대 지정</span>
                 </label>
@@ -293,7 +293,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="비밀번호"
-                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10"
                       />
                     </motion.div>
                   )}
@@ -305,7 +305,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full py-2.5 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {submitting
                   ? (editEvent ? '수정 중...' : '생성 중...')

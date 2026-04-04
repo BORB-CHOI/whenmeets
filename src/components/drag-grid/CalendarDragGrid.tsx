@@ -159,7 +159,7 @@ export default function CalendarDragGrid({
                 >
                   {day}
                   {hasOverlay && isEventDate && (
-                    <span className="absolute bottom-0.5 right-1 text-[8px] text-indigo-500 font-medium">
+                    <span className="absolute bottom-0.5 right-1 text-[8px] text-emerald-500 font-medium">
                       +{overlayCountMap[dateStr]?.['all_day'] ?? 0}
                     </span>
                   )}

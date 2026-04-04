@@ -7,12 +7,12 @@ interface SegmentedControlProps<T extends string> {
 }
 
 const GLOW = {
-  default: '0 0 0 1.5px rgba(79, 70, 229, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(79, 70, 229, 0.1)',
+  default: '0 0 0 1.5px rgba(5, 150, 105, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(5, 150, 105, 0.1)',
   danger: '0 0 0 1.5px rgba(220, 38, 38, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(220, 38, 38, 0.1)',
 };
 
 const TEXT = {
-  default: 'text-indigo-700',
+  default: 'text-emerald-700',
   danger: 'text-red-700',
 };
 

@@ -13,13 +13,13 @@ export default function Home() {
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
       {/* Mesh gradient background */}
       <div className="absolute inset-0 -z-10 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 40%, #DDD6FE 70%, #EDE9FE 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 40%, #A7F3D0 70%, #ECFDF5 100%)' }}
       >
         <div
           className="absolute opacity-80"
           style={{
             width: '700px', height: '500px',
-            background: 'linear-gradient(135deg, rgba(79,70,229,0.45) 0%, rgba(129,140,248,0.35) 50%, rgba(167,139,250,0.2) 100%)',
+            background: 'linear-gradient(135deg, rgba(5,150,105,0.4) 0%, rgba(52,211,153,0.3) 50%, rgba(167,243,208,0.2) 100%)',
             borderRadius: '40% 60% 55% 45% / 55% 40% 60% 45%',
             filter: 'blur(50px)',
             top: '-250px', left: '-150px',
@@ -30,7 +30,7 @@ export default function Home() {
           className="absolute opacity-80"
           style={{
             width: '600px', height: '450px',
-            background: 'linear-gradient(225deg, rgba(167,139,250,0.5) 0%, rgba(196,181,253,0.35) 50%, rgba(79,70,229,0.15) 100%)',
+            background: 'linear-gradient(225deg, rgba(52,211,153,0.45) 0%, rgba(110,231,183,0.3) 50%, rgba(5,150,105,0.15) 100%)',
             borderRadius: '50% 50% 45% 55% / 55% 45% 50% 50%',
             filter: 'blur(50px)',
             bottom: '-200px', right: '-100px',
@@ -41,7 +41,7 @@ export default function Home() {
           className="absolute"
           style={{
             width: '500px', height: '400px',
-            background: 'linear-gradient(180deg, rgba(99,102,241,0.4) 0%, rgba(129,140,248,0.3) 50%, rgba(196,181,253,0.15) 100%)',
+            background: 'linear-gradient(180deg, rgba(16,185,129,0.35) 0%, rgba(52,211,153,0.25) 50%, rgba(167,243,208,0.15) 100%)',
             borderRadius: '45% 55% 50% 50% / 50% 45% 55% 50%',
             filter: 'blur(40px)',
             top: '40%', left: '45%',
@@ -66,7 +66,7 @@ export default function Home() {
       </p>
       <button
         onClick={() => setShowModal(true)}
-        className="mt-8 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 transition-all text-lg cursor-pointer"
+        className="mt-8 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 transition-all text-lg cursor-pointer"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
       >
         이벤트 만들기
@@ -97,7 +97,7 @@ export default function Home() {
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded ${
                     item.role === 'creator'
-                      ? 'text-indigo-600 bg-indigo-50'
+                      ? 'text-emerald-600 bg-emerald-50'
                       : 'text-emerald-600 bg-emerald-50'
                   }`}>
                     {item.role === 'creator' ? '관리' : '참여'}

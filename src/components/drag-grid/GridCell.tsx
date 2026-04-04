@@ -42,13 +42,13 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       >
         {hasOverlay && (
           <div
-            className="absolute inset-0 rounded-lg bg-indigo-400 pointer-events-none"
+            className="absolute inset-0 rounded-lg bg-emerald-400 pointer-events-none"
             style={{ opacity: overlayOpacity }}
           />
         )}
         <span className="text-sm text-gray-700 relative z-10">{formatDateCompact(date)}</span>
         {hasOverlay && (
-          <span className="text-[10px] text-indigo-600 font-medium relative z-10">
+          <span className="text-[10px] text-emerald-600 font-medium relative z-10">
             +{overlayCount}
           </span>
         )}
@@ -65,10 +65,10 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       {hasOverlay && (
         <>
           <div
-            className="absolute inset-0 bg-indigo-400 pointer-events-none"
+            className="absolute inset-0 bg-emerald-400 pointer-events-none"
             style={{ opacity: overlayOpacity }}
           />
-          <span className="absolute top-0 right-0.5 text-[7px] text-indigo-500 font-medium leading-[15px] pointer-events-none">
+          <span className="absolute top-0 right-0.5 text-[7px] text-emerald-500 font-medium leading-[15px] pointer-events-none">
             {overlayCount}
           </span>
         </>

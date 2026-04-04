@@ -56,7 +56,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
               onClick={() => toggleDay(day)}
               className={`h-10 rounded-lg text-sm font-medium transition-all cursor-pointer
                 ${selected
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : isWeekend
                     ? 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                     : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
@@ -73,14 +73,14 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
           <button
             type="button"
             onClick={selectWeekdays}
-            className="text-xs text-indigo-600 hover:text-indigo-700 cursor-pointer"
+            className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer"
           >
             평일 전체
           </button>
           <button
             type="button"
             onClick={selectAll}
-            className="text-xs text-indigo-600 hover:text-indigo-700 cursor-pointer"
+            className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer"
           >
             전체 선택
           </button>
@@ -90,7 +90,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
             type="checkbox"
             checked={startOnMonday}
             onChange={(e) => setStartOnMonday(e.target.checked)}
-            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
           />
           월요일 시작
         </label>

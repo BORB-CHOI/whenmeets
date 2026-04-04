@@ -368,7 +368,7 @@ export default function EventPageClient({
             {dateRange}
             <span
               onClick={() => setShowEditModal(true)}
-              className="ml-3 text-indigo-600 hover:text-indigo-800 cursor-pointer"
+              className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
             >이벤트 수정</span>
           </p>
         </div>
@@ -387,7 +387,7 @@ export default function EventPageClient({
           {viewMode === 'view' ? (
             <button
               onClick={handleEditClick}
-              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer"
+              className="h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer"
             >
               내 시간 입력
             </button>
@@ -395,7 +395,7 @@ export default function EventPageClient({
             <button
               onClick={handleFinishEditing}
               disabled={saving}
-              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {saving ? '저장 중...' : '편집 완료'}
             </button>
@@ -411,14 +411,14 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 resize-none"
               rows={3}
               autoFocus
             />
             <div className="flex gap-2 mt-2">
               <button
                 onClick={saveDescription}
-                className="text-sm text-indigo-600 font-medium hover:text-indigo-800 cursor-pointer"
+                className="text-sm text-emerald-600 font-medium hover:text-emerald-800 cursor-pointer"
               >
                 저장
               </button>
@@ -460,7 +460,7 @@ export default function EventPageClient({
               <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
                 event.mode === 'unavailable'
                   ? 'bg-red-50 text-red-700 border border-red-200'
-                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               }`}>
                 {event.mode === 'unavailable'
                   ? (event.date_only ? '⛔ 안 되는 날짜를 선택해주세요' : '⛔ 안 되는 시간을 선택해주세요')
@@ -526,7 +526,7 @@ export default function EventPageClient({
                     />
                   </div>
                   <div className={`p-3 rounded-lg text-sm mb-5 ${
-                    activeMode === 2 ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'
+                    activeMode === 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ 필요하다면 가능한 시간을 드래그하세요'}
                   </div>
@@ -599,7 +599,7 @@ export default function EventPageClient({
                     className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                   >
                     <span>최적 시간만 보기</span>
-                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-emerald-600' : 'bg-gray-200'}`}>
                       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${showBestTimes ? 'translate-x-4' : 'translate-x-0.5'}`} />
                     </div>
                   </button>
@@ -609,7 +609,7 @@ export default function EventPageClient({
                       className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                     >
                       <span>"필요하다면.." 숨기기</span>
-                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </div>
                     </button>
@@ -687,7 +687,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 transition-all"
                     autoFocus
                     maxLength={50}
                   />
@@ -734,7 +734,7 @@ export default function EventPageClient({
                 <button
                   onClick={handleNameSubmit}
                   disabled={nameLoading || !nameInput.trim()}
-                  className="px-5 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {nameLoading ? '참여 중...' : '참여하기'}
                 </button>

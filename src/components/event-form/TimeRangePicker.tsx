@@ -115,7 +115,7 @@ function ScrollPicker({
     >
       {/* Center highlight bar */}
       <div
-        className="absolute left-0 right-0 pointer-events-none border-y border-indigo-200 bg-indigo-50/50 z-10"
+        className="absolute left-0 right-0 pointer-events-none border-y border-emerald-200 bg-emerald-50/50 z-10"
         style={{ top: ITEM_H * halfPad, height: ITEM_H }}
       />
       {/* Fade top/bottom */}
@@ -143,7 +143,7 @@ function ScrollPicker({
               onClick={() => { if (!disabled) { onChange(opt); scrollToValue(opt, true); } }}
               className={`flex items-center justify-center cursor-pointer transition-colors
                 ${disabled ? 'text-gray-200 cursor-not-allowed' : ''}
-                ${selected ? 'text-indigo-700 font-bold' : ''}
+                ${selected ? 'text-emerald-700 font-bold' : ''}
                 ${!selected && !disabled ? 'text-gray-500' : ''}`}
               style={{
                 height: ITEM_H,
