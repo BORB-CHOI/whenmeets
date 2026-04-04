@@ -57,7 +57,7 @@ export default function AuthButton() {
     return (
       <button
         onClick={handleSignIn}
-        className="h-[38px] px-4 bg-indigo-600 text-white text-sm font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer"
+        className="h-[38px] px-3 sm:px-4 bg-indigo-600 text-white text-sm font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer whitespace-nowrap"
       >
         Google로 로그인
       </button>
