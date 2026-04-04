@@ -44,3 +44,16 @@ body {
   25% { transform: translateX(-4px); }
   75% { transform: translateX(4px); }
 }
+
+/* Edit mode grid cell hover ring — moving vs stopped */
+.grid[data-moving] [data-date][data-slot]:hover {
+  outline: 2px solid #111827;
+  outline-offset: -1px;
+  z-index: 5;
+}
+
+.grid:not([data-moving]) [data-date][data-slot]:hover {
+  outline: 2px solid #059669;
+  outline-offset: -1px;
+  z-index: 5;
+}
