@@ -4,6 +4,8 @@ export type AvailabilityLevel = 0 | 1 | 2; // 0=unavailable, 1=if_needed, 2=avai
 // Slot index: 0=00:00, 1=00:30, 2=01:00, ..., 18=09:00, ..., 42=21:00
 export type Availability = Record<string, Record<string, AvailabilityLevel>>;
 
+export type EventMode = 'available' | 'unavailable';
+
 export interface Event {
   id: string;
   title: string;
@@ -12,6 +14,8 @@ export interface Event {
   time_end: number;      // Slot index, exclusive (e.g., 42 = 21:00)
   has_password: boolean;
   created_at: string;
+  mode: EventMode;       // 'available' = mark available, 'unavailable' = mark unavailable
+  date_only: boolean;    // true = dates-only mode (uses "all_day" slot key)
 }
 
 export interface Participant {

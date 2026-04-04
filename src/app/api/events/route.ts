@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, dates, time_start, time_end, password } = body;
+  const { title, dates, time_start, time_end, password, mode, date_only } = body;
 
   if (!title || !dates || !Array.isArray(dates) || dates.length === 0) {
     return NextResponse.json({ error: 'Title and dates are required' }, { status: 400 });
@@ -35,12 +35,18 @@ export async function POST(request: NextRequest) {
   const id = nanoid(10);
   const supabase = createServerClient();
 
+  // Validate mode
+  const eventMode = mode === 'unavailable' ? 'unavailable' : 'available';
+  const isDateOnly = date_only === true;
+
   const eventData: Record<string, unknown> = {
     id,
     title: title.trim(),
     dates,
     time_start: start,
     time_end: end,
+    mode: eventMode,
+    date_only: isDateOnly,
   };
 
   if (password) {
