@@ -530,6 +530,69 @@ git commit -m "feat: 편집 모드 사이드바에 응답자 목록 표시"
 
 ---
 
+## Task 5: 편집 모드 그리드 호버 링 — 이동 중 검은색, 멈추면 형광색
+
+**핵심 변경:** 편집 모드에서 그리드 셀에 마우스 호버 시, 마우스가 움직이는 중에는 검은색 outline, 멈추면(~200ms) 형광색(에메랄드) outline으로 전환.
+
+**Files:**
+- Modify: `src/components/drag-grid/GridCell.tsx`
+
+- [ ] **Step 1: GridCell에 호버 링 로직 추가**
+
+CSS만으로는 "멈춤 감지"가 불가능하므로, 부모 그리드에서 mousemove 이벤트를 감지하고 CSS 변수로 상태를 전달하는 방식 사용.
+
+**방법:** AvailabilityGrid의 grid div에 mousemove 이벤트를 걸어서 `data-moving` 속성을 토글. 200ms 타이머로 멈춤 감지.
+
+`AvailabilityGrid.tsx`의 grid div에 추가:
+```typescript
+const movingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+const gridRef = useRef<HTMLDivElement>(null);
+
+function handleGridMouseMove() {
+  if (gridRef.current) gridRef.current.dataset.moving = '1';
+  if (movingTimer.current) clearTimeout(movingTimer.current);
+  movingTimer.current = setTimeout(() => {
+    if (gridRef.current) delete gridRef.current.dataset.moving;
+  }, 200);
+}
+```
+
+grid div에:
+```tsx
+<div ref={gridRef} onMouseMove={handleGridMouseMove} ...>
+```
+
+**GridCell CSS:**
+```css
+/* globals.css에 추가 */
+
+/* 편집 모드 그리드 셀 호버 링 */
+[data-date][data-slot]:hover {
+  outline: 2px solid #059669; /* 기본: 에메랄드 (멈춤) */
+  outline-offset: -1px;
+  z-index: 5;
+}
+
+[data-moving="1"] [data-date][data-slot]:hover {
+  outline-color: #111827; /* 이동 중: 검은색 */
+}
+```
+
+이렇게 하면 JS 타이머(200ms)로 멈춤 감지, CSS로 색상 전환. GridCell 컴포넌트 수정 없이 CSS만으로 처리.
+
+- [ ] **Step 2: globals.css에 호버 링 스타일 추가**
+
+- [ ] **Step 3: AvailabilityGrid에 mousemove 핸들러 추가**
+
+- [ ] **Step 4: 커밋**
+
+```bash
+git add -A
+git commit -m "feat: 편집 모드 호버 링 — 이동 중 검은색, 멈추면 에메랄드"
+```
+
+---
+
 ## Execution Order
 
 | Task | 내용 | 의존성 |
@@ -538,5 +601,6 @@ git commit -m "feat: 편집 모드 사이드바에 응답자 목록 표시"
 | 2 | 이름 모달 UI 변경 | Task 1 (API 변경 필요) |
 | 3 | 셀 높이 + 숫자 | 없음 (독립) |
 | 4 | 편집 모드 응답자 목록 | 없음 (독립) |
+| 5 | 편집 모드 호버 링 (이동/멈춤) | 없음 (독립) |
 
-Task 1→2 순서 의존. Task 3, 4는 독립적.
+Task 1→2 순서 의존. Task 3, 4, 5는 독립적.
