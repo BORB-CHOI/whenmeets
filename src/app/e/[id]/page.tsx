@@ -15,7 +15,7 @@ export default async function EventPage({ params }: Props) {
   // Fetch event in one query (includes password_hash for auth check)
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, created_at, password_hash')
+    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only')
     .eq('id', id)
     .single();
 
@@ -52,6 +52,8 @@ export default async function EventPage({ params }: Props) {
           time_end: event.time_end,
           has_password: true,
           created_at: event.created_at,
+          mode: event.mode ?? 'available',
+          date_only: event.date_only ?? false,
           requires_auth: true,
           participants: [],
         }}
@@ -78,6 +80,8 @@ export default async function EventPage({ params }: Props) {
         time_end: event.time_end,
         has_password: hasPassword,
         created_at: event.created_at,
+        mode: event.mode ?? 'available',
+        date_only: event.date_only ?? false,
         participants: participants ?? [],
       }}
       initialState={{ type: 'ready' }}

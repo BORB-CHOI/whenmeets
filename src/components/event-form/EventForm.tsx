@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { EventMode } from '@/lib/types';
 import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
 
@@ -15,6 +16,8 @@ export default function EventForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [dateOnly, setDateOnly] = useState(false);
+  const [mode, setMode] = useState<EventMode>('available');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,9 +39,11 @@ export default function EventForm() {
       body: JSON.stringify({
         title: title.trim(),
         dates,
-        time_start: timeStart,
-        time_end: timeEnd,
+        time_start: dateOnly ? 0 : timeStart,
+        time_end: dateOnly ? 48 : timeEnd,
         password: password || undefined,
+        mode,
+        date_only: dateOnly,
       }),
     });
 
@@ -67,6 +72,52 @@ export default function EventForm() {
         />
       </div>
 
+      {/* Mode toggle: Dates and times / Dates only */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-2">유형</label>
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setDateOnly(false)}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+              ${!dateOnly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            날짜 + 시간
+          </button>
+          <button
+            type="button"
+            onClick={() => setDateOnly(true)}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+              ${dateOnly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            날짜만
+          </button>
+        </div>
+      </div>
+
+      {/* Response mode: available / unavailable */}
+      <div>
+        <label className="block text-sm font-medium text-gray-600 mb-2">응답 방식</label>
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setMode('available')}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+              ${mode === 'available' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            되는 시간 수합
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('unavailable')}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+              ${mode === 'unavailable' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            안 되는 시간 수합
+          </button>
+        </div>
+      </div>
+
       {/* Date picker */}
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -75,18 +126,20 @@ export default function EventForm() {
         <DatePicker selectedDates={dates} onDatesChange={setDates} />
       </div>
 
-      {/* Time range */}
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-2">
-          시간 범위
-        </label>
-        <TimeRangePicker
-          timeStart={timeStart}
-          timeEnd={timeEnd}
-          onTimeStartChange={setTimeStart}
-          onTimeEndChange={setTimeEnd}
-        />
-      </div>
+      {/* Time range — hidden for date-only mode */}
+      {!dateOnly && (
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-2">
+            시간 범위
+          </label>
+          <TimeRangePicker
+            timeStart={timeStart}
+            timeEnd={timeEnd}
+            onTimeStartChange={setTimeStart}
+            onTimeEndChange={setTimeEnd}
+          />
+        </div>
+      )}
 
       {/* Optional password */}
       <div>
