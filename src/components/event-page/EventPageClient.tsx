@@ -44,11 +44,12 @@ interface EventPageClientProps {
 type ViewMode = 'view' | 'edit';
 
 function readStoredSession(eventId: string) {
+  if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(`whenmeets:${eventId}`);
     if (stored) return JSON.parse(stored) as { participantId: string; token: string };
   } catch {
-    localStorage.removeItem(`whenmeets:${eventId}`);
+    try { localStorage.removeItem(`whenmeets:${eventId}`); } catch { /* SSR safe */ }
   }
   return null;
 }
