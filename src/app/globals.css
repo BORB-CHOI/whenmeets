@@ -28,11 +28,8 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Remove focus ring globally — custom focus states handled per component */
+/* Remove browser default black focus outline — Tailwind focus:ring handles focus states */
 *:focus {
-  outline: none;
-}
-*:focus-visible {
   outline: none;
 }
 
