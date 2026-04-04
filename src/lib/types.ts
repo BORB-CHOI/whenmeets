@@ -16,6 +16,7 @@ export interface Event {
   created_at: string;
   mode: EventMode;       // 'available' = mark available, 'unavailable' = mark unavailable
   date_only: boolean;    // true = dates-only mode (uses "all_day" slot key)
+  description?: string;
 }
 
 export interface Participant {

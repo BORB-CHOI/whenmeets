@@ -71,6 +71,8 @@ export default function EventPageClient({
   const [nameError, setNameError] = useState('');
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
+  const [description, setDescription] = useState(initialEvent.description ?? '');
+  const [editingDescription, setEditingDescription] = useState(false);
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
   const supabaseRef = useRef(createAuthBrowserClient());
 
@@ -326,6 +328,16 @@ export default function EventPageClient({
     } catch { /* */ }
   }
 
+  async function saveDescription() {
+    await fetch(`/api/events/${eventId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description }),
+    });
+    setEvent((prev) => ({ ...prev, description }));
+    setEditingDescription(false);
+  }
+
   // Date range display
   const sortedDates = [...event.dates].sort();
   const firstDate = sortedDates[0];
@@ -381,8 +393,52 @@ export default function EventPageClient({
         </div>
       </div>
 
-      {/* Description add */}
-      <p className="text-sm text-gray-400 hover:text-gray-500 cursor-pointer mb-6">+ 설명 추가</p>
+      {/* Description add/edit */}
+      <div className="mb-6">
+        {editingDescription ? (
+          <div className="mt-2">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="이벤트 설명을 입력하세요"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 resize-none"
+              rows={3}
+              autoFocus
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={saveDescription}
+                className="text-sm text-indigo-600 font-medium hover:text-indigo-800 cursor-pointer"
+              >
+                저장
+              </button>
+              <button
+                onClick={() => {
+                  setEditingDescription(false);
+                  setDescription(event.description ?? '');
+                }}
+                className="text-sm text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : description ? (
+          <p
+            className="mt-2 text-sm text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+            onClick={() => setEditingDescription(true)}
+          >
+            {description}
+          </p>
+        ) : (
+          <p
+            className="mt-2 text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+            onClick={() => setEditingDescription(true)}
+          >
+            + 설명 추가
+          </p>
+        )}
+      </div>
 
       {/* Main content: 2-column layout */}
       <div className="flex flex-col lg:flex-row gap-8">
