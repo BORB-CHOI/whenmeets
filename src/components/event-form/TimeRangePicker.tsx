@@ -87,7 +87,7 @@ function ScrollPicker({
   }, [value, scrollToValue]);
 
   function handleScroll() {
-    if (!containerRef.current) return;
+    if (!containerRef.current || wheelControlled.current) return;
     isScrolling.current = true;
 
     // Debounce: snap to nearest after scroll stops
@@ -104,6 +104,35 @@ function ScrollPicker({
       containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
       isScrolling.current = false;
     }, 80);
+  }
+
+  // Wheel: always move exactly 1 item regardless of scroll speed
+  const wheelControlled = useRef(false);
+  const wheelCooldown = useRef(false);
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (wheelCooldown.current || !containerRef.current) return;
+
+    const direction = e.deltaY > 0 ? 1 : -1;
+    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
+    const nextIdx = Math.max(0, Math.min(currentIdx + direction, options.length - 1));
+
+    wheelControlled.current = true;
+    containerRef.current.scrollTo({ top: nextIdx * ITEM_H, behavior: 'smooth' });
+
+    const opt = options[nextIdx];
+    if (!disabledCheck(opt)) {
+      onChange(opt);
+    }
+
+    // Cooldown to prevent rapid-fire scrolling
+    wheelCooldown.current = true;
+    setTimeout(() => {
+      wheelCooldown.current = false;
+      wheelControlled.current = false;
+    }, 150);
   }
 
   const halfPad = Math.floor(VISIBLE / 2);
@@ -125,6 +154,7 @@ function ScrollPicker({
       <div
         ref={containerRef}
         onScroll={handleScroll}
+        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         className="h-full overflow-y-auto select-none"
         style={{
