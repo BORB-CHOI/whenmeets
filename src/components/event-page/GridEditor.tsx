@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Availability, EventMode, Participant } from '@/lib/types';
 import DragGrid from '@/components/drag-grid/DragGrid';
+import CalendarImportButton from './CalendarImportButton';
+import TimezoneSelector from './TimezoneSelector';
 
 interface GridEditorProps {
   eventId: string;
@@ -49,6 +51,15 @@ export default function GridEditor({
         </Link>
       </div>
 
+      <div className="flex items-center justify-between mb-3">
+        <CalendarImportButton
+          dates={dates}
+          timeStart={timeStart}
+          timeEnd={timeEnd}
+          onImport={onAvailabilityChange}
+        />
+      </div>
+
       <DragGrid
         dates={dates}
         timeStart={timeStart}
@@ -59,6 +70,10 @@ export default function GridEditor({
         currentParticipantId={currentParticipantId}
         dateOnly={dateOnly}
       />
+
+      <div className="mt-3">
+        <TimezoneSelector />
+      </div>
 
       {/* Share link */}
       <div className="mt-6 p-3 bg-gray-50 rounded-xl">
