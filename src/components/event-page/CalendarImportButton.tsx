@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { fetchCalendarEvents, calendarEventsToAvailability } from '@/lib/calendar';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import type { Availability } from '@/lib/types';
 
 interface CalendarImportButtonProps {
@@ -21,6 +22,7 @@ export default function CalendarImportButton({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
   const supabaseRef = useRef(createAuthBrowserClient());
   const supabase = supabaseRef.current;
 
@@ -41,9 +43,6 @@ export default function CalendarImportButton({
   if (!isAuthenticated) return null;
 
   async function handleImport() {
-    if (!confirm('캘린더 이벤트를 가져오면 현재 입력한 시간이 덮어쓰기됩니다. 계속하시겠습니까?')) {
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -74,7 +73,7 @@ export default function CalendarImportButton({
   return (
     <div className="flex flex-col gap-1">
       <button
-        onClick={handleImport}
+        onClick={() => setShowImportConfirm(true)}
         disabled={loading}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50"
       >
@@ -125,6 +124,14 @@ export default function CalendarImportButton({
       {error && (
         <p className="text-xs text-red-600 px-1">{error}</p>
       )}
+      <ConfirmModal
+        open={showImportConfirm}
+        title="캘린더 가져오기"
+        message="캘린더 이벤트를 가져오면 현재 입력한 시간이 덮어쓰기됩니다. 계속하시겠습니까?"
+        confirmLabel="가져오기"
+        onConfirm={() => { setShowImportConfirm(false); handleImport(); }}
+        onCancel={() => setShowImportConfirm(false)}
+      />
     </div>
   );
 }
