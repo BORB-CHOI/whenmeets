@@ -622,6 +622,11 @@ export default function EventPageClient({
                   )}
                 </div>
               </div>
+
+              {/* Timezone */}
+              <div className="mt-5">
+                <TimezoneSelector />
+              </div>
             </>
           )}
 
