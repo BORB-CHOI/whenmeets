@@ -5,7 +5,7 @@ import { formatDateCompact } from '@/lib/constants';
 
 const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: '',                                        // No response yet — transparent
-  0: 'bg-red-500/15',                              // Unavailable — red tint
+  0: 'bg-red-400/30',                              // Unavailable — red tint
   1: 'bg-[#FFE8B8]',                               // If needed — yellow (timeful)
   2: 'bg-[#4F46E5]/[.47]',                         // Available — indigo
 };

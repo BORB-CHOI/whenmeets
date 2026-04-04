@@ -38,7 +38,7 @@ export default function useGridDrag({
     const draft = { ...draftRef.current };
     if (!draft[date]) draft[date] = {};
 
-    if (activeMode === 0 || erasing.current) {
+    if (erasing.current) {
       const dateCopy = { ...draft[date] };
       delete dateCopy[slot];
       if (Object.keys(dateCopy).length === 0) {
@@ -80,20 +80,14 @@ export default function useGridDrag({
 
       // Toggle: if first cell already matches activeMode, erase instead
       erasing.current = false;
-      if (activeMode !== 0) {
-        const cell = getCellFromPoint(x, y);
-        if (cell) {
-          const existing = availability[cell.date]?.[cell.slot];
-          if (existing === activeMode) {
-            erasing.current = true;
-          }
-          applyToCell(cell.date, cell.slot);
-          return;
-        }
-      }
-
       const cell = getCellFromPoint(x, y);
-      if (cell) applyToCell(cell.date, cell.slot);
+      if (cell) {
+        const existing = availability[cell.date]?.[cell.slot];
+        if (existing === activeMode) {
+          erasing.current = true;
+        }
+        applyToCell(cell.date, cell.slot);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeMode, availability]
