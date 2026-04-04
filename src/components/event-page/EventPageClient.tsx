@@ -102,7 +102,7 @@ export default function EventPageClient({
     return existing?.availability ?? {};
   });
 
-  const { saving, saveAvailability } = useAvailabilitySave({
+  const { saving, saveNow } = useAvailabilitySave({
     eventId,
     participantId,
     participantToken,
@@ -291,7 +291,12 @@ export default function EventPageClient({
 
   function handleAvailabilityChange(newAvailability: Availability) {
     setAvailability(newAvailability);
-    saveAvailability(newAvailability);
+    // No auto-save here — saving happens only on 편집 완료
+  }
+
+  async function handleFinishEditing() {
+    await saveNow(availability);
+    setViewMode('view');
   }
 
   async function handleCopyLink() {
@@ -345,8 +350,9 @@ export default function EventPageClient({
             </button>
           ) : (
             <button
-              onClick={() => { setViewMode('view'); handleRealtimeUpdate(); }}
-              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer"
+              onClick={handleFinishEditing}
+              disabled={saving}
+              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {saving ? '저장 중...' : '편집 완료'}
             </button>
