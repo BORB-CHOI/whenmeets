@@ -51,8 +51,13 @@ export default function useGridDrag({
     // Paint DOM directly instead of triggering React re-render
     const cellEl = document.querySelector(`[data-date="${date}"][data-slot="${slot}"]`) as HTMLElement | null;
     if (cellEl) {
-      const color = erasing.current ? '' : CELL_CSS_COLORS[activeMode];
-      cellEl.style.backgroundColor = color;
+      if (erasing.current) {
+        cellEl.style.backgroundColor = 'white';
+        cellEl.dataset.erased = '1';
+      } else {
+        cellEl.style.backgroundColor = CELL_CSS_COLORS[activeMode];
+        delete cellEl.dataset.erased;
+      }
     }
   }
 
@@ -116,6 +121,11 @@ export default function useGridDrag({
 
   const handlePointerEnd = useCallback(() => {
     if (isDragging.current) {
+      // Clear all inline styles so React takes back control
+      document.querySelectorAll('[data-date][data-slot]').forEach((el) => {
+        (el as HTMLElement).style.backgroundColor = '';
+        delete (el as HTMLElement).dataset.erased;
+      });
       // Commit draft to React state once on drag end
       onAvailabilityChange({ ...draftRef.current });
     }
