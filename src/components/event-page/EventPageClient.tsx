@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Availability, EventData } from '@/lib/types';
+import { Availability, AvailabilityLevel, EventData } from '@/lib/types';
+import SegmentedControl from '@/components/ui/SegmentedControl';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
 import { generateSlots } from '@/lib/constants';
@@ -78,6 +79,11 @@ export default function EventPageClient({
       }
     });
   }, []);
+
+  // Active drag mode (lifted from DragGrid)
+  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(
+    initialEvent.mode === 'unavailable' ? 0 : 2,
+  );
 
   // Heatmap filters
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -389,6 +395,8 @@ export default function EventPageClient({
                 currentParticipantId={participantId}
                 dateOnly={event.date_only}
                 eventMode={event.mode}
+                activeMode={activeMode}
+                onActiveModeChange={setActiveMode}
               />
             </>
           ) : event.date_only ? (
@@ -419,18 +427,53 @@ export default function EventPageClient({
         <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100">
           {viewMode === 'edit' ? (
             <>
-              {/* Edit mode sidebar — legend + calendar + overlay */}
-              <div className="mb-5">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">범례</h3>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                    <span className="w-4 h-4 rounded-sm bg-[#4F46E5]/[.47] border border-gray-200/50" />
-                    {event.mode === 'unavailable' ? 'Unavailable' : 'Available'}
+              {/* Mode selector toggle */}
+              <div className="mb-3">
+                {event.mode === 'unavailable' ? (
+                  <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium">
+                    ✓ 안 되는 시간을 드래그하세요
                   </div>
-                  {event.mode === 'available' && (
-                    <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                      <span className="w-4 h-4 rounded-sm bg-[#FFE8B8] border border-gray-200/50" />
-                      필요하다면..
+                ) : (
+                  <SegmentedControl
+                    options={[
+                      { value: 'available', label: 'Available' },
+                      { value: 'if_needed', label: 'If Needed' },
+                    ]}
+                    value={activeMode === 2 ? 'available' : 'if_needed'}
+                    onChange={(v) => setActiveMode(v === 'available' ? 2 : 1)}
+                  />
+                )}
+              </div>
+
+              {/* Active mode highlight banner */}
+              <div className={`p-3 rounded-lg text-sm mt-3 mb-5 ${
+                activeMode === 2 ? 'bg-indigo-50 text-indigo-700' :
+                activeMode === 1 ? 'bg-amber-50 text-amber-700' :
+                'bg-red-50 text-red-700'
+              }`}>
+                {activeMode === 2 && '✓ 되는 시간을 드래그하세요'}
+                {activeMode === 1 && '✓ 필요하다면 가능한 시간을 드래그하세요'}
+                {activeMode === 0 && '✓ 안 되는 시간을 드래그하세요'}
+              </div>
+
+              {/* Legend */}
+              <div className="mb-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">범례</h3>
+                <div className="flex flex-col gap-1.5 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-sm bg-[#4F46E5]/47" />
+                    <span>Available</span>
+                  </div>
+                  {event.mode !== 'unavailable' && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-sm bg-[#FFE8B8]" />
+                      <span>필요하다면..</span>
+                    </div>
+                  )}
+                  {event.mode === 'unavailable' && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-sm bg-red-400/30" />
+                      <span>Unavailable</span>
                     </div>
                   )}
                 </div>

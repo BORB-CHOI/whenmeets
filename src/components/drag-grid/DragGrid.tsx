@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Availability, AvailabilityLevel, EventMode, Participant } from '@/lib/types';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import GridCell from './GridCell';
-import ModeSwitch from './ModeSwitch';
 import CalendarDragGrid from './CalendarDragGrid';
 import useGridDrag from './useGridDrag';
 
@@ -18,6 +17,8 @@ interface DragGridProps {
   currentParticipantId?: string | null;
   dateOnly?: boolean;
   eventMode?: EventMode;
+  activeMode: AvailabilityLevel;
+  onActiveModeChange: (mode: AvailabilityLevel) => void;
 }
 
 export default function DragGrid({
@@ -30,9 +31,9 @@ export default function DragGrid({
   currentParticipantId,
   dateOnly,
   eventMode = 'available',
+  activeMode,
+  onActiveModeChange,
 }: DragGridProps) {
-  // Default mode based on event type: unavailable events default to Unavailable(0)
-  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(eventMode === 'unavailable' ? 0 : 2);
 
   const { gridProps } = useGridDrag({
     activeMode,
@@ -79,7 +80,6 @@ export default function DragGrid({
   if (dateOnly) {
     return (
       <div className="flex flex-col gap-3">
-        <ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} eventMode={eventMode} />
         <CalendarDragGrid
           dates={dates}
           availability={availability}
@@ -99,7 +99,6 @@ export default function DragGrid({
       timeStart={timeStart}
       timeEnd={timeEnd}
       columnsProps={gridProps}
-      header={<ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} eventMode={eventMode} />}
       renderCell={(date, slot) => {
         const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
         return (

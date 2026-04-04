@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Availability, EventMode, Participant } from '@/lib/types';
+import { Availability, AvailabilityLevel, EventMode, Participant } from '@/lib/types';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import TimezoneSelector from './TimezoneSelector';
@@ -33,7 +34,10 @@ export default function GridEditor({
   participants,
   currentParticipantId,
   dateOnly,
+  mode = 'available',
 }: GridEditorProps) {
+  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(mode === 'unavailable' ? 0 : 2);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-4">
       <div className="flex items-center justify-between mb-4">
@@ -69,6 +73,9 @@ export default function GridEditor({
         participants={participants}
         currentParticipantId={currentParticipantId}
         dateOnly={dateOnly}
+        eventMode={mode}
+        activeMode={activeMode}
+        onActiveModeChange={setActiveMode}
       />
 
       <div className="mt-3">
