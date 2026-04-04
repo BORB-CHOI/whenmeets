@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { verifyEventToken } from '@/lib/auth';
 import ResultsPageClient from '@/components/results/ResultsPageClient';
@@ -29,6 +30,9 @@ export default async function ResultsPage({ params }: Props) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <p className="text-gray-500">결과를 불러올 수 없습니다</p>
+        <Link href="/" className="mt-4 text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+          홈으로
+        </Link>
       </div>
     );
   }
@@ -43,6 +47,9 @@ export default async function ResultsPage({ params }: Props) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen px-4">
           <p className="text-gray-500">인증이 필요합니다</p>
+          <Link href={`/e/${id}`} className="mt-4 text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+            이벤트로 돌아가기
+          </Link>
         </div>
       );
     }
