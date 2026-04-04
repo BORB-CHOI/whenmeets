@@ -509,34 +509,30 @@ export default function EventPageClient({
         <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100">
           {viewMode === 'edit' ? (
             <>
-              {/* Mode selector toggle */}
-              <div className="mb-3">
-                {event.mode === 'unavailable' ? (
-                  <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium">
-                    ✓ 안 되는 시간을 드래그하세요
+              {/* Mode selector toggle + highlight */}
+              {event.mode === 'unavailable' ? (
+                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium mb-5">
+                  ✓ 안 되는 시간을 드래그하세요
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <SegmentedControl
+                      options={[
+                        { value: 'available', label: 'Available' },
+                        { value: 'if_needed', label: 'If Needed' },
+                      ]}
+                      value={activeMode === 2 ? 'available' : 'if_needed'}
+                      onChange={(v) => setActiveMode(v === 'available' ? 2 : 1)}
+                    />
                   </div>
-                ) : (
-                  <SegmentedControl
-                    options={[
-                      { value: 'available', label: 'Available' },
-                      { value: 'if_needed', label: 'If Needed' },
-                    ]}
-                    value={activeMode === 2 ? 'available' : 'if_needed'}
-                    onChange={(v) => setActiveMode(v === 'available' ? 2 : 1)}
-                  />
-                )}
-              </div>
-
-              {/* Active mode highlight banner */}
-              <div className={`p-3 rounded-lg text-sm mt-3 mb-5 ${
-                activeMode === 2 ? 'bg-indigo-50 text-indigo-700' :
-                activeMode === 1 ? 'bg-amber-50 text-amber-700' :
-                'bg-red-50 text-red-700'
-              }`}>
-                {activeMode === 2 && '✓ 되는 시간을 드래그하세요'}
-                {activeMode === 1 && '✓ 필요하다면 가능한 시간을 드래그하세요'}
-                {activeMode === 0 && '✓ 안 되는 시간을 드래그하세요'}
-              </div>
+                  <div className={`p-3 rounded-lg text-sm mb-5 ${
+                    activeMode === 2 ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ 필요하다면 가능한 시간을 드래그하세요'}
+                  </div>
+                </>
+              )}
 
               {/* Legend */}
               <div className="mb-5">
@@ -554,7 +550,7 @@ export default function EventPageClient({
                   )}
                   {event.mode === 'unavailable' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-red-400/30" />
+                      <div className="w-4 h-4 rounded-sm bg-red-500/50" />
                       <span>Unavailable</span>
                     </div>
                   )}

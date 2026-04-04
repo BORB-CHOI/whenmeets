@@ -83,21 +83,20 @@ export default function HeatmapGrid({
 
         return (
           <div
-            className="w-full h-full relative cursor-pointer transition-transform duration-150 hover:scale-[1.08] hover:z-10"
+            className="w-full h-full relative cursor-pointer transition-all duration-150 hover:brightness-110 hover:outline-2 hover:outline-indigo-400 hover:-outline-offset-1 hover:z-10"
             style={{ backgroundColor: bgColor }}
             onMouseEnter={() => onCellHover?.(date, slot)}
             onMouseLeave={() => onCellHover?.(null)}
           >
             {count > 0 && (
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-semibold tabular-nums text-white/80 pointer-events-none select-none">
+              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none"
+                style={{ color: count === total ? 'rgba(255,255,255,0.9)' : 'rgba(79,70,229,0.8)' }}
+              >
                 {count}
               </span>
             )}
             {isHoveredAvailable && (
-              <div
-                className="absolute inset-0"
-                style={{ outline: '1.5px dashed #111827', outlineOffset: '-1px' }}
-              />
+              <div className="absolute inset-0 bg-indigo-600/20 ring-2 ring-inset ring-indigo-500" />
             )}
           </div>
         );
