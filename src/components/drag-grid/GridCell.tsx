@@ -25,12 +25,15 @@ interface GridCellProps {
   wide?: boolean;
   overlayCount?: number;
   overlayTotal?: number;
+  onCellHover?: (date: string, slot: number | string) => void;
+  onCellLeave?: () => void;
 }
 
-export default function GridCell({ date, slot, value, wide, overlayCount, overlayTotal }: GridCellProps) {
+export default function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellHover, onCellLeave }: GridCellProps) {
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
-  const overlayOpacity = hasOverlay
-    ? Math.min(0.3, Math.log(overlayCount + 1) / Math.log(overlayTotal! + 1) * 0.3)
+  // Border opacity: 0.2 ~ 0.8 based on how many others responded
+  const borderOpacity = hasOverlay
+    ? Math.min(0.8, 0.2 + (overlayCount! / overlayTotal!) * 0.6)
     : 0;
 
   if (wide) {
@@ -61,9 +64,23 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       data-date={date}
       data-slot={slot}
       className={`relative w-full h-full ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer`}
+      onMouseEnter={() => onCellHover?.(date, slot)}
+      onMouseLeave={() => onCellLeave?.()}
     >
+      {/* Overlay: dotted border indicating other participants (no fill) */}
+      {hasOverlay && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            border: `2px dashed rgba(5,150,105,${borderOpacity})`,
+          }}
+        />
+      )}
       {hasOverlay && overlayCount! > 0 && (
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white/90 pointer-events-none select-none drop-shadow-sm">
+        <span
+          className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none"
+          style={{ color: `rgba(5,150,105,${Math.min(1, borderOpacity + 0.2)})` }}
+        >
           {overlayCount}
         </span>
       )}

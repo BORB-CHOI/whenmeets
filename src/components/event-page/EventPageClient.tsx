@@ -478,6 +478,7 @@ export default function EventPageClient({
                 eventMode={event.mode}
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
+                onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: Number(slot ?? 0) } : null)}
               />
             </>
           ) : event.date_only ? (
@@ -556,17 +557,20 @@ export default function EventPageClient({
                 </div>
               </div>
 
-              {/* Participant list in edit mode */}
+              {/* Participant list in edit mode — same interaction as view mode */}
               {event.participants.length > 0 && (
                 <div className="mb-5">
                   <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     응답자 ({event.participants.length})
                   </h3>
-                  <ParticipantFilter
-                    participants={event.participants}
-                    selectedIds={new Set(event.participants.map(p => p.id))}
-                    onSelectedChange={() => {}}
-                  />
+                  <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                    <ParticipantFilter
+                      participants={event.participants}
+                      selectedIds={new Set(event.participants.map(p => p.id))}
+                      onSelectedChange={() => {}}
+                      slotAvailability={slotAvailability}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -597,12 +601,14 @@ export default function EventPageClient({
                   : `(${event.participants.length})`}
               </h2>
 
-              <ParticipantFilter
-                participants={event.participants}
-                selectedIds={selectedIds}
-                onSelectedChange={setSelectedIds}
-                slotAvailability={slotAvailability}
-              />
+              <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                <ParticipantFilter
+                  participants={event.participants}
+                  selectedIds={selectedIds}
+                  onSelectedChange={setSelectedIds}
+                  slotAvailability={slotAvailability}
+                />
+              </div>
 
               {/* Options */}
               <div className="mt-6">
