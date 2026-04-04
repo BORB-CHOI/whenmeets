@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const COMMON_TIMEZONES = [
   { value: 'UTC', city: 'UTC' },
@@ -60,6 +61,8 @@ interface TimezoneSelectorProps {
 
 export default function TimezoneSelector({ onChange }: TimezoneSelectorProps) {
   const [timezone, setTimezone] = useState<string>('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Load from localStorage or auto-detect
@@ -67,6 +70,14 @@ export default function TimezoneSelector({ onChange }: TimezoneSelectorProps) {
     const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const tz = stored || detected;
     setTimezone(tz);
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   function handleChange(newTz: string) {
@@ -87,37 +98,65 @@ export default function TimezoneSelector({ onChange }: TimezoneSelectorProps) {
   if (!timezone) return null;
 
   return (
-    <div className="flex items-center gap-2 text-xs text-gray-400" title="표시 기준 시간대 (데���터에는 영향 없음)">
-      <svg
-        className="h-3.5 w-3.5 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <div ref={ref} className="relative">
+      {/* Trigger button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer w-full"
       >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="2" y1="12" x2="22" y2="12" />
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      </svg>
-      <select
-        value={timezone}
-        onChange={(e) => handleChange(e.target.value)}
-        className="bg-transparent text-xs text-gray-400 border-none outline-none cursor-pointer hover:text-gray-600 transition-colors p-0"
-      >
-        {COMMON_TIMEZONES.map((tz) => (
-          <option key={tz.value} value={tz.value}>
-            {formatTimezoneDisplay(tz.value)}
-          </option>
-        ))}
-        {/* If the user's detected timezone isn't in the common list, include it */}
-        {!COMMON_TIMEZONES.some((t) => t.value === timezone) && (
-          <option value={timezone}>
-            {formatTimezoneDisplay(timezone)}
-          </option>
+        <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span className="flex-1 text-left truncate">{formatTimezoneDisplay(timezone)}</span>
+        <svg className={`w-3 h-3 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {COMMON_TIMEZONES.map((tz) => (
+              <button
+                key={tz.value}
+                onClick={() => { handleChange(tz.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between cursor-pointer ${
+                  timezone === tz.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'
+                }`}
+              >
+                <span>{formatTimezoneDisplay(tz.value)}</span>
+                {timezone === tz.value && (
+                  <svg className="w-4 h-4 text-indigo-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+            {/* Include user's detected timezone if not in common list */}
+            {!COMMON_TIMEZONES.some((t) => t.value === timezone) && (
+              <button
+                onClick={() => { handleChange(timezone); setOpen(false); }}
+                className="w-full text-left px-3 py-2.5 text-sm bg-indigo-50 text-indigo-700 font-medium flex items-center justify-between cursor-pointer"
+              >
+                <span>{formatTimezoneDisplay(timezone)}</span>
+                <svg className="w-4 h-4 text-indigo-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            )}
+          </motion.div>
         )}
-      </select>
+      </AnimatePresence>
     </div>
   );
 }
