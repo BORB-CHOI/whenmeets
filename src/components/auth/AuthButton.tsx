@@ -38,6 +38,11 @@ export default function AuthButton() {
   };
 
   const handleSignOut = async () => {
+    // Clear all whenmeets participant sessions
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('whenmeets:')) localStorage.removeItem(key);
+    }
     await supabase.auth.signOut();
     window.location.href = '/';
   };

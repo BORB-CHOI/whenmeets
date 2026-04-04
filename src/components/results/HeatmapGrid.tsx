@@ -61,7 +61,7 @@ export default function HeatmapGrid({
 
         return (
           <div
-            className={`w-full h-[28px] border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
+            className={`w-full h-7 sm:h-9 lg:h-11 border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
               ${getColor(count)}
               ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}
               ${isBest ? 'ring-2 ring-indigo-500 ring-inset' : ''}

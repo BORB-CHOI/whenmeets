@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Availability, EventData, Participant } from '@/lib/types';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
@@ -404,49 +405,73 @@ export default function EventPageClient({
       </div>
 
       {/* Name input modal */}
-      {showNameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">내 시간 입력하기</h2>
-            <p className="text-sm text-gray-500 mb-4">이름을 입력하고 참여하세요</p>
-
-            <form onSubmit={handleNameSubmit} className="flex flex-col gap-3">
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="이름 입력"
-                disabled={nameLoading}
-                className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005] disabled:opacity-50"
-                maxLength={50}
-                autoFocus
-              />
-              {nameError && <p className="text-sm text-red-500">{nameError}</p>}
-              <button
-                type="submit"
-                disabled={nameLoading || !nameInput.trim()}
-                className="h-[38px] bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {nameLoading ? '참여 중...' : '참여하기'}
-              </button>
-            </form>
-
-            <button
-              onClick={() => setShowNameModal(false)}
-              className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-600 cursor-pointer"
+      <AnimatePresence>
+        {showNameModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowNameModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4"
+              onClick={(e) => e.stopPropagation()}
             >
-              취소
-            </button>
-          </div>
-        </div>
-      )}
+              <h2 className="text-lg font-bold text-gray-900 mb-1">내 시간 입력하기</h2>
+              <p className="text-sm text-gray-500 mb-4">이름을 입력하고 참여하세요</p>
+
+              <form onSubmit={handleNameSubmit} className="flex flex-col gap-3">
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="이름 입력"
+                  disabled={nameLoading}
+                  className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005] disabled:opacity-50"
+                  maxLength={50}
+                  autoFocus
+                />
+                {nameError && <p className="text-sm text-red-500">{nameError}</p>}
+                <button
+                  type="submit"
+                  disabled={nameLoading || !nameInput.trim()}
+                  className="h-[38px] bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {nameLoading ? '참여 중...' : '참여하기'}
+                </button>
+              </form>
+
+              <button
+                onClick={() => setShowNameModal(false)}
+                className="mt-3 w-full text-center text-sm text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                취소
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toast for copy */}
-      {copied && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
-          링크가 복사되었습니다
-        </div>
-      )}
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg"
+          >
+            링크가 복사되었습니다
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
