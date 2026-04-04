@@ -653,7 +653,8 @@ export default function EventPageClient({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowNameModal(false)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.bd = '1'; }}
+            onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') setShowNameModal(false); (e.currentTarget as HTMLElement).dataset.bd = ''; }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
