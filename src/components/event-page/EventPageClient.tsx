@@ -318,6 +318,15 @@ export default function EventPageClient({
 
   async function handleFinishEditing() {
     await saveNow(availability);
+    // Refresh event data to show updated heatmap and participant list
+    try {
+      const res = await fetch(`/api/events/${eventId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEvent(data);
+        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      }
+    } catch { /* ignore */ }
     setViewMode('view');
   }
 
