@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
 
 function safeCompare(a: string, b: string): boolean {
@@ -68,13 +69,28 @@ export async function POST(
     );
   }
 
+  // Try to get authenticated user (optional)
+  let userId: string | null = null;
+  try {
+    const authClient = await createAuthServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    // Auth is optional for participant creation
+  }
+
+  const insertData: Record<string, unknown> = {
+    event_id: id,
+    name: name.trim(),
+    availability: {},
+  };
+  if (userId) {
+    insertData.user_id = userId;
+  }
+
   const { data: participant, error } = await supabase
     .from('participants')
-    .insert({
-      event_id: id,
-      name: name.trim(),
-      availability: {},
-    })
+    .insert(insertData)
     .select('id, token')
     .single();
 
