@@ -67,12 +67,13 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       onMouseEnter={() => onCellHover?.(date, slot)}
       onMouseLeave={() => onCellLeave?.()}
     >
-      {/* Overlay: dotted border indicating other participants (no fill) */}
+      {/* Overlay: inset outline indicating other participants (no fill, no overlap) */}
       {hasOverlay && (
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0.5 pointer-events-none rounded-sm"
           style={{
-            border: `2px dashed rgba(5,150,105,${borderOpacity})`,
+            outline: `1.5px dashed rgba(5,150,105,${borderOpacity})`,
+            outlineOffset: '-1px',
           }}
         />
       )}

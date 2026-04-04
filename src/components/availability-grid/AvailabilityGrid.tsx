@@ -107,6 +107,7 @@ export default function AvailabilityGrid({
           <div
             ref={gridRef}
             onMouseMove={handleGridMouseMove}
+            data-grid-container=""
             className={`grid${columnsProps ? ' touch-none' : ''}`}
             style={{ flex: 1, minWidth: 0, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
             {...columnsProps}
