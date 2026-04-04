@@ -52,7 +52,7 @@ export default function RootLayout({
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
         <Header />
-        <main className="min-h-screen">{children}</main>
+        <main>{children}</main>
       </body>
     </html>
   );

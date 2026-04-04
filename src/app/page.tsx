@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen px-4 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
       {/* Mesh gradient background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {/* Blob 1: top-left on desktop, top-center on mobile */}
