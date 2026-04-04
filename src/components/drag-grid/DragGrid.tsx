@@ -44,13 +44,25 @@ export default function DragGrid({
 
   const overlayTotal = otherParticipants.length;
 
-  function getOverlayCount(date: string, slot: string): number {
-    let count = 0;
+  // Pre-compute overlay counts: O(participants × dates × slots) once, then O(1) lookup per cell
+  const overlayCountMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
     for (const p of otherParticipants) {
-      const val = p.availability?.[date]?.[slot];
-      if (val === 2 || val === 1) count++;
+      if (!p.availability) continue;
+      for (const [date, slots] of Object.entries(p.availability)) {
+        if (!map[date]) map[date] = {};
+        for (const [slot, val] of Object.entries(slots)) {
+          if (val === 2 || val === 1) {
+            map[date][slot] = (map[date][slot] || 0) + 1;
+          }
+        }
+      }
     }
-    return count;
+    return map;
+  }, [otherParticipants]);
+
+  function getOverlayCount(date: string, slot: string): number {
+    return overlayCountMap[date]?.[slot] ?? 0;
   }
 
   function getCellValue(date: string, slot: number | string): AvailabilityLevel | -1 {

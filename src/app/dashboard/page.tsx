@@ -19,18 +19,20 @@ export default async function DashboardPage() {
 
   const supabase = createServerClient();
 
-  // Fetch events created by this user
+  // Fetch events created by this user (limit to prevent unbounded queries)
   const { data: createdRaw } = await supabase
     .from('events')
     .select('id, title, dates, created_at')
     .eq('created_by', user.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   // Fetch events where user is a participant
   const { data: participantRows } = await supabase
     .from('participants')
     .select('event_id')
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .limit(50);
 
   const participatedEventIds = (participantRows ?? []).map(
     (r) => r.event_id as string,
@@ -42,7 +44,8 @@ export default async function DashboardPage() {
       .from('events')
       .select('id, title, dates, created_at')
       .in('id', participatedEventIds)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
     participatedRaw = data;
   }
 
