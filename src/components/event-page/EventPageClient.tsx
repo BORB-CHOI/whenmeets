@@ -16,6 +16,7 @@ import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import TimezoneSelector from './TimezoneSelector';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -96,6 +97,7 @@ export default function EventPageClient({
   );
   const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
   const [showBestTimes, setShowBestTimes] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Session (localStorage)
   const [session, setSession] = useState(() => {
@@ -567,12 +569,8 @@ export default function EventPageClient({
 
               {/* Delete availability */}
               <button
-                onClick={() => {
-                  if (confirm('내 응답을 삭제하시겠습니까?')) {
-                    handleAvailabilityChange({});
-                  }
-                }}
-                className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-sm text-red-500 hover:text-red-700 cursor-pointer mt-4"
               >
                 내 응답 삭제
               </button>
@@ -699,6 +697,19 @@ export default function EventPageClient({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="응답 삭제"
+        message="내 응답을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        variant="danger"
+        onConfirm={() => {
+          handleAvailabilityChange({});
+          setShowDeleteConfirm(false);
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
       {/* Toast for copy */}
       <AnimatePresence>
