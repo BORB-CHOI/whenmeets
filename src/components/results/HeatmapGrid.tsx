@@ -89,7 +89,7 @@ export default function HeatmapGrid({
             onMouseLeave={() => onCellHover?.(null)}
           >
             {count > 0 && (
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none"
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums pointer-events-none select-none"
                 style={{ color: count === total ? 'rgba(255,255,255,0.9)' : 'rgba(5,150,105,0.7)' }}
               >
                 {count}
