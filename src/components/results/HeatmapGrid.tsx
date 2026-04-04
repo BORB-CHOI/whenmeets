@@ -11,6 +11,8 @@ interface HeatmapGridProps {
   selectedIds: Set<string>;
   includeIfNeeded: boolean;
   hoveredParticipantId?: string | null;
+  onCellHover?: (date: string | null, slot?: number) => void;
+  bestSlots?: Set<string>;
 }
 
 export default function HeatmapGrid({
@@ -21,6 +23,8 @@ export default function HeatmapGrid({
   selectedIds,
   includeIfNeeded,
   hoveredParticipantId,
+  onCellHover,
+  bestSlots,
 }: HeatmapGridProps) {
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
@@ -33,14 +37,6 @@ export default function HeatmapGrid({
       else if (val === 1 && includeIfNeeded) count++;
     }
     return count;
-  }
-
-  function isHoveredAvailable(date: string, slot: number): boolean {
-    if (!hoveredParticipantId) return false;
-    const p = participants.find((p) => p.id === hoveredParticipantId);
-    if (!p) return false;
-    const val = p.availability?.[date]?.[String(slot)];
-    return val === 2 || (val === 1 && includeIfNeeded);
   }
 
   function getColor(count: number): string {
@@ -59,12 +55,19 @@ export default function HeatmapGrid({
       timeEnd={timeEnd}
       renderCell={(date, slot) => {
         const count = getCount(date, slot);
-        const highlighted = hoveredParticipantId ? isHoveredAvailable(date, slot) : false;
+        const slotKey = `${date}-${slot}`;
+        const isBest = bestSlots?.has(slotKey);
+        const dimmed = bestSlots && bestSlots.size > 0 && !isBest;
+
         return (
           <div
-            className={`w-[44px] h-[28px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
+            className={`w-full h-[28px] border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
+              ${getColor(count)}
               ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}
-              ${highlighted ? 'ring-2 ring-indigo-400 ring-inset' : ''}`}
+              ${isBest ? 'ring-2 ring-indigo-500 ring-inset' : ''}
+              ${dimmed ? 'opacity-30' : ''}`}
+            onMouseEnter={() => onCellHover?.(date, slot)}
+            onMouseLeave={() => onCellHover?.(null)}
           >
             {count > 0 && (
               <span className={`text-[9px] font-medium ${count === total ? 'text-white' : 'text-gray-600'}`}>

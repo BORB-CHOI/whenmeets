@@ -33,7 +33,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       <div
         data-date={date}
         data-slot={slot}
-        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 ${CELL_COLORS[value]} transition-colors duration-75 select-none flex items-center justify-between`}
+        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer flex items-center justify-between`}
       >
         {hasOverlay && (
           <div
@@ -57,7 +57,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
     <div
       data-date={date}
       data-slot={slot}
-      className={`relative w-[44px] h-[28px] border-r border-gray-200 ${CELL_COLORS[value]} transition-all duration-75 select-none hover:scale-105
+      className={`relative w-[44px] h-[28px] border-r border-gray-200 ${CELL_COLORS[value]} transition-all duration-75 select-none hover:scale-105 cursor-pointer
         ${slotNum % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}`}
     >
       {hasOverlay && (
