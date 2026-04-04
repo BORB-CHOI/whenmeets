@@ -538,18 +538,18 @@ export default function EventPageClient({
                 <h3 className="text-sm font-semibold text-gray-900 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-sm bg-[#4F46E5]/47" />
+                    <div className="w-4 h-4 rounded-sm bg-indigo-400/35" />
                     <span>Available</span>
                   </div>
                   {event.mode !== 'unavailable' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-[#FFE8B8]" />
+                      <div className="w-4 h-4 rounded-sm bg-amber-200/60" />
                       <span>필요하다면..</span>
                     </div>
                   )}
                   {event.mode === 'unavailable' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-red-500/50" />
+                      <div className="w-4 h-4 rounded-sm bg-red-400/40" />
                       <span>Unavailable</span>
                     </div>
                   )}
@@ -564,11 +564,6 @@ export default function EventPageClient({
                   timeEnd={event.time_end}
                   onImport={handleAvailabilityChange}
                 />
-              </div>
-
-              {/* Timezone */}
-              <div className="mb-5">
-                <TimezoneSelector />
               </div>
 
               {/* Delete availability */}
