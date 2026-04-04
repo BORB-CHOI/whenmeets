@@ -82,7 +82,7 @@ export default function EventForm() {
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 ${
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 ${
             titleError
               ? 'border-red-500 ring ring-red-500/10'
               : 'border-gray-200'
@@ -153,7 +153,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10"
           />
         )}
       </div>
@@ -163,7 +163,7 @@ export default function EventForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 cursor-pointer"
+        className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
       >
         {submitting ? '생성 중...' : '이벤트 만들기'}
       </button>

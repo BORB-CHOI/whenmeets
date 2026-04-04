@@ -13,7 +13,7 @@ interface CalendarHeatmapGridProps {
 }
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const BASE_COLOR = '#4F46E5';
+const BASE_COLOR = '#059669';
 
 function parseDate(s: string) {
   return new Date(s + 'T00:00:00');
@@ -123,7 +123,7 @@ export default function CalendarHeatmapGrid({
                     {day}
                   </span>
                   {count > 0 && isEventDate && (
-                    <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-indigo-500'}`}>
+                    <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-emerald-500'}`}>
                       {count}
                     </span>
                   )}

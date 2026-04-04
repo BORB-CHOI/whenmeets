@@ -16,9 +16,9 @@ export default async function Header() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer py-2"
+            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-gray-900 hover:text-emerald-600 transition-colors cursor-pointer py-2"
           >
-            <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center text-white text-xs font-extrabold shrink-0">
+            <div className="w-7 h-7 bg-emerald-600 rounded-md flex items-center justify-center text-white text-xs font-extrabold shrink-0">
               W
             </div>
             WhenMeets
@@ -26,10 +26,10 @@ export default async function Header() {
           {user && (
             <Link
               href="/dashboard"
-              className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors relative group cursor-pointer"
+              className="text-sm font-medium text-gray-500 hover:text-emerald-600 transition-colors relative group cursor-pointer"
             >
               대시보드
-              <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-indigo-600 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
+              <span className="absolute -bottom-0.5 left-0 w-full h-0.5 bg-emerald-600 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
             </Link>
           )}
         </div>

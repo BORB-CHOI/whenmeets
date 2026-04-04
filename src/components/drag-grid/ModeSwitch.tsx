@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { AvailabilityLevel, EventMode } from '@/lib/types';
 
 const ALL_MODES: { value: AvailabilityLevel; label: string; color: string }[] = [
-  { value: 2, label: 'Available', color: 'bg-[#4F46E5]/[.47]' },
-  { value: 1, label: 'If Needed', color: 'bg-[#FFE8B8]' },
-  { value: 0, label: 'Unavailable', color: 'bg-red-500/15' },
+  { value: 2, label: 'Available', color: 'bg-emerald-400/60' },
+  { value: 1, label: 'If Needed', color: 'bg-amber-300/50' },
+  { value: 0, label: 'Unavailable', color: 'bg-red-400/50' },
 ];
 
 interface ModeSwitchProps {

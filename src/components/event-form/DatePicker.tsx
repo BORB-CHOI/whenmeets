@@ -202,11 +202,11 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   className={`h-9 rounded-lg text-sm tabular-nums transition-colors
                     ${isPast ? 'text-gray-200 cursor-not-allowed' : 'cursor-pointer'}
-                    ${isSelected && !previewRemoving ? 'bg-indigo-600 text-white font-semibold' : ''}
-                    ${previewAdding && !isSelected ? 'bg-indigo-100 text-indigo-700 font-semibold' : ''}
+                    ${isSelected && !previewRemoving ? 'bg-emerald-600 text-white font-semibold' : ''}
+                    ${previewAdding && !isSelected ? 'bg-emerald-100 text-emerald-700 font-semibold' : ''}
                     ${previewRemoving && isSelected ? 'bg-gray-200 text-gray-400 line-through' : ''}
                     ${!isSelected && !isInPreview && !isPast ? 'hover:bg-gray-100 text-gray-700' : ''}
-                    ${isToday && !isSelected && !isInPreview ? 'ring-1 ring-inset ring-indigo-300' : ''}`}
+                    ${isToday && !isSelected && !isInPreview ? 'ring-1 ring-inset ring-emerald-300' : ''}`}
                 >
                   {day.getDate()}
                 </button>
