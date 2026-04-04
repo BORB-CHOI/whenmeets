@@ -52,7 +52,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
     <div
       data-date={date}
       data-slot={slot}
-      className={`relative w-full h-full ${CELL_COLORS[value]} transition-all duration-75 select-none cursor-pointer`}
+      className={`relative w-full h-full ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer`}
     >
       {hasOverlay && (
         <>
