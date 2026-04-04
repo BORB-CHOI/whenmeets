@@ -15,7 +15,6 @@ import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
-import TimezoneSelector from './TimezoneSelector';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
@@ -623,10 +622,6 @@ export default function EventPageClient({
                 </div>
               </div>
 
-              {/* Timezone */}
-              <div className="mt-5">
-                <TimezoneSelector />
-              </div>
             </>
           )}
 
