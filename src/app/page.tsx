@@ -48,7 +48,7 @@ export default function Home() {
         WhenMeets
       </h1>
       <p
-        className="mt-3 text-lg text-gray-500 text-center max-w-xs"
+        className="mt-3 text-lg text-gray-500 text-center max-w-sm text-balance"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.1s both' }}
       >
         모바일에서도 편하게 쓰는 그룹 일정 조율. 무료, 오픈소스.
