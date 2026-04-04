@@ -210,7 +210,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                   type="checkbox"
                   checked={includeIfNeeded}
                   onChange={(e) => setIncludeIfNeeded(e.target.checked)}
-                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-gray-300 text-emerald-600"
                 />
                 &quot;되면 가능&quot; 포함
               </label>

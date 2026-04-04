@@ -47,7 +47,7 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호 입력"
           disabled={loading}
-          className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 focus:scale-[1.005] disabled:opacity-50"
+          className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-emerald-600 focus:scale-[1.005] disabled:opacity-50"
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
