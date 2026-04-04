@@ -479,7 +479,7 @@ export default function EventPageClient({
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => setShowBestTimes(!showBestTimes)}
-                    className="flex items-center justify-between text-sm text-gray-600 cursor-pointer"
+                    className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                   >
                     <span>최적 시간만 보기</span>
                     <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-indigo-600' : 'bg-gray-200'}`}>
@@ -489,7 +489,7 @@ export default function EventPageClient({
                   {event.mode !== 'unavailable' && (
                     <button
                       onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
-                      className="flex items-center justify-between text-sm text-gray-600 cursor-pointer"
+                      className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                     >
                       <span>"필요하다면.." 숨기기</span>
                       <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-indigo-600' : 'bg-gray-200'}`}>
