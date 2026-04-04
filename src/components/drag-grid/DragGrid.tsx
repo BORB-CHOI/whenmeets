@@ -19,6 +19,7 @@ interface DragGridProps {
   eventMode?: EventMode;
   activeMode: AvailabilityLevel;
   onActiveModeChange: (mode: AvailabilityLevel) => void;
+  onCellHover?: (date: string | null, slot?: number | string) => void;
 }
 
 export default function DragGrid({
@@ -33,6 +34,7 @@ export default function DragGrid({
   eventMode = 'available',
   activeMode,
   onActiveModeChange,
+  onCellHover,
 }: DragGridProps) {
 
   const { gridProps } = useGridDrag({
@@ -109,6 +111,8 @@ export default function DragGrid({
             value={getCellValue(date, slot)}
             overlayCount={overlayTotal > 0 ? overlayCount : undefined}
             overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
+            onCellHover={(d, s) => onCellHover?.(d, s)}
+            onCellLeave={() => onCellHover?.(null)}
           />
         );
       }}
