@@ -13,27 +13,46 @@ import DayOfWeekPicker from './DayOfWeekPicker';
 interface EventFormModalProps {
   open: boolean;
   onClose: () => void;
+  // edit mode props
+  editEvent?: {
+    id: string;
+    title: string;
+    dates: string[];
+    time_start: number;
+    time_end: number;
+    mode: EventMode;
+    date_only: boolean;
+  };
+  onEventUpdated?: () => void;
 }
 
 type DateSelectionMode = 'calendar' | 'days_of_week';
 
-export default function EventFormModal({ open, onClose }: EventFormModalProps) {
+function detectDateSelectionMode(dates: string[]): DateSelectionMode {
+  if (dates.length === 0) return 'calendar';
+  // ISO dates look like YYYY-MM-DD (10 chars with dashes at positions 4 and 7)
+  return /^\d{4}-\d{2}-\d{2}$/.test(dates[0]) ? 'calendar' : 'days_of_week';
+}
+
+export default function EventFormModal({ open, onClose, editEvent, onEventUpdated }: EventFormModalProps) {
   const router = useRouter();
-  const [title, setTitle] = useState(() => {
-    const now = new Date();
-    return `새 이벤트 ${now.getMonth() + 1}/${now.getDate()}`;
-  });
-  const [dates, setDates] = useState<string[]>([]);
-  const [timeStart, setTimeStart] = useState(36);
-  const [timeEnd, setTimeEnd] = useState(84);
+  const now = new Date();
+  const [title, setTitle] = useState(
+    editEvent?.title ?? `새 이벤트 ${now.getMonth() + 1}/${now.getDate()}`,
+  );
+  const [dates, setDates] = useState<string[]>(editEvent?.dates ?? []);
+  const [timeStart, setTimeStart] = useState(editEvent?.time_start ?? 36);
+  const [timeEnd, setTimeEnd] = useState(editEvent?.time_end ?? 84);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [showTimeRange, setShowTimeRange] = useState(true);
-  const [mode, setMode] = useState<EventMode>('available');
+  const [showTimeRange, setShowTimeRange] = useState(editEvent ? !editEvent.date_only : true);
+  const [mode, setMode] = useState<EventMode>(editEvent?.mode ?? 'available');
   const [titleError, setTitleError] = useState(false);
-  const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>('calendar');
+  const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>(
+    editEvent ? detectDateSelectionMode(editEvent.dates) : 'calendar',
+  );
 
   const dateOnly = !showTimeRange;
 
@@ -53,6 +72,30 @@ export default function EventFormModal({ open, onClose }: EventFormModalProps) {
 
     setSubmitting(true);
     setError('');
+
+    if (editEvent) {
+      const res = await fetch(`/api/events/${editEvent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          dates,
+          time_start: dateOnly ? 0 : timeStart,
+          time_end: dateOnly ? 48 : timeEnd,
+          mode,
+          date_only: dateOnly,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || '이벤트 수정에 실패했습니다');
+        setSubmitting(false);
+        return;
+      }
+      onClose();
+      onEventUpdated?.();
+      return;
+    }
 
     const res = await fetch('/api/events', {
       method: 'POST',
@@ -111,7 +154,7 @@ export default function EventFormModal({ open, onClose }: EventFormModalProps) {
           >
             {/* Fixed header */}
             <div className="flex items-center justify-between px-6 pt-4 pb-2 shrink-0">
-              <h2 className="text-lg font-bold text-gray-900">이벤트 만들기</h2>
+              <h2 className="text-lg font-bold text-gray-900">{editEvent ? '이벤트 수정' : '이벤트 만들기'}</h2>
               <button
                 onClick={onClose}
                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -263,7 +306,9 @@ export default function EventFormModal({ open, onClose }: EventFormModalProps) {
                 disabled={submitting}
                 className="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? '생성 중...' : '이벤트 만들기'}
+                {submitting
+                  ? (editEvent ? '수정 중...' : '생성 중...')
+                  : (editEvent ? '수정 완료' : '이벤트 만들기')}
               </button>
             </form>
           </motion.div>

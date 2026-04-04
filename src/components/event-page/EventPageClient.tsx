@@ -11,6 +11,7 @@ import { generateSlots } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
+import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
@@ -63,6 +64,7 @@ export default function EventPageClient({
 }: EventPageClientProps) {
   const [event, setEvent] = useState<EventData>(initialEvent);
   const [viewMode, setViewMode] = useState<ViewMode>('view');
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [nameLoading, setNameLoading] = useState(false);
@@ -342,7 +344,10 @@ export default function EventPageClient({
           <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {dateRange}
-            <span className="ml-3 text-indigo-600 hover:text-indigo-700 cursor-pointer font-medium">이벤트 수정</span>
+            <span
+              onClick={() => setShowEditModal(true)}
+              className="ml-3 text-indigo-600 hover:text-indigo-800 cursor-pointer"
+            >이벤트 수정</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -563,6 +568,27 @@ export default function EventPageClient({
 
         </div>
       </div>
+
+      {/* Edit event modal */}
+      <EventFormModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        editEvent={{
+          id: eventId,
+          title: event.title,
+          dates: event.dates,
+          time_start: event.time_start,
+          time_end: event.time_end,
+          mode: event.mode,
+          date_only: event.date_only,
+        }}
+        onEventUpdated={() => {
+          setShowEditModal(false);
+          fetch(`/api/events/${eventId}`)
+            .then((r) => r.json())
+            .then((data) => setEvent(data));
+        }}
+      />
 
       {/* Name input modal */}
       <AnimatePresence>

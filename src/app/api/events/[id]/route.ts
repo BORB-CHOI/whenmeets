@@ -54,6 +54,34 @@ export async function GET(
   });
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json();
+  const supabase = createServerClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (body.title !== undefined) updateData.title = body.title;
+  if (body.dates !== undefined) updateData.dates = body.dates;
+  if (body.time_start !== undefined) updateData.time_start = body.time_start;
+  if (body.time_end !== undefined) updateData.time_end = body.time_end;
+  if (body.mode !== undefined) updateData.mode = body.mode;
+  if (body.date_only !== undefined) updateData.date_only = body.date_only;
+  if (body.description !== undefined) updateData.description = body.description;
+
+  const { error } = await supabase
+    .from('events')
+    .update(updateData)
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 // Soft delete: set deleted_at timestamp (only by event creator)
 export async function DELETE(
   request: NextRequest,
