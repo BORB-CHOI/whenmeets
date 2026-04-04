@@ -13,7 +13,7 @@ export async function GET(
   // Single query: fetch event with password_hash included (strip from response)
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only')
+    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description')
     .eq('id', id)
     .single();
 
@@ -50,6 +50,7 @@ export async function GET(
     created_at: event.created_at,
     mode: event.mode,
     date_only: event.date_only,
+    description: event.description ?? undefined,
     participants: participants ?? [],
   });
 }
