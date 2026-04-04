@@ -15,7 +15,7 @@ interface HeatmapGridProps {
   bestSlots?: Set<string>;
 }
 
-const BASE_COLOR = '#6366F1'; // Indigo 500 — softer than 600
+const BASE_COLOR = '#059669'; // Emerald 600
 
 function hexAlpha(alpha: number): string {
   return alpha.toString(16).padStart(2, '0').toUpperCase();
@@ -23,8 +23,8 @@ function hexAlpha(alpha: number): string {
 
 function computeCellColor(count: number, total: number): string | undefined {
   if (total === 0 || count === 0) return undefined;
-  if (count === total) return BASE_COLOR + 'D0'; // max ~80% opacity, not full
-  const alpha = Math.floor((count / total) * (180 - 25) + 25);
+  if (count === total) return BASE_COLOR + 'E0'; // ~88% opacity for full attendance
+  const alpha = Math.floor((count / total) * (200 - 30) + 30);
   return BASE_COLOR + hexAlpha(alpha);
 }
 
@@ -83,20 +83,20 @@ export default function HeatmapGrid({
 
         return (
           <div
-            className="w-full h-full relative cursor-pointer transition-all duration-150 hover:brightness-110 hover:outline-2 hover:outline-indigo-400 hover:-outline-offset-1 hover:z-10"
+            className="w-full h-full relative cursor-pointer transition-all duration-150 hover:brightness-110 hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1 hover:z-10"
             style={{ backgroundColor: bgColor }}
             onMouseEnter={() => onCellHover?.(date, slot)}
             onMouseLeave={() => onCellHover?.(null)}
           >
             {count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none"
-                style={{ color: count === total ? 'rgba(255,255,255,0.85)' : 'rgba(99,102,241,0.7)' }}
+                style={{ color: count === total ? 'rgba(255,255,255,0.9)' : 'rgba(5,150,105,0.7)' }}
               >
                 {count}
               </span>
             )}
             {isHoveredAvailable && (
-              <div className="absolute inset-0 bg-indigo-600/20 ring-2 ring-inset ring-indigo-500" />
+              <div className="absolute inset-0 bg-emerald-500/20 ring-2 ring-inset ring-emerald-400" />
             )}
           </div>
         );

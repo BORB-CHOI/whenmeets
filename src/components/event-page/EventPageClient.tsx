@@ -538,18 +538,18 @@ export default function EventPageClient({
                 <h3 className="text-sm font-semibold text-gray-900 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-sm bg-indigo-400/35" />
+                    <div className="w-4 h-4 rounded-sm bg-emerald-400/60" />
                     <span>Available</span>
                   </div>
                   {event.mode !== 'unavailable' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-amber-200/60" />
+                      <div className="w-4 h-4 rounded-sm bg-amber-300/50" />
                       <span>필요하다면..</span>
                     </div>
                   )}
                   {event.mode === 'unavailable' && (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-red-400/40" />
+                      <div className="w-4 h-4 rounded-sm bg-red-400/50" />
                       <span>Unavailable</span>
                     </div>
                   )}
