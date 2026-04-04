@@ -79,7 +79,7 @@ export default function AvailabilityGrid({
               <div
                 key={slot}
                 className="flex items-start justify-end pr-3"
-                style={{ height: 15 }}
+                style={{ height: 24 }}
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
@@ -132,7 +132,7 @@ export default function AvailabilityGrid({
                 if (isLastRow) border += 'border-b border-b-[#BDBDBD] ';
 
                 return (
-                  <div key={`${date}-${slot}`} className={border} style={{ height: 15 }}>
+                  <div key={`${date}-${slot}`} className={border} style={{ height: 24 }}>
                     {renderCell(date, slot)}
                   </div>
                 );

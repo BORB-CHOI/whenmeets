@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhenMeets Design System Preview</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+  :root {
+    --primary: #4F46E5;
+    --primary-light: #818CF8;
+    --primary-pale: #EEF2FF;
+    --primary-dark: #3730A3;
+    --surface: #FFFFFF;
+    --surface-alt: #F9FAFB;
+    --border: #E5E7EB;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --success: #059669;
+    --warning: #D97706;
+    --error: #DC2626;
+    --grid-available: rgba(79, 70, 229, 0.47);
+    --grid-ifneeded: #FDE68A;
+    --grid-unavailable: #F3F4F6;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-btn: 0px 2px 8px rgba(79,70,229,0.5);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: var(--text-primary);
+    background: var(--surface);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'Geist Mono', 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* ===== HEADER ===== */
+  .header {
+    position: fixed; top:0; left:0; right:0; z-index:40;
+    height: 56px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  @media(min-width:640px) { .header { height: 64px; } }
+  .header-inner {
+    max-width: 1280px; margin: 0 auto; padding: 0 16px;
+    display: flex; align-items: center; height: 100%;
+  }
+  .logo { font-size: 20px; font-weight: 700; color: var(--primary); text-decoration: none; display:flex; align-items:center; gap:8px; }
+  .logo-icon { width:28px; height:28px; background:var(--primary); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; color:white; font-size:14px; font-weight:800; }
+  .spacer { flex:1; }
+  .header-link { color: var(--text-secondary); text-decoration:none; font-size:14px; font-weight:500; padding:8px 12px; border-radius:var(--radius-md); transition:background 0.15s; }
+  .header-link:hover { background: var(--surface-alt); }
+  .header-cta { background:var(--primary); color:white; font-size:14px; font-weight:600; padding:8px 20px; border-radius:var(--radius-md); border:none; cursor:pointer; box-shadow:var(--shadow-btn); transition:all 0.15s; }
+  .header-cta:hover { background:var(--primary-dark); }
+
+  /* ===== MAIN CONTENT ===== */
+  .main { padding-top:56px; }
+  @media(min-width:640px) { .main { padding-top:64px; } }
+
+  /* ===== SECTION SYSTEM ===== */
+  .section { max-width:1280px; margin:0 auto; padding:48px 16px; }
+  @media(min-width:640px) { .section { padding:64px 32px; } }
+  .section-title { font-size:24px; font-weight:700; margin-bottom:8px; }
+  .section-subtitle { font-size:14px; color:var(--text-secondary); margin-bottom:32px; }
+
+  /* ===== MESH GRADIENT BACKGROUND ===== */
+  .mesh-bg {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 40%, #DDD6FE 70%, #EDE9FE 100%);
+  }
+  .mesh-bg::before,
+  .mesh-bg::after {
+    content: '';
+    position: absolute;
+    border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%;
+    filter: blur(50px);
+    opacity: 0.8;
+  }
+  .mesh-bg::before {
+    width: 700px; height: 500px;
+    background: linear-gradient(135deg, rgba(79,70,229,0.45) 0%, rgba(129,140,248,0.35) 50%, rgba(167,139,250,0.2) 100%);
+    top: -250px; left: -150px;
+    animation: wave1 12s ease-in-out infinite;
+  }
+  .mesh-bg::after {
+    width: 600px; height: 450px;
+    background: linear-gradient(225deg, rgba(167,139,250,0.5) 0%, rgba(196,181,253,0.35) 50%, rgba(79,70,229,0.15) 100%);
+    bottom: -200px; right: -100px;
+    animation: wave2 15s ease-in-out infinite;
+  }
+  .mesh-blob-3 {
+    position: absolute;
+    width: 500px; height: 400px;
+    background: linear-gradient(180deg, rgba(99,102,241,0.4) 0%, rgba(129,140,248,0.3) 50%, rgba(196,181,253,0.15) 100%);
+    border-radius: 45% 55% 50% 50% / 50% 45% 55% 50%;
+    filter: blur(40px);
+    top: 40%; left: 45%;
+    transform: translate(-50%, -50%);
+    animation: wave3 18s ease-in-out infinite;
+  }
+  @keyframes wave1 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
+    25% { transform: translate(60px, 30px) rotate(5deg) scale(1.1); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
+    50% { transform: translate(30px, -40px) rotate(-3deg) scale(0.95); border-radius: 45% 55% 60% 40% / 60% 45% 55% 45%; }
+    75% { transform: translate(-30px, 20px) rotate(4deg) scale(1.05); border-radius: 50% 50% 45% 55% / 50% 55% 45% 50%; }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
+  }
+  @keyframes wave2 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
+    33% { transform: translate(-50px, -30px) rotate(-6deg) scale(1.08); border-radius: 40% 60% 55% 45% / 50% 50% 45% 55%; }
+    66% { transform: translate(40px, 20px) rotate(4deg) scale(0.92); border-radius: 55% 45% 50% 50% / 45% 55% 50% 50%; }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
+  }
+  @keyframes wave3 {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+    25% { transform: translate(-40%, -55%) rotate(3deg) scale(1.12); }
+    50% { transform: translate(-55%, -45%) rotate(-4deg) scale(0.9); }
+    75% { transform: translate(-45%, -55%) rotate(2deg) scale(1.05); }
+    100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  }
+  .mesh-bg > * { position: relative; z-index: 1; }
+
+  /* ===== HERO ===== */
+  .hero { text-align:center; padding:80px 16px 48px; }
+  @media(min-width:640px) { .hero { padding:100px 32px 64px; } }
+  .hero h1 { font-size:32px; font-weight:800; line-height:1.2; margin-bottom:12px; }
+  @media(min-width:640px) { .hero h1 { font-size:48px; } }
+  .hero p { font-size:16px; color:var(--text-secondary); margin-bottom:32px; max-width:480px; margin-left:auto; margin-right:auto; }
+  .hero .cta-row { display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .btn-primary { background:var(--primary); color:white; font-size:16px; font-weight:600; padding:12px 32px; border-radius:var(--radius-md); border:none; cursor:pointer; box-shadow:var(--shadow-btn); transition:all 0.15s; }
+  .btn-primary:hover { background:var(--primary-dark); }
+  .btn-ghost { background:transparent; color:var(--text-secondary); font-size:14px; font-weight:500; padding:12px 20px; border-radius:var(--radius-md); border:1px solid var(--border); cursor:pointer; transition:all 0.15s; }
+  .btn-ghost:hover { background:var(--surface-alt); }
+  .btn-on-primary { background:rgba(255,255,255,0.2); color:var(--primary-dark); font-size:14px; font-weight:500; padding:12px 20px; border-radius:var(--radius-md); border:1px solid rgba(79,70,229,0.2); cursor:pointer; transition:all 0.2s cubic-bezier(0.4,0,0.2,1); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .btn-on-primary:hover { background:rgba(255,255,255,0.4); transform:translateY(-1px); }
+  .hero-note { font-size:13px; color:var(--text-muted); margin-top:12px; }
+
+  /* ===== COLOR PALETTE ===== */
+  .palette { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px; }
+  .swatch { border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--border); }
+  .swatch-color { height:64px; }
+  .swatch-info { padding:8px 10px; }
+  .swatch-name { font-size:12px; font-weight:600; }
+  .swatch-hex { font-size:11px; color:var(--text-muted); font-family:'Geist Mono',monospace; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .type-specimen { margin-bottom:32px; }
+  .type-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+  .type-hero { font-size:48px; font-weight:800; line-height:1.1; }
+  .type-h2 { font-size:24px; font-weight:700; }
+  .type-body { font-size:16px; color:var(--text-secondary); }
+  .type-small { font-size:13px; color:var(--text-muted); }
+  .type-mono { font-size:14px; font-family:'Geist Mono','JetBrains Mono',monospace; font-variant-numeric:tabular-nums; color:var(--text-secondary); }
+
+  /* ===== BUTTONS ===== */
+  .btn-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .btn-secondary { background:var(--primary-pale); color:var(--primary); font-size:14px; font-weight:600; padding:8px 20px; border-radius:var(--radius-md); border:none; cursor:pointer; transition:all 0.15s; }
+  .btn-secondary:hover { background:#DBEAFE; }
+  .btn-sm { font-size:13px; padding:6px 14px; }
+  .btn-danger { background:#FEE2E2; color:var(--error); font-size:14px; font-weight:600; padding:8px 20px; border-radius:var(--radius-md); border:none; cursor:pointer; }
+
+  /* ===== FORM ELEMENTS ===== */
+  .form-group { margin-bottom:20px; }
+  .form-label { display:block; font-size:14px; font-weight:600; margin-bottom:6px; }
+  .form-input { width:100%; padding:10px 14px; font-size:14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); font-family:inherit; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
+  .form-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,70,229,0.1); }
+  .form-input.error { border-color:var(--error); box-shadow:0 0 0 3px rgba(220,38,38,0.1); }
+  .form-hint { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .form-error { font-size:12px; color:var(--error); margin-top:4px; }
+
+  /* ===== CARDS ===== */
+  .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); border:1px solid var(--border); padding:16px; transition:box-shadow 0.15s; }
+  .card:hover { box-shadow:var(--shadow-md); }
+  .card-title { font-size:16px; font-weight:600; margin-bottom:4px; }
+  .card-desc { font-size:13px; color:var(--text-secondary); }
+  .card-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+  @media(min-width:640px) { .card-grid { grid-template-columns:repeat(2,1fr); } }
+
+  /* ===== AVAILABILITY GRID MOCKUP ===== */
+  .grid-demo { border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .grid-header { display:grid; grid-template-columns:48px repeat(7,1fr); background:var(--surface); border-bottom:1px solid var(--border); }
+  .grid-header-cell { padding:8px 4px; text-align:center; font-size:12px; font-weight:600; }
+  .grid-header-date { font-size:11px; color:var(--text-muted); font-weight:400; }
+  .grid-body { display:grid; grid-template-columns:48px repeat(7,1fr); }
+  .grid-time { padding:4px 6px; font-size:11px; color:var(--text-muted); text-align:right; font-family:'Geist Mono',monospace; font-variant-numeric:tabular-nums; border-right:1px solid var(--border); display:flex; align-items:flex-start; justify-content:flex-end; }
+  .grid-row { display:contents; }
+  .grid-cell { height:28px; border:1px solid rgba(229,231,235,0.5); transition:background 0.25s ease-in-out; cursor:pointer; }
+  .grid-cell:hover { opacity:0.8; }
+  .grid-cell.available { background:var(--grid-available); }
+  .grid-cell.ifneeded { background:var(--grid-ifneeded); }
+  .grid-cell.unavailable { background:var(--grid-unavailable); }
+
+  /* ===== GRID LEGEND ===== */
+  .legend { display:flex; gap:16px; padding:12px 16px; background:var(--surface-alt); border-top:1px solid var(--border); font-size:12px; color:var(--text-secondary); }
+  .legend-item { display:flex; align-items:center; gap:6px; }
+  .legend-dot { width:12px; height:12px; border-radius:2px; }
+
+  /* ===== SLIDE TOGGLE ===== */
+  .slide-toggle {
+    display:inline-flex; position:relative;
+    background:var(--surface-alt); border:1px solid var(--border);
+    border-radius:999px; padding:3px; cursor:pointer;
+  }
+  .slide-toggle-option {
+    padding:8px 20px; font-size:13px; font-weight:500;
+    color:var(--text-secondary); border:none; background:transparent;
+    cursor:pointer; border-radius:999px; position:relative; z-index:1;
+    transition:color 0.3s cubic-bezier(0.4,0,0.2,1);
+    white-space:nowrap;
+  }
+  .slide-toggle-option.active { color:var(--primary); font-weight:600; }
+  .slide-toggle-indicator {
+    position:absolute; top:3px; bottom:3px;
+    background:var(--surface); border:1px solid var(--primary);
+    border-radius:999px; box-shadow:0 1px 3px rgba(79,70,229,0.15);
+    transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ===== DIALOG MOCKUP ===== */
+  .dialog-backdrop { background:rgba(0,0,0,0.3); border-radius:var(--radius-lg); padding:40px; display:flex; justify-content:center; align-items:flex-start; }
+  .dialog { background:var(--surface); border-radius:var(--radius-lg); box-shadow:0 20px 60px rgba(0,0,0,0.15); width:100%; max-width:448px; overflow:hidden; }
+  .dialog-header { padding:20px 24px 0; display:flex; justify-content:space-between; align-items:center; }
+  .dialog-title { font-size:18px; font-weight:700; }
+  .dialog-close { width:32px; height:32px; border-radius:var(--radius-sm); border:none; background:transparent; cursor:pointer; font-size:18px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; }
+  .dialog-close:hover { background:var(--surface-alt); }
+  .dialog-body { padding:16px 24px; }
+  .dialog-footer { padding:12px 24px 20px; display:flex; justify-content:flex-end; gap:8px; }
+
+  /* ===== EVENT CARD (timeful style) ===== */
+  .event-item { display:flex; align-items:center; justify-content:space-between; min-height:64px; padding:10px 16px; background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); transition:box-shadow 0.15s; cursor:pointer; }
+  .event-item:hover { box-shadow:var(--shadow-md); }
+  .event-item-title { font-size:15px; font-weight:600; }
+  .event-item-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .event-item-badge { font-size:12px; font-weight:600; color:var(--primary); background:var(--primary-pale); padding:4px 10px; border-radius:var(--radius-sm); }
+
+  /* ===== ALERT STATES ===== */
+  .alert { padding:12px 16px; border-radius:var(--radius-md); font-size:13px; display:flex; align-items:center; gap:8px; }
+  .alert-success { background:#ECFDF5; color:#065F46; }
+  .alert-warning { background:#FFFBEB; color:#92400E; }
+  .alert-error { background:#FEF2F2; color:#991B1B; }
+  .alert-info { background:var(--primary-pale); color:var(--primary-dark); }
+
+  /* ===== DARK MODE ===== */
+  .dark {
+    --primary: #818CF8;
+    --primary-light: #A5B4FC;
+    --primary-pale: rgba(79,70,229,0.15);
+    --primary-dark: #6366F1;
+    --surface: #111827;
+    --surface-alt: #1F2937;
+    --border: #374151;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --grid-available: rgba(129,140,248,0.47);
+    --grid-unavailable: #1F2937;
+    --shadow-btn: 0px 2px 8px rgba(129,140,248,0.4);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer { background:var(--primary); color:white; padding:48px 16px; margin-top:64px; }
+  .footer-inner { max-width:1280px; margin:0 auto; display:grid; grid-template-columns:1fr; gap:32px; }
+  @media(min-width:640px) { .footer-inner { grid-template-columns:2fr 1fr 1fr; } }
+  .footer a { color:rgba(255,255,255,0.8); text-decoration:none; font-size:14px; }
+  .footer a:hover { color:white; }
+  .footer-brand { font-size:20px; font-weight:700; margin-bottom:8px; }
+  .footer-desc { font-size:14px; color:rgba(255,255,255,0.7); }
+  .footer-heading { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.6); margin-bottom:12px; }
+  .footer-links { display:flex; flex-direction:column; gap:8px; }
+
+  /* ===== THEME TOGGLE ===== */
+  .theme-toggle { position:fixed; bottom:20px; right:20px; z-index:50; width:44px; height:44px; border-radius:50%; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow-md); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:20px; }
+
+  /* ===== MICRO ANIMATIONS ===== */
+  @keyframes fadeInUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity:0; }
+    to { opacity:1; }
+  }
+  @keyframes scaleIn {
+    from { opacity:0; transform:scale(0.95); }
+    to { opacity:1; transform:scale(1); }
+  }
+  @keyframes slideInRight {
+    from { opacity:0; transform:translateX(20px); }
+    to { opacity:1; transform:translateX(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform:scale(1); }
+    50% { transform:scale(1.02); }
+  }
+  @keyframes shimmer {
+    0% { background-position:-200% 0; }
+    100% { background-position:200% 0; }
+  }
+
+  /* Scroll-triggered animations */
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Hero entrance animations */
+  .hero h1 { animation: fadeInUp 0.8s ease-out; }
+  .hero p { animation: fadeInUp 0.8s ease-out 0.15s both; }
+  .hero .cta-row { animation: fadeInUp 0.8s ease-out 0.3s both; }
+  .hero-note { animation: fadeIn 0.8s ease-out 0.5s both; }
+
+  /* Button hover animations */
+  .btn-primary { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0px 4px 12px rgba(79,70,229,0.4); }
+  .btn-primary:active { transform:translateY(0); transition-duration:0.1s; }
+  .btn-secondary { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .btn-secondary:hover { transform:translateY(-1px); }
+  .btn-ghost { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .btn-ghost:hover { transform:translateY(-1px); }
+  .btn-danger { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .btn-danger:hover { transform:translateY(-1px); }
+  .header-cta { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+  .header-cta:hover { transform:translateY(-1px); box-shadow:0px 4px 12px rgba(79,70,229,0.4); }
+
+  /* Card hover animations */
+  .card { transition:all 0.25s cubic-bezier(0.4,0,0.2,1); }
+  .card:hover { transform:translateY(-2px); }
+  .event-item { transition:all 0.25s cubic-bezier(0.4,0,0.2,1); }
+  .event-item:hover { transform:translateY(-2px); }
+
+  /* Form focus animations */
+  .form-input { transition:border-color 0.2s, box-shadow 0.2s, transform 0.15s; }
+  .form-input:focus { transform:scale(1.005); }
+
+  /* Grid cell animations */
+  .grid-cell { transition:background 0.25s ease-in-out, transform 0.15s; }
+  .grid-cell:hover { transform:scale(1.05); z-index:1; }
+
+  /* Toggle animations handled by slide-toggle CSS */
+
+  /* Alert entrance */
+  .alert { transition:all 0.2s; }
+  .alert:hover { transform:translateX(4px); }
+
+  /* Swatch hover */
+  .swatch { transition:all 0.25s cubic-bezier(0.4,0,0.2,1); }
+  .swatch:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); }
+
+  /* Dialog entrance */
+  .dialog { animation:scaleIn 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Section title animations */
+  .section-title { transition:color 0.3s; }
+
+  /* Logo hover */
+  .logo { transition:opacity 0.2s; }
+  .logo:hover { opacity:0.8; }
+
+  /* Header link underline animation */
+  .header-link { position:relative; }
+  .header-link::after { content:''; position:absolute; bottom:4px; left:12px; right:12px; height:2px; background:var(--primary); transform:scaleX(0); transition:transform 0.2s cubic-bezier(0.4,0,0.2,1); border-radius:1px; }
+  .header-link:hover::after { transform:scaleX(1); }
+
+  /* Theme toggle */
+  .theme-toggle { transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .theme-toggle:hover { transform:scale(1.1) rotate(15deg); }
+
+  /* Badge pulse */
+  .event-item-badge { transition:all 0.2s; }
+
+  /* Footer link hover */
+  .footer a { transition:color 0.2s, transform 0.2s; display:inline-block; }
+  .footer a:hover { transform:translateX(4px); }
+
+  /* ===== UTILITY ===== */
+  .divider { height:1px; background:var(--border); margin:32px 0; }
+  .gap-16 { gap:16px; }
+  .mb-8 { margin-bottom:8px; }
+  .mb-16 { margin-bottom:16px; }
+  .mb-24 { margin-bottom:24px; }
+  .mb-32 { margin-bottom:32px; }
+  .flex { display:flex; }
+  .flex-col { flex-direction:column; }
+  .items-center { align-items:center; }
+  .justify-between { justify-content:space-between; }
+  .text-center { text-align:center; }
+  .w-full { width:100%; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">W</div>
+      WhenMeets
+    </a>
+    <div class="spacer"></div>
+    <a class="header-link" href="#">Blog</a>
+    <a class="header-link" href="#">Sign in</a>
+    <button class="header-cta" style="margin-left:8px">일정 만들기</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- HERO SECTION (Product Mockup) -->
+  <section class="hero mesh-bg">
+    <div class="mesh-blob-3"></div>
+    <h1>만날 시간을 찾아보세요</h1>
+    <p>복잡한 연락 없이 그룹 일정을 조율하세요. 캘린더 연동도 지원합니다.</p>
+    <div class="cta-row">
+      <button class="btn-primary">일정 만들기</button>
+      <button class="btn-on-primary">어떻게 동작하나요?</button>
+    </div>
+    <p class="hero-note">무료! 로그인 없이도 사용 가능합니다.</p>
+  </section>
+
+  <div class="divider" style="max-width:1280px;margin:0 auto"></div>
+
+  <!-- ===== 1. COLOR PALETTE ===== -->
+  <section class="section">
+    <h2 class="section-title">Color Palette</h2>
+    <p class="section-subtitle">Indigo primary + neutral grays. Restrained, professional.</p>
+    <div class="palette">
+      <div class="swatch"><div class="swatch-color" style="background:#4F46E5"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-hex">#4F46E5</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#818CF8"></div><div class="swatch-info"><div class="swatch-name">Primary Light</div><div class="swatch-hex">#818CF8</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#EEF2FF"></div><div class="swatch-info"><div class="swatch-name">Primary Pale</div><div class="swatch-hex">#EEF2FF</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#3730A3"></div><div class="swatch-info"><div class="swatch-name">Primary Dark</div><div class="swatch-hex">#3730A3</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#111827"></div><div class="swatch-info"><div class="swatch-name">Text Primary</div><div class="swatch-hex">#111827</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#6B7280"></div><div class="swatch-info"><div class="swatch-name">Text Secondary</div><div class="swatch-hex">#6B7280</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#9CA3AF"></div><div class="swatch-info"><div class="swatch-name">Text Muted</div><div class="swatch-hex">#9CA3AF</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#E5E7EB"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#E5E7EB</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F9FAFB"></div><div class="swatch-info"><div class="swatch-name">Surface Alt</div><div class="swatch-hex">#F9FAFB</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#059669"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#059669</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#D97706"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#D97706</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#DC2626"></div><div class="swatch-info"><div class="swatch-name">Error</div><div class="swatch-hex">#DC2626</div></div></div>
+    </div>
+  </section>
+
+  <!-- ===== 2. TYPOGRAPHY ===== -->
+  <section class="section" style="background:var(--surface-alt)">
+    <h2 class="section-title">Typography</h2>
+    <p class="section-subtitle">Pretendard for everything. Geist Mono for time data.</p>
+
+    <div class="type-specimen">
+      <div class="type-label">Hero / 48px / 800</div>
+      <div class="type-hero">만날 시간을 찾아보세요</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-label">H2 / 24px / 700</div>
+      <div class="type-h2">팀 회의 일정 조율</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-label">Body / 16px / 400</div>
+      <div class="type-body">복잡한 연락 없이 그룹 일정을 조율하세요. 캘린더 연동도 지원합니다.</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-label">Small / 13px / 400</div>
+      <div class="type-small">5명이 응답했습니다 &middot; 마감: 2026년 4월 10일</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-label">Mono (Time Data) / 14px / Geist Mono</div>
+      <div class="type-mono">09:00 AM &nbsp; 10:30 AM &nbsp; 02:00 PM &nbsp; 05:30 PM</div>
+    </div>
+  </section>
+
+  <!-- ===== 3. BUTTONS ===== -->
+  <section class="section">
+    <h2 class="section-title">Buttons</h2>
+    <p class="section-subtitle">Primary, Secondary, Ghost, Danger. Height 38px, radius 6px.</p>
+
+    <div class="btn-row">
+      <button class="btn-primary" style="font-size:14px;padding:8px 20px">일정 만들기</button>
+      <button class="btn-secondary">응답하기</button>
+      <button class="btn-ghost">취소</button>
+      <button class="btn-danger">삭제</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary btn-sm">Small Primary</button>
+      <button class="btn-secondary btn-sm">Small Secondary</button>
+      <button class="btn-ghost btn-sm">Small Ghost</button>
+    </div>
+  </section>
+
+  <!-- ===== 4. FORM ELEMENTS ===== -->
+  <section class="section" style="background:var(--surface-alt)">
+    <h2 class="section-title">Form Elements</h2>
+    <p class="section-subtitle">timeful-style inputs with indigo focus ring.</p>
+
+    <div style="max-width:448px">
+      <div class="form-group">
+        <label class="form-label">일정 제목</label>
+        <input class="form-input" type="text" placeholder="예: 팀 회의 일정" value="스터디 모임">
+        <div class="form-hint">참가자에게 보이는 일정 이름입니다</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">일정 제목 (에러 상태)</label>
+        <input class="form-input error" type="text" placeholder="제목을 입력해주세요">
+        <div class="form-error">일정 제목을 입력해주세요</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">시간 범위</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="form-input mono" type="text" value="09:00 AM" style="width:120px;text-align:center">
+          <span style="color:var(--text-muted);font-size:14px">~</span>
+          <input class="form-input mono" type="text" value="09:00 PM" style="width:120px;text-align:center">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="slide-toggle" id="slideToggle1">
+          <div class="slide-toggle-indicator" id="toggleIndicator1"></div>
+          <button class="slide-toggle-option active" data-index="0">Dates and times</button>
+          <button class="slide-toggle-option" data-index="1">Dates only</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. AVAILABILITY GRID ===== -->
+  <section class="section">
+    <h2 class="section-title">Availability Grid</h2>
+    <p class="section-subtitle">Core interaction. 7-day high-density view, timeful colors adapted to indigo.</p>
+
+    <div class="grid-demo" style="max-width:720px">
+      <div class="grid-header">
+        <div class="grid-header-cell"></div>
+        <div class="grid-header-cell"><div>Mon</div><div class="grid-header-date">4/7</div></div>
+        <div class="grid-header-cell"><div>Tue</div><div class="grid-header-date">4/8</div></div>
+        <div class="grid-header-cell"><div>Wed</div><div class="grid-header-date">4/9</div></div>
+        <div class="grid-header-cell"><div>Thu</div><div class="grid-header-date">4/10</div></div>
+        <div class="grid-header-cell"><div>Fri</div><div class="grid-header-date">4/11</div></div>
+        <div class="grid-header-cell"><div>Sat</div><div class="grid-header-date">4/12</div></div>
+        <div class="grid-header-cell"><div>Sun</div><div class="grid-header-date">4/13</div></div>
+      </div>
+      <div class="grid-body">
+        <!-- 9 AM -->
+        <div class="grid-time">9 AM</div>
+        <div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell ifneeded"></div><div class="grid-cell"></div>
+        <!-- 9:30 -->
+        <div class="grid-time"></div>
+        <div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell ifneeded"></div><div class="grid-cell"></div>
+        <!-- 10 AM -->
+        <div class="grid-time">10 AM</div>
+        <div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        <!-- 10:30 -->
+        <div class="grid-time"></div>
+        <div class="grid-cell"></div><div class="grid-cell ifneeded"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell ifneeded"></div>
+        <!-- 11 AM -->
+        <div class="grid-time">11 AM</div>
+        <div class="grid-cell ifneeded"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div>
+        <!-- 11:30 -->
+        <div class="grid-time"></div>
+        <div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell ifneeded"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell available"></div>
+        <!-- 12 PM -->
+        <div class="grid-time">12 PM</div>
+        <div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div><div class="grid-cell available"></div>
+        <!-- 12:30 -->
+        <div class="grid-time"></div>
+        <div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell ifneeded"></div><div class="grid-cell available"></div><div class="grid-cell available"></div><div class="grid-cell"></div><div class="grid-cell available"></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grid-available)"></div>Available</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grid-ifneeded)"></div>If needed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grid-unavailable)"></div>Unavailable</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. EVENT CARDS ===== -->
+  <section class="section" style="background:var(--surface-alt)">
+    <h2 class="section-title">Event Cards</h2>
+    <p class="section-subtitle">timeful-style event items. Drop shadow on hover.</p>
+
+    <div style="max-width:600px;display:flex;flex-direction:column;gap:12px">
+      <div class="event-item">
+        <div>
+          <div class="event-item-title">스터디 모임</div>
+          <div class="event-item-meta">5명 응답 &middot; 2026.04.07 ~ 04.13</div>
+        </div>
+        <div class="event-item-badge">진행중</div>
+      </div>
+      <div class="event-item">
+        <div>
+          <div class="event-item-title">팀 회식 날짜</div>
+          <div class="event-item-meta">12명 응답 &middot; 2026.04.14 ~ 04.20</div>
+        </div>
+        <div class="event-item-badge">완료</div>
+      </div>
+      <div class="event-item">
+        <div>
+          <div class="event-item-title">프로젝트 킥오프</div>
+          <div class="event-item-meta">0명 응답 &middot; 아직 응답 없음</div>
+        </div>
+        <div class="event-item-badge" style="background:#FFFBEB;color:#92400E">대기중</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. DIALOG ===== -->
+  <section class="section">
+    <h2 class="section-title">Dialog</h2>
+    <p class="section-subtitle">Max-width 448px. timeful-style modal with indigo accent.</p>
+
+    <div class="dialog-backdrop">
+      <div class="dialog">
+        <div class="dialog-header">
+          <div class="dialog-title">일정에 참여하기</div>
+          <button class="dialog-close">&times;</button>
+        </div>
+        <div class="dialog-body">
+          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
+          <div class="form-group" style="margin-bottom:12px">
+            <input class="form-input" type="text" placeholder="이름 입력">
+          </div>
+          <div style="text-align:center;color:var(--text-muted);font-size:13px;margin:12px 0">또는</div>
+          <button class="btn-ghost w-full" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google로 계속하기
+          </button>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn-ghost">취소</button>
+          <button class="btn-primary" style="font-size:14px;padding:8px 20px">참여하기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 8. ALERTS ===== -->
+  <section class="section" style="background:var(--surface-alt)">
+    <h2 class="section-title">Alerts</h2>
+    <p class="section-subtitle">Semantic color states for feedback.</p>
+
+    <div style="max-width:500px;display:flex;flex-direction:column;gap:12px">
+      <div class="alert alert-success">일정이 성공적으로 생성되었습니다!</div>
+      <div class="alert alert-info">링크를 공유해서 참가자를 초대하세요.</div>
+      <div class="alert alert-warning">아직 아무도 응답하지 않았습니다.</div>
+      <div class="alert alert-error">일정 제목을 입력해주세요.</div>
+    </div>
+  </section>
+
+  <!-- ===== 9. SPACING / BORDER RADIUS ===== -->
+  <section class="section">
+    <h2 class="section-title">Spacing & Radius</h2>
+    <p class="section-subtitle">4px base unit. Consistent radius hierarchy.</p>
+
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px">
+      <div style="text-align:center">
+        <div style="width:48px;height:48px;background:var(--primary-pale);border-radius:var(--radius-sm);margin:0 auto 8px"></div>
+        <div style="font-size:12px;font-weight:600">4px</div>
+        <div style="font-size:11px;color:var(--text-muted)">radius-sm</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:48px;height:48px;background:var(--primary-pale);border-radius:var(--radius-md);margin:0 auto 8px"></div>
+        <div style="font-size:12px;font-weight:600">6px</div>
+        <div style="font-size:11px;color:var(--text-muted)">radius-md</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:48px;height:48px;background:var(--primary-pale);border-radius:var(--radius-lg);margin:0 auto 8px"></div>
+        <div style="font-size:12px;font-weight:600">8px</div>
+        <div style="font-size:11px;color:var(--text-muted)">radius-lg</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:48px;height:48px;background:var(--primary-pale);border-radius:var(--radius-xl);margin:0 auto 8px"></div>
+        <div style="font-size:12px;font-weight:600">12px</div>
+        <div style="font-size:11px;color:var(--text-muted)">radius-xl</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:48px;height:48px;background:var(--primary-pale);border-radius:50%;margin:0 auto 8px"></div>
+        <div style="font-size:12px;font-weight:600">50%</div>
+        <div style="font-size:11px;color:var(--text-muted)">radius-full</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div style="width:8px;height:8px;background:var(--primary);border-radius:2px" title="2xs: 2px"></div>
+      <div style="width:8px;height:16px;background:var(--primary);border-radius:2px" title="xs: 4px"></div>
+      <div style="width:8px;height:32px;background:var(--primary);border-radius:2px" title="sm: 8px"></div>
+      <div style="width:8px;height:64px;background:var(--primary);border-radius:2px" title="md: 16px"></div>
+      <div style="width:8px;height:96px;background:var(--primary);border-radius:2px" title="lg: 24px"></div>
+      <div style="width:8px;height:128px;background:var(--primary);border-radius:2px" title="xl: 32px"></div>
+      <div style="width:8px;height:192px;background:var(--primary);border-radius:2px" title="2xl: 48px"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">2</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">4</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">8</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">16</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">24</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">32</span>
+      <span style="font-size:10px;color:var(--text-muted);width:8px;text-align:center">48</span>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">WhenMeets</div>
+        <div class="footer-desc">쉽고 빠른 그룹 일정 조율</div>
+      </div>
+      <div>
+        <div class="footer-heading">Links</div>
+        <div class="footer-links">
+          <a href="#">Blog</a>
+          <a href="#">GitHub</a>
+          <a href="#">피드백</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-heading">Legal</div>
+        <div class="footer-links">
+          <a href="#">개인정보처리방침</a>
+          <a href="#">이용약관</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- THEME TOGGLE -->
+<button class="theme-toggle" onclick="document.body.classList.toggle('dark')" title="Toggle dark mode">
+  <span id="theme-icon">🌙</span>
+</button>
+
+<script>
+// Slide toggle setup
+function initSlideToggle(toggleEl) {
+  const options = toggleEl.querySelectorAll('.slide-toggle-option');
+  const indicator = toggleEl.querySelector('.slide-toggle-indicator');
+
+  function updateIndicator(activeOption) {
+    const rect = activeOption.getBoundingClientRect();
+    const parentRect = toggleEl.getBoundingClientRect();
+    indicator.style.left = (activeOption.offsetLeft) + 'px';
+    indicator.style.width = (activeOption.offsetWidth) + 'px';
+  }
+
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      options.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      updateIndicator(opt);
+    });
+  });
+
+  // Initial position
+  const active = toggleEl.querySelector('.slide-toggle-option.active');
+  if (active) {
+    // Wait for fonts to load
+    requestAnimationFrame(() => updateIndicator(active));
+  }
+}
+document.querySelectorAll('.slide-toggle').forEach(initSlideToggle);
+
+// Theme toggle
+document.querySelector('.theme-toggle').addEventListener('click', () => {
+  const icon = document.getElementById('theme-icon');
+  icon.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+});
+
+// Scroll-triggered animations with IntersectionObserver
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      // Stagger child animations
+      const delay = entry.target.dataset.delay || 0;
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, delay);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+// Add scroll animation to sections
+document.querySelectorAll('.section').forEach((section, i) => {
+  // Animate the section title
+  const title = section.querySelector('.section-title');
+  const subtitle = section.querySelector('.section-subtitle');
+  if (title) {
+    title.classList.add('animate-on-scroll');
+    title.dataset.delay = 0;
+    observer.observe(title);
+  }
+  if (subtitle) {
+    subtitle.classList.add('animate-on-scroll');
+    subtitle.dataset.delay = 100;
+    observer.observe(subtitle);
+  }
+
+  // Animate cards, swatches, and grid items
+  section.querySelectorAll('.swatch, .card, .event-item, .alert, .btn-row, .form-group, .type-specimen').forEach((el, j) => {
+    el.classList.add('animate-on-scroll');
+    el.dataset.delay = 50 + (j * 80);
+    observer.observe(el);
+  });
+});
+
+// Animate grid demo
+const gridDemo = document.querySelector('.grid-demo');
+if (gridDemo) {
+  gridDemo.classList.add('animate-on-scroll');
+  observer.observe(gridDemo);
+}
+
+// Animate dialog
+const dialogBackdrop = document.querySelector('.dialog-backdrop');
+if (dialogBackdrop) {
+  dialogBackdrop.classList.add('animate-on-scroll');
+  observer.observe(dialogBackdrop);
+}
+</script>
+
+</body>
+</html>
