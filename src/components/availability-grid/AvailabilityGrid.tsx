@@ -71,8 +71,8 @@ export default function AvailabilityGrid({
     <div className="flex flex-col gap-3">
       {header}
 
-      <div className="flex justify-center overflow-hidden" ref={containerRef}>
-        <div className="flex items-start shrink-0" style={{ width: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
+      <div className="flex justify-center" ref={containerRef}>
+        <div className="flex items-start w-full" style={{ maxWidth: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: 40 }}>
             {slots.map((slot) => (
@@ -96,7 +96,7 @@ export default function AvailabilityGrid({
           {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
           <div
             className={`grid${columnsProps ? ' touch-none' : ''}`}
-            style={{ width: containerWidth, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
+            style={{ flex: 1, minWidth: 0, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
             {...columnsProps}
           >
             {/* Date headers */}
