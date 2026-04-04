@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Availability, EventData, Participant } from '@/lib/types';
+import { Availability, EventData } from '@/lib/types';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
-import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
+import { generateSlots } from '@/lib/constants';
+import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import PasswordForm from './PasswordForm';
 import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
@@ -15,6 +15,14 @@ import CalendarImportButton from './CalendarImportButton';
 import TimezoneSelector from './TimezoneSelector';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
+  loading: () => (
+    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300">로딩 중...</span>
+    </div>
+  ),
+});
+
+const CalendarHeatmapGrid = dynamic(() => import('@/components/results/CalendarHeatmapGrid'), {
   loading: () => (
     <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
       <span className="text-xs text-gray-300">로딩 중...</span>
@@ -58,6 +66,17 @@ export default function EventPageClient({
   const [nameError, setNameError] = useState('');
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
+  const [googleUserName, setGoogleUserName] = useState<string | null>(null);
+  const supabaseRef = useRef(createAuthBrowserClient());
+
+  // Check if user is logged in via Google
+  useEffect(() => {
+    supabaseRef.current.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.full_name) {
+        setGoogleUserName(user.user_metadata.full_name);
+      }
+    });
+  }, []);
 
   // Heatmap filters
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -106,13 +125,14 @@ export default function EventPageClient({
 
   useRealtimeSync(eventId, true, handleRealtimeUpdate);
 
-  // Best times calculation
+  // Best times: timeful style — find max count, only show slots matching max
   const bestSlots = useMemo(() => {
     const filtered = event.participants.filter((p) => selectedIds.has(p.id));
     if (filtered.length === 0) return new Set<string>();
 
     const slots = generateSlots(event.time_start, event.time_end);
-    const counts: { key: string; count: number }[] = [];
+    let maxCount = 0;
+    const slotCounts: { key: string; count: number }[] = [];
 
     for (const date of event.dates) {
       for (const slot of slots) {
@@ -122,26 +142,27 @@ export default function EventPageClient({
           if (val === 2) count++;
           else if (val === 1 && includeIfNeeded) count++;
         }
-        if (count >= 2) {
-          counts.push({ key: `${date}-${slot}`, count });
+        if (count > 0) {
+          slotCounts.push({ key: `${date}-${slot}`, count });
+          if (count > maxCount) maxCount = count;
         }
       }
     }
 
-    counts.sort((a, b) => b.count - a.count);
-    return new Set(counts.slice(0, 10).map((c) => c.key));
+    // Only slots with the maximum count are "best"
+    return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
   }, [event, selectedIds, includeIfNeeded]);
 
-  // Hover: which participants are available at hovered slot
-  const hoveredAvailable = useMemo(() => {
-    if (!hoveredSlot) return new Set<string>();
-    const ids = new Set<string>();
+  // Hover: per-participant availability level at hovered slot (for sidebar styling)
+  const slotAvailability = useMemo(() => {
+    if (!hoveredSlot) return undefined;
+    const map = new Map<string, 0 | 1 | 2>();
     for (const p of event.participants) {
       const val = p.availability?.[hoveredSlot.date]?.[String(hoveredSlot.slot)];
-      if (val === 2 || (val === 1 && includeIfNeeded)) ids.add(p.id);
+      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
     }
-    return ids;
-  }, [hoveredSlot, event.participants, includeIfNeeded]);
+    return map;
+  }, [hoveredSlot, event.participants]);
 
   // Password state
   if (initialState.type === 'password' && !session) {
@@ -166,10 +187,52 @@ export default function EventPageClient({
     );
   }
 
+  // Auto-join with Google name (no name modal needed)
+  async function autoJoinWithName(name: string) {
+    setNameLoading(true);
+    try {
+      let storedToken: string | null = null;
+      try {
+        const stored = localStorage.getItem(`whenmeets:${eventId}`);
+        if (stored) storedToken = JSON.parse(stored).token;
+      } catch { /* */ }
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (storedToken) headers['X-Participant-Token'] = storedToken;
+
+      const res = await fetch(`/api/events/${eventId}/participants`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      setParticipantId(data.id);
+      setParticipantToken(data.token);
+      setSession({ participantId: data.id, token: data.token });
+      localStorage.setItem(
+        `whenmeets:${eventId}`,
+        JSON.stringify({ participantId: data.id, token: data.token }),
+      );
+      if (data.existing) {
+        const existingP = event.participants.find((p) => p.id === data.id);
+        if (existingP) setAvailability(existingP.availability);
+      }
+      return true;
+    } finally {
+      setNameLoading(false);
+    }
+  }
+
   // Handle "Edit availability" click
-  function handleEditClick() {
+  async function handleEditClick() {
     if (session) {
       setViewMode('edit');
+    } else if (googleUserName) {
+      // Google user: auto-join with their Google name
+      const ok = await autoJoinWithName(googleUserName);
+      if (ok) setViewMode('edit');
+      else setShowNameModal(true); // fallback to manual
     } else {
       setShowNameModal(true);
     }
@@ -239,14 +302,25 @@ export default function EventPageClient({
     } catch { /* */ }
   }
 
+  // Date range display
+  const sortedDates = [...event.dates].sort();
+  const firstDate = sortedDates[0];
+  const lastDate = sortedDates[sortedDates.length - 1];
+  const fmtShort = (d: string) => {
+    const dt = new Date(d + 'T00:00:00');
+    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+  };
+  const dateRange = firstDate === lastDate ? fmtShort(firstDate) : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+    <div className="max-w-6xl mx-auto px-6 py-6">
+      {/* Event header — timeful style */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{event.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {event.dates.length}일 · {event.participants.length}명 참여
+          <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {dateRange}
+            <span className="ml-3 text-indigo-600 hover:text-indigo-700 cursor-pointer font-medium">이벤트 수정</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -264,17 +338,14 @@ export default function EventPageClient({
           {viewMode === 'view' ? (
             <button
               onClick={handleEditClick}
-              className="h-[38px] px-4 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all cursor-pointer flex items-center"
+              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer"
             >
               내 시간 입력
             </button>
           ) : (
             <button
-              onClick={() => {
-                setViewMode('view');
-                handleRealtimeUpdate();
-              }}
-              className="h-[38px] px-4 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer flex items-center"
+              onClick={() => { setViewMode('view'); handleRealtimeUpdate(); }}
+              className="h-[38px] px-5 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-[0px_2px_8px_rgba(79,70,229,0.5)] transition-all cursor-pointer"
             >
               {saving ? '저장 중...' : '편집 완료'}
             </button>
@@ -282,19 +353,24 @@ export default function EventPageClient({
         </div>
       </div>
 
+      {/* Description add */}
+      <p className="text-sm text-gray-400 hover:text-gray-500 cursor-pointer mb-6">+ 설명 추가</p>
+
       {/* Main content: 2-column layout */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Left: Grid */}
         <div className="flex-1 min-w-0">
           {viewMode === 'edit' ? (
             <>
-              <div className="mb-3">
-                <CalendarImportButton
-                  dates={event.dates}
-                  timeStart={event.time_start}
-                  timeEnd={event.time_end}
-                  onImport={handleAvailabilityChange}
-                />
+              {/* Guide banner — centered bold, sticky on mobile */}
+              <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
+                event.mode === 'unavailable'
+                  ? 'bg-red-50 text-red-700 border border-red-200'
+                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+              }`}>
+                {event.mode === 'unavailable'
+                  ? (event.date_only ? '⛔ 안 되는 날짜를 선택해주세요' : '⛔ 안 되는 시간을 선택해주세요')
+                  : (event.date_only ? '✅ 되는 날짜를 선택해주세요' : '✅ 되는 시간을 선택해주세요')}
               </div>
               <DragGrid
                 dates={event.dates}
@@ -305,102 +381,126 @@ export default function EventPageClient({
                 participants={event.participants}
                 currentParticipantId={participantId}
                 dateOnly={event.date_only}
+                eventMode={event.mode}
               />
-              <div className="mt-3">
-                <TimezoneSelector />
-              </div>
             </>
+          ) : event.date_only ? (
+            <CalendarHeatmapGrid
+              dates={event.dates}
+              participants={event.participants}
+              selectedIds={selectedIds}
+              includeIfNeeded={includeIfNeeded}
+              onCellHover={(date) => setHoveredSlot(date ? { date, slot: 0 } : null)}
+              bestSlots={showBestTimes ? bestSlots : undefined}
+            />
           ) : (
-            <>
-              {event.participants.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                  <p>아직 응답이 없습니다.</p>
-                  <button
-                    onClick={handleEditClick}
-                    className="mt-3 text-indigo-600 hover:text-indigo-700 text-sm font-medium cursor-pointer"
-                  >
-                    첫 번째로 시간 입력하기
-                  </button>
-                </div>
-              ) : (
-                <HeatmapGrid
-                  dates={event.dates}
-                  timeStart={event.time_start}
-                  timeEnd={event.time_end}
-                  participants={event.participants}
-                  selectedIds={selectedIds}
-                  includeIfNeeded={includeIfNeeded}
-                  hoveredParticipantId={null}
-                  onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: slot! } : null)}
-                  bestSlots={showBestTimes ? bestSlots : undefined}
-                />
-              )}
-            </>
+            <HeatmapGrid
+              dates={event.dates}
+              timeStart={event.time_start}
+              timeEnd={event.time_end}
+              participants={event.participants}
+              selectedIds={selectedIds}
+              includeIfNeeded={includeIfNeeded}
+              hoveredParticipantId={null}
+              onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: slot! } : null)}
+              bestSlots={showBestTimes ? bestSlots : undefined}
+            />
           )}
         </div>
 
-        {/* Right: Sidebar (always visible) */}
-        <div className="w-full lg:w-72 shrink-0">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">
-            응답 ({event.participants.length}명)
-          </h2>
+        {/* Right: Sidebar */}
+        <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100">
+          {viewMode === 'edit' ? (
+            <>
+              {/* Edit mode sidebar — legend + calendar + overlay */}
+              <div className="mb-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">범례</h3>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2.5 text-sm text-gray-600">
+                    <span className="w-4 h-4 rounded-sm bg-[#4F46E5]/[.47] border border-gray-200/50" />
+                    {event.mode === 'unavailable' ? 'Unavailable' : 'Available'}
+                  </div>
+                  {event.mode === 'available' && (
+                    <div className="flex items-center gap-2.5 text-sm text-gray-600">
+                      <span className="w-4 h-4 rounded-sm bg-[#FFE8B8] border border-gray-200/50" />
+                      필요하다면..
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          <ParticipantFilter
-            participants={event.participants}
-            selectedIds={selectedIds}
-            onSelectedChange={setSelectedIds}
-            onHover={(id) => {}}
-            onHoverEnd={() => {}}
-            highlightedIds={hoveredSlot ? hoveredAvailable : undefined}
-          />
+              {/* Calendar import */}
+              <div className="mb-5">
+                <CalendarImportButton
+                  dates={event.dates}
+                  timeStart={event.time_start}
+                  timeEnd={event.time_end}
+                  onImport={handleAvailabilityChange}
+                />
+              </div>
 
-          <button
-            onClick={handleEditClick}
-            className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
-          >
-            + 내 시간 추가
-          </button>
+              {/* Timezone */}
+              <div className="mb-5">
+                <TimezoneSelector />
+              </div>
 
-          {/* Options */}
-          <div className="mt-5 pt-4 border-t border-gray-100 flex flex-col gap-3">
-            <label className="flex items-center gap-2.5 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showBestTimes}
-                onChange={(e) => setShowBestTimes(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              />
-              Show best times
-            </label>
-            <label className="flex items-center gap-2.5 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!includeIfNeeded}
-                onChange={(e) => setIncludeIfNeeded(!e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              />
-              Hide if needed times
-            </label>
-          </div>
-
-          {/* Share link */}
-          <div className="mt-5 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500 mb-2">이 일정을 공유하세요:</p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                value={typeof window !== 'undefined' ? `${window.location.origin}/e/${eventId}` : ''}
-                className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg font-mono"
-              />
+              {/* Delete availability */}
               <button
-                onClick={handleCopyLink}
-                className="px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => {
+                  if (confirm('내 응답을 삭제하시겠습니까?')) {
+                    handleAvailabilityChange({});
+                  }
+                }}
+                className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
               >
-                복사
+                내 응답 삭제
               </button>
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              {/* View mode sidebar — responses + options */}
+              <h2 className="text-base font-bold text-gray-900 mb-3">
+                응답자 {hoveredSlot && slotAvailability
+                  ? `(${Array.from(slotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/${event.participants.length})`
+                  : `(${event.participants.length})`}
+              </h2>
+
+              <ParticipantFilter
+                participants={event.participants}
+                selectedIds={selectedIds}
+                onSelectedChange={setSelectedIds}
+                slotAvailability={slotAvailability}
+              />
+
+              {/* Options */}
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">옵션</h3>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => setShowBestTimes(!showBestTimes)}
+                    className="flex items-center justify-between text-sm text-gray-600 cursor-pointer"
+                  >
+                    <span>최적 시간만 보기</span>
+                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${showBestTimes ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </div>
+                  </button>
+                  {event.mode !== 'unavailable' && (
+                    <button
+                      onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
+                      className="flex items-center justify-between text-sm text-gray-600 cursor-pointer"
+                    >
+                      <span>"필요하다면.." 숨기기</span>
+                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
         </div>
       </div>
 

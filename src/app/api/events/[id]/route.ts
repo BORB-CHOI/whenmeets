@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
 
 export async function GET(
@@ -51,4 +52,43 @@ export async function GET(
     date_only: event.date_only,
     participants: participants ?? [],
   });
+}
+
+// Soft delete: set deleted_at timestamp (only by event creator)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const authClient = await createAuthServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const supabase = createServerClient();
+
+  // Verify the user owns this event
+  const { data: event } = await supabase
+    .from('events')
+    .select('created_by')
+    .eq('id', id)
+    .single();
+
+  if (!event || event.created_by !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // Soft delete: set deleted_at
+  const { error } = await supabase
+    .from('events')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

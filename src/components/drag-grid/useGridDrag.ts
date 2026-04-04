@@ -26,6 +26,7 @@ export default function useGridDrag({
 }: UseGridDragOptions) {
   const isDragging = useRef(false);
   const lastCell = useRef<string | null>(null);
+  const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const draftRef = useRef<Availability>({});
   const erasing = useRef(false);
 
@@ -53,11 +54,29 @@ export default function useGridDrag({
     onAvailabilityChange(draft);
   }
 
+  // Interpolate between two points to fill in gaps during fast mouse movement
+  function interpolateAndApply(x1: number, y1: number, x2: number, y2: number) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // Sample every 4px to catch small cells
+    const steps = Math.max(Math.ceil(dist / 4), 1);
+
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const ix = x1 + dx * t;
+      const iy = y1 + dy * t;
+      const cell = getCellFromPoint(ix, iy);
+      if (cell) applyToCell(cell.date, cell.slot);
+    }
+  }
+
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
       isDragging.current = true;
       draftRef.current = JSON.parse(JSON.stringify(availability));
       lastCell.current = null;
+      lastPoint.current = { x, y };
 
       // Toggle: if first cell already matches activeMode, erase instead
       erasing.current = false;
@@ -82,14 +101,22 @@ export default function useGridDrag({
 
   const handlePointerMove = useCallback((x: number, y: number) => {
     if (!isDragging.current) return;
-    const cell = getCellFromPoint(x, y);
-    if (cell) applyToCell(cell.date, cell.slot);
+
+    // Interpolate from last point to current point to prevent gaps
+    if (lastPoint.current) {
+      interpolateAndApply(lastPoint.current.x, lastPoint.current.y, x, y);
+    } else {
+      const cell = getCellFromPoint(x, y);
+      if (cell) applyToCell(cell.date, cell.slot);
+    }
+    lastPoint.current = { x, y };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMode]);
 
   const handlePointerEnd = useCallback(() => {
     isDragging.current = false;
     lastCell.current = null;
+    lastPoint.current = null;
     erasing.current = false;
   }, []);
 

@@ -4,7 +4,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import DashboardClient from '@/components/dashboard/DashboardClient';
 
 export const metadata = {
-  title: '대시보드 — WhenMeets',
+  title: '대시보드 - WhenMeets',
 };
 
 export default async function DashboardPage() {
@@ -24,6 +24,7 @@ export default async function DashboardPage() {
     .from('events')
     .select('id, title, dates, created_at')
     .eq('created_by', user.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -86,7 +87,7 @@ export default async function DashboardPage() {
         대시보드
       </h1>
       <p className="mt-1 text-sm text-gray-500">
-        내 일정을 관리하세요.
+        내 이벤트를 관리하세요.
       </p>
       <div className="mt-8">
         <DashboardClient

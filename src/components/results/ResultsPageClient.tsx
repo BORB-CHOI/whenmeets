@@ -231,7 +231,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                         key={`${bt.date}-${bt.slot}-${i}`}
                         className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg border border-gray-100"
                       >
-                        <span className={`text-sm font-medium font-mono tabular-nums ${ratio >= 0.75 ? 'text-indigo-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium tabular-nums ${ratio >= 0.75 ? 'text-indigo-700' : 'text-gray-700'}`}>
                           {formatDateCompact(bt.date)} {slotToTime(bt.slot)}-{slotToTime(endSlot)}
                         </span>
                         <span className={`text-sm font-semibold ${ratio >= 0.75 ? 'text-indigo-600' : 'text-gray-500'}`}>
@@ -251,7 +251,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
       {/* Share link */}
       <div className="mt-6 p-3 bg-gray-50 rounded-xl">
-        <p className="text-xs text-gray-500 mb-2">이 일정을 공유하세요:</p>
+        <p className="text-xs text-gray-500 mb-2">이 이벤트를 공유하세요:</p>
         <div className="flex gap-2">
           <input
             type="text"

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { slotToTime, SLOTS_PER_HOUR } from '@/lib/constants';
+import { useRef, useEffect, useCallback } from 'react';
+import { SLOTS_PER_HOUR } from '@/lib/constants';
 
 interface TimeRangePickerProps {
   timeStart: number;
@@ -10,16 +10,24 @@ interface TimeRangePickerProps {
   onTimeEndChange: (slot: number) => void;
 }
 
-function generateTimeOptions(): { value: number; label: string }[] {
-  const options: { value: number; label: string }[] = [];
-  // Show options every 30 minutes (every 2 slots at 15-min resolution)
-  for (let slot = 0; slot <= 24 * SLOTS_PER_HOUR; slot += 2) {
-    options.push({ value: slot, label: slotToTime(slot) });
-  }
-  return options;
+function formatTime(slot: number): string {
+  const h = Math.floor(slot / SLOTS_PER_HOUR);
+  const m = (slot % SLOTS_PER_HOUR) * 15;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function TimeDropdown({
+function generateOptions(): number[] {
+  const opts: number[] = [];
+  for (let slot = 0; slot <= 24 * SLOTS_PER_HOUR; slot += 2) {
+    opts.push(slot);
+  }
+  return opts;
+}
+
+const ITEM_H = 36;
+const VISIBLE = 5;
+
+function ScrollPicker({
   value,
   onChange,
   disabledCheck,
@@ -28,75 +36,88 @@ function TimeDropdown({
   onChange: (v: number) => void;
   disabledCheck: (v: number) => boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const options = generateTimeOptions();
+  const options = generateOptions();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label ?? '';
+  const scrollToValue = useCallback((v: number, smooth = false) => {
+    const idx = options.indexOf(v);
+    if (idx === -1 || !containerRef.current) return;
+    const top = idx * ITEM_H;
+    containerRef.current.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+  }, [options]);
 
-  // Close on outside click
   useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+    scrollToValue(value);
+  }, [value, scrollToValue]);
 
-  // Scroll selected into view
-  useEffect(() => {
-    if (open && listRef.current) {
-      const selected = listRef.current.querySelector('[data-selected="true"]');
-      if (selected) selected.scrollIntoView({ block: 'center' });
-    }
-  }, [open]);
+  function handleScroll() {
+    if (!containerRef.current) return;
+    isScrolling.current = true;
 
-  const handleSelect = useCallback((v: number) => {
-    onChange(v);
-    setOpen(false);
-  }, [onChange]);
+    // Debounce: snap to nearest after scroll stops
+    clearTimeout((containerRef.current as any)._snapTimer);
+    (containerRef.current as any)._snapTimer = setTimeout(() => {
+      if (!containerRef.current) return;
+      const scrollTop = containerRef.current.scrollTop;
+      const idx = Math.round(scrollTop / ITEM_H);
+      const clamped = Math.max(0, Math.min(idx, options.length - 1));
+      const opt = options[clamped];
+      if (!disabledCheck(opt)) {
+        onChange(opt);
+      }
+      containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
+      isScrolling.current = false;
+    }, 80);
+  }
+
+  const halfPad = Math.floor(VISIBLE / 2);
 
   return (
-    <div ref={ref} className="relative flex-1">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3.5 py-2.5 border border-gray-200 rounded-md text-sm bg-white hover:border-gray-300 focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 transition-all font-mono tabular-nums"
-      >
-        <span>{selectedLabel}</span>
-        <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+    <div
+      className="relative rounded-lg border border-gray-200 overflow-hidden bg-white"
+      style={{ height: ITEM_H * VISIBLE }}
+    >
+      {/* Center highlight bar */}
+      <div
+        className="absolute left-0 right-0 pointer-events-none border-y border-indigo-200 bg-indigo-50/50 z-10"
+        style={{ top: ITEM_H * halfPad, height: ITEM_H }}
+      />
+      {/* Fade top/bottom */}
+      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white to-transparent pointer-events-none z-20" />
+      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none z-20" />
 
-      {open && (
-        <div
-          ref={listRef}
-          className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-md py-1 scrollbar-thin"
-        >
-          {options.map((opt) => {
-            const disabled = disabledCheck(opt.value);
-            const selected = opt.value === value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                disabled={disabled}
-                data-selected={selected}
-                onClick={() => handleSelect(opt.value)}
-                className={`w-full px-3.5 py-2 text-sm text-left font-mono tabular-nums transition-colors
-                  ${selected ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''}
-                  ${disabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-700'}
-                `}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="h-full overflow-y-auto"
+        style={{
+          scrollbarWidth: 'none',
+          paddingTop: ITEM_H * halfPad,
+          paddingBottom: ITEM_H * halfPad,
+        }}
+      >
+        {options.map((opt) => {
+          const disabled = disabledCheck(opt);
+          const selected = opt === value;
+          return (
+            <div
+              key={opt}
+              onClick={() => { if (!disabled) { onChange(opt); scrollToValue(opt, true); } }}
+              className={`flex items-center justify-center cursor-pointer transition-colors
+                ${disabled ? 'text-gray-200 cursor-not-allowed' : ''}
+                ${selected ? 'text-indigo-700 font-bold' : ''}
+                ${!selected && !disabled ? 'text-gray-500' : ''}`}
+              style={{
+                height: ITEM_H,
+                fontSize: selected ? 16 : 14,
+              }}
+            >
+              {formatTime(opt)}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -109,17 +130,21 @@ export default function TimeRangePicker({
 }: TimeRangePickerProps) {
   return (
     <div className="flex items-center gap-3">
-      <TimeDropdown
-        value={timeStart}
-        onChange={onTimeStartChange}
-        disabledCheck={(v) => v >= timeEnd}
-      />
-      <span className="text-gray-400 text-sm">~</span>
-      <TimeDropdown
-        value={timeEnd}
-        onChange={onTimeEndChange}
-        disabledCheck={(v) => v <= timeStart}
-      />
+      <div className="flex-1">
+        <ScrollPicker
+          value={timeStart}
+          onChange={onTimeStartChange}
+          disabledCheck={(v) => v >= timeEnd}
+        />
+      </div>
+      <span className="text-gray-400 text-sm font-medium">~</span>
+      <div className="flex-1">
+        <ScrollPicker
+          value={timeEnd}
+          onChange={onTimeEndChange}
+          disabledCheck={(v) => v <= timeStart}
+        />
+      </div>
     </div>
   );
 }
