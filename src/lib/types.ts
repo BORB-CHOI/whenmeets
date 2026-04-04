@@ -22,3 +22,9 @@ export interface Participant {
   availability: Availability;
   created_at: string;
 }
+
+/** Event data with participants, as returned by the API */
+export interface EventData extends Event {
+  participants: Pick<Participant, 'id' | 'name' | 'availability' | 'created_at'>[];
+  requires_auth?: boolean;
+}

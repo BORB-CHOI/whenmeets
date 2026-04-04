@@ -1,7 +1,7 @@
 'use client';
 
 import { Participant } from '@/lib/types';
-import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
+import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 
 interface HeatmapGridProps {
   dates: string[];
@@ -20,7 +20,6 @@ export default function HeatmapGrid({
   selectedIds,
   includeIfNeeded,
 }: HeatmapGridProps) {
-  const slots = generateSlots(timeStart, timeEnd);
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
 
@@ -44,45 +43,25 @@ export default function HeatmapGrid({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-flex">
-        {/* Time labels */}
-        <div className="flex flex-col pt-[28px]">
-          {slots.map((slot) => (
-            <div
-              key={slot}
-              className="h-[20px] pr-2 text-[10px] text-gray-400 text-right leading-[20px]"
-            >
-              {slot % 2 === 0 ? slotToTime(slot) : ''}
-            </div>
-          ))}
-        </div>
-
-        {/* Date columns */}
-        {dates.map((date) => (
-          <div key={date} className="flex flex-col">
-            <div className="h-[28px] text-xs font-medium text-gray-600 text-center leading-[28px]">
-              {formatDateCompact(date)}
-            </div>
-            {slots.map((slot) => {
-              const count = getCount(date, slot);
-              return (
-                <div
-                  key={`${date}-${slot}`}
-                  className={`w-[44px] h-[20px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
-                    ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}`}
-                >
-                  {count > 0 && (
-                    <span className={`text-[9px] font-medium ${count === total ? 'text-white' : 'text-gray-600'}`}>
-                      {count}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+    <AvailabilityGrid
+      dates={dates}
+      timeStart={timeStart}
+      timeEnd={timeEnd}
+      renderCell={(date, slot) => {
+        const count = getCount(date, slot);
+        return (
+          <div
+            className={`w-[44px] h-[20px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
+              ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}`}
+          >
+            {count > 0 && (
+              <span className={`text-[9px] font-medium ${count === total ? 'text-white' : 'text-gray-600'}`}>
+                {count}
+              </span>
+            )}
           </div>
-        ))}
-      </div>
-    </div>
+        );
+      }}
+    />
   );
 }
