@@ -18,15 +18,22 @@ export default function EventForm() {
   const [error, setError] = useState('');
   const [dateOnly, setDateOnly] = useState(false);
   const [mode, setMode] = useState<EventMode>('available');
+  const [titleError, setTitleError] = useState(false);
+  const [dateError, setDateError] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTitleError(false);
+    setDateError(false);
+
     if (!title.trim()) {
       setError('제목을 입력해주세요');
+      setTitleError(true);
       return;
     }
     if (dates.length === 0) {
       setError('최소 하나의 날짜를 선택해주세요');
+      setDateError(true);
       return;
     }
 
@@ -55,7 +62,7 @@ export default function EventForm() {
     }
 
     const { id } = await res.json();
-    router.push(`/e/${id}`);
+    router.push(`/e/${id}/results`);
   }
 
   return (
@@ -65,53 +72,72 @@ export default function EventForm() {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            if (titleError) setTitleError(false);
+          }}
           placeholder="일정 제목"
-          className="w-full px-4 py-3 text-lg border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005] ${
+            titleError
+              ? 'border-red-500 ring ring-red-500/10 animate-[shake_0.3s_ease-in-out]'
+              : 'border-gray-200'
+          }`}
           maxLength={100}
         />
       </div>
 
-      {/* Mode toggle: Dates and times / Dates only */}
+      {/* Mode toggle: Dates and times / Dates only — Slide Toggle */}
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-2">유형</label>
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+        <div className="relative flex p-0.5 bg-gray-50 border border-gray-200 rounded-full">
+          <div
+            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-white border border-indigo-600/20 rounded-full shadow-sm transition-transform duration-300 ease-in-out"
+            style={{ transform: dateOnly ? 'translateX(calc(100% + 4px))' : 'translateX(0)' }}
+          />
           <button
             type="button"
             onClick={() => setDateOnly(false)}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-              ${!dateOnly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+              !dateOnly ? 'text-indigo-600 font-semibold' : 'text-gray-500'
+            }`}
           >
             날짜 + 시간
           </button>
           <button
             type="button"
             onClick={() => setDateOnly(true)}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-              ${dateOnly ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+              dateOnly ? 'text-indigo-600 font-semibold' : 'text-gray-500'
+            }`}
           >
             날짜만
           </button>
         </div>
       </div>
 
-      {/* Response mode: available / unavailable */}
+      {/* Response mode: available / unavailable — Slide Toggle */}
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-2">응답 방식</label>
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+        <div className="relative flex p-0.5 bg-gray-50 border border-gray-200 rounded-full">
+          <div
+            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-white border border-indigo-600/20 rounded-full shadow-sm transition-transform duration-300 ease-in-out"
+            style={{ transform: mode === 'unavailable' ? 'translateX(calc(100% + 4px))' : 'translateX(0)' }}
+          />
           <button
             type="button"
             onClick={() => setMode('available')}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-              ${mode === 'available' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+              mode === 'available' ? 'text-indigo-600 font-semibold' : 'text-gray-500'
+            }`}
           >
             되는 시간 수합
           </button>
           <button
             type="button"
             onClick={() => setMode('unavailable')}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
-              ${mode === 'unavailable' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+              mode === 'unavailable' ? 'text-indigo-600 font-semibold' : 'text-gray-500'
+            }`}
           >
             안 되는 시간 수합
           </button>
@@ -156,7 +182,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005]"
           />
         )}
       </div>

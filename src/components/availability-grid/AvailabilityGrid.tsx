@@ -36,7 +36,7 @@ export default function AvailabilityGrid({
             {slots.map((slot) => (
               <div
                 key={slot}
-                className="h-[20px] pr-2 text-[10px] text-gray-400 text-right leading-[20px]"
+                className="h-[28px] pr-2 text-[10px] text-gray-400 text-right leading-[28px] font-mono tabular-nums"
               >
                 {slot % 2 === 0 ? slotToTime(slot) : ''}
               </div>

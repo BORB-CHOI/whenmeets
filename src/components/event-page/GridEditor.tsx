@@ -35,7 +35,7 @@ export default function GridEditor({
   dateOnly,
 }: GridEditorProps) {
   return (
-    <div className="max-w-lg mx-auto px-4 py-4">
+    <div className="max-w-4xl mx-auto px-4 py-4">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-lg font-bold">{title}</h1>

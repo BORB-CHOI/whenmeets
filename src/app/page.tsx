@@ -5,30 +5,33 @@ export default function Home() {
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 overflow-hidden">
       {/* Mesh gradient background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
+        {/* Blob 1: top-left on desktop, top-center on mobile */}
         <div
-          className="absolute w-125 h-125 rounded-[40%_60%_55%_45%/55%_40%_60%_45%] opacity-45"
+          className="absolute w-100 h-100 sm:w-125 sm:h-125 rounded-[40%_60%_55%_45%/55%_40%_60%_45%] opacity-35 sm:opacity-45"
           style={{
             background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-            top: '-10%',
-            left: '-5%',
+            top: '-15%',
+            left: '-20%',
             animation: 'blob1 14s ease-in-out infinite',
           }}
         />
+        {/* Blob 2: right-center on desktop, bottom-right on mobile */}
         <div
-          className="absolute w-112.5 h-112.5 rounded-[55%_45%_40%_60%/45%_55%_45%_55%] opacity-50"
+          className="absolute w-87.5 h-87.5 sm:w-112.5 sm:h-112.5 rounded-[55%_45%_40%_60%/45%_55%_45%_55%] opacity-35 sm:opacity-50"
           style={{
             background: 'linear-gradient(225deg, #7C3AED, #4F46E5)',
-            top: '30%',
-            right: '-10%',
+            top: '50%',
+            right: '-25%',
             animation: 'blob2 16s ease-in-out infinite',
           }}
         />
+        {/* Blob 3: bottom-left on desktop, bottom on mobile */}
         <div
-          className="absolute w-100 h-100 rounded-[45%_55%_60%_40%/60%_45%_55%_40%] opacity-45"
+          className="absolute w-75 h-75 sm:w-100 sm:h-100 rounded-[45%_55%_60%_40%/60%_45%_55%_40%] opacity-30 sm:opacity-45"
           style={{
             background: 'linear-gradient(315deg, #4F46E5, #8B5CF6)',
-            bottom: '-5%',
-            left: '20%',
+            bottom: '-10%',
+            left: '-15%',
             animation: 'blob3 18s ease-in-out infinite',
           }}
         />
