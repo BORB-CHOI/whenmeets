@@ -50,7 +50,7 @@ function readStoredSession(eventId: string) {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(`whenmeets:${eventId}`);
-    if (stored) return JSON.parse(stored) as { participantId: string; token: string };
+    if (stored) return JSON.parse(stored) as { participantId: string; name: string; password: string | null };
   } catch {
     try { localStorage.removeItem(`whenmeets:${eventId}`); } catch { /* SSR safe */ }
   }
@@ -107,7 +107,8 @@ export default function EventPageClient({
   });
 
   const [participantId, setParticipantId] = useState<string | null>(session?.participantId ?? null);
-  const [participantToken, setParticipantToken] = useState<string | null>(session?.token ?? null);
+  const [participantPassword, setParticipantPassword] = useState<string | null>(session?.password ?? null);
+  const [namePassword, setNamePassword] = useState('');
   const [availability, setAvailability] = useState<Availability>(() => {
     if (!session) return {};
     const existing = initialEvent.participants.find((p) => p.id === session.participantId);
@@ -117,7 +118,7 @@ export default function EventPageClient({
   const { saving, saveNow } = useAvailabilitySave({
     eventId,
     participantId,
-    participantToken,
+    participantPassword,
   });
 
   // Realtime sync
@@ -191,7 +192,7 @@ export default function EventPageClient({
             if (existing) {
               setSession(stored);
               setParticipantId(stored.participantId);
-              setParticipantToken(stored.token);
+              setParticipantPassword(stored.password ?? null);
               setAvailability(existing.availability);
             }
           }
@@ -200,32 +201,24 @@ export default function EventPageClient({
     );
   }
 
-  // Auto-join with Google name (no name modal needed)
+  // Auto-join with Google name (no name modal needed, no password for Google users)
   async function autoJoinWithName(name: string) {
     setNameLoading(true);
     try {
-      let storedToken: string | null = null;
-      try {
-        const stored = localStorage.getItem(`whenmeets:${eventId}`);
-        if (stored) storedToken = JSON.parse(stored).token;
-      } catch { /* */ }
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (storedToken) headers['X-Participant-Token'] = storedToken;
-
       const res = await fetch(`/api/events/${eventId}/participants`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
       if (!res.ok) return false;
 
       const data = await res.json();
       setParticipantId(data.id);
-      setParticipantToken(data.token);
-      setSession({ participantId: data.id, token: data.token });
+      setParticipantPassword(null);
+      setSession({ participantId: data.id, name: data.name, password: null });
       localStorage.setItem(
         `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, token: data.token }),
+        JSON.stringify({ participantId: data.id, name: data.name, password: null }),
       );
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
@@ -259,21 +252,22 @@ export default function EventPageClient({
     setNameLoading(true);
     setNameError('');
     try {
-      let storedToken: string | null = null;
-      try {
-        const stored = localStorage.getItem(`whenmeets:${eventId}`);
-        if (stored) storedToken = JSON.parse(stored).token;
-      } catch { /* */ }
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (storedToken) headers['X-Participant-Token'] = storedToken;
-
       const res = await fetch(`/api/events/${eventId}/participants`, {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ name: nameInput.trim() }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput.trim(), password: namePassword || undefined }),
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          const errData = await res.json();
+          if (errData.requires_password) {
+            setNameError('이 이름은 비밀번호가 설정되어 있습니다. 비밀번호를 입력해주세요.');
+            return;
+          }
+          setNameError(errData.error || '비밀번호가 일치하지 않습니다');
+          return;
+        }
         const errData = await res.json();
         setNameError(errData.error || '참여에 실패했습니다');
         return;
@@ -281,12 +275,17 @@ export default function EventPageClient({
 
       const data = await res.json();
       setParticipantId(data.id);
-      setParticipantToken(data.token);
-      setSession({ participantId: data.id, token: data.token });
+      setParticipantPassword(namePassword || null);
+      setSession({ participantId: data.id, name: data.name, password: namePassword || null });
       localStorage.setItem(
         `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, token: data.token }),
+        JSON.stringify({ participantId: data.id, name: data.name, password: namePassword || null }),
       );
+
+      if (data.numbered === true) {
+        setNameError('');
+        // Brief info: numbered participant joined (no action needed)
+      }
 
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
@@ -304,6 +303,7 @@ export default function EventPageClient({
 
       setShowNameModal(false);
       setNameInput('');
+      setNamePassword('');
       setViewMode('edit');
     } finally {
       setNameLoading(false);
@@ -654,7 +654,7 @@ export default function EventPageClient({
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm"
             onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.bd = '1'; }}
-            onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') setShowNameModal(false); (e.currentTarget as HTMLElement).dataset.bd = ''; }}
+            onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') { setShowNameModal(false); setNameInput(''); setNamePassword(''); } (e.currentTarget as HTMLElement).dataset.bd = ''; }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -668,7 +668,7 @@ export default function EventPageClient({
               <div className="flex items-center justify-between px-6 pt-5 pb-2">
                 <h2 className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
                 <button
-                  onClick={() => setShowNameModal(false)}
+                  onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -691,6 +691,16 @@ export default function EventPageClient({
                     autoFocus
                     maxLength={50}
                   />
+                  <div className="mt-3">
+                    <input
+                      type="password"
+                      value={namePassword}
+                      onChange={(e) => setNamePassword(e.target.value)}
+                      placeholder="비밀번호 (선택사항)"
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-600 focus:ring focus:ring-emerald-600/10 transition-all"
+                    />
+                    <p className="text-xs text-gray-400 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
+                  </div>
                   {nameError && <p className="text-sm text-red-500 mt-2">{nameError}</p>}
                 </form>
 
@@ -726,7 +736,7 @@ export default function EventPageClient({
               <div className="flex justify-end gap-2 px-6 pb-5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowNameModal(false)}
+                  onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   취소
