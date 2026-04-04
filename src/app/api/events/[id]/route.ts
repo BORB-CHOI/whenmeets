@@ -9,9 +9,10 @@ export async function GET(
   const { id } = await params;
   const supabase = createServerClient();
 
+  // Single query: fetch event with password_hash included (strip from response)
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, created_at')
+    .select('id, title, dates, time_start, time_end, created_at, password_hash')
     .eq('id', id)
     .single();
 
@@ -19,14 +20,7 @@ export async function GET(
     return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
-  // Check password separately to avoid loading hash into main event object
-  const { data: pwCheck } = await supabase
-    .from('events')
-    .select('password_hash')
-    .eq('id', id)
-    .single();
-
-  const hasPassword = !!pwCheck?.password_hash;
+  const hasPassword = !!event.password_hash;
   if (hasPassword) {
     const cookie = request.cookies.get(`whenmeets_auth_${id}`);
     if (!cookie || !verifyEventToken(id, cookie.value)) {
