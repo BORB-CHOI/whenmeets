@@ -49,16 +49,24 @@ export default function DashboardClient({
 
   return (
     <div>
-      {/* Tab bar */}
-      <div className="flex gap-1 p-1 bg-gray-50 rounded-full border border-gray-200 w-fit">
+      {/* Tab bar — pill toggle with sliding indicator */}
+      <div className="relative flex gap-1 p-1 bg-gray-50 rounded-full border border-gray-200 w-fit">
+        {/* Sliding indicator */}
+        <div
+          className="absolute top-1 bottom-1 bg-white rounded-full border border-emerald-600 shadow-sm transition-all duration-200 ease-out"
+          style={{
+            width: `calc(${100 / tabs.length}% - 4px)`,
+            left: `calc(${(tabs.findIndex(t => t.key === activeTab) * 100) / tabs.length}% + 2px)`,
+          }}
+        />
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`relative z-10 px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-150 cursor-pointer flex items-center gap-1.5 ${
               activeTab === tab.key
-                ? 'bg-white text-emerald-600 font-semibold border border-emerald-600 shadow-sm'
-                : 'text-gray-500 border border-transparent hover:text-gray-700'
+                ? 'text-emerald-600 font-semibold'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {tab.icon}
