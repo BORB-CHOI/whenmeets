@@ -1,12 +1,21 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Participant } from '@/lib/types';
 import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
-import HeatmapGrid from './HeatmapGrid';
 import ParticipantFilter from './ParticipantFilter';
+import AdBanner from '@/components/ads/AdBanner';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+
+const HeatmapGrid = dynamic(() => import('./HeatmapGrid'), {
+  loading: () => (
+    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300">로딩 중...</span>
+    </div>
+  ),
+});
 
 interface ResultsData {
   event: {
@@ -213,6 +222,8 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
           </div>
         </>
       )}
+
+      <AdBanner />
 
       {/* Share link */}
       <div className="mt-6 p-3 bg-gray-50 rounded-xl">
