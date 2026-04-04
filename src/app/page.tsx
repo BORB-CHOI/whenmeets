@@ -12,35 +12,43 @@ export default function Home() {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
       {/* Mesh gradient background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
+      <div className="absolute inset-0 -z-10 overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 40%, #DDD6FE 70%, #EDE9FE 100%)' }}
+      >
         <div
-          className="absolute w-100 h-100 sm:w-125 sm:h-125 rounded-[40%_60%_55%_45%/55%_40%_60%_45%] opacity-35 sm:opacity-45"
+          className="absolute opacity-80"
           style={{
-            background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-            top: '-15%',
-            left: '-20%',
-            animation: 'blob1 14s ease-in-out infinite',
+            width: '700px', height: '500px',
+            background: 'linear-gradient(135deg, rgba(79,70,229,0.45) 0%, rgba(129,140,248,0.35) 50%, rgba(167,139,250,0.2) 100%)',
+            borderRadius: '40% 60% 55% 45% / 55% 40% 60% 45%',
+            filter: 'blur(50px)',
+            top: '-250px', left: '-150px',
+            animation: 'blob1 12s ease-in-out infinite',
           }}
         />
         <div
-          className="absolute w-87.5 h-87.5 sm:w-112.5 sm:h-112.5 rounded-[55%_45%_40%_60%/45%_55%_45%_55%] opacity-35 sm:opacity-50"
+          className="absolute opacity-80"
           style={{
-            background: 'linear-gradient(225deg, #7C3AED, #4F46E5)',
-            top: '50%',
-            right: '-25%',
-            animation: 'blob2 16s ease-in-out infinite',
+            width: '600px', height: '450px',
+            background: 'linear-gradient(225deg, rgba(167,139,250,0.5) 0%, rgba(196,181,253,0.35) 50%, rgba(79,70,229,0.15) 100%)',
+            borderRadius: '50% 50% 45% 55% / 55% 45% 50% 50%',
+            filter: 'blur(50px)',
+            bottom: '-200px', right: '-100px',
+            animation: 'blob2 15s ease-in-out infinite',
           }}
         />
         <div
-          className="absolute w-75 h-75 sm:w-100 sm:h-100 rounded-[45%_55%_60%_40%/60%_45%_55%_40%] opacity-30 sm:opacity-45"
+          className="absolute"
           style={{
-            background: 'linear-gradient(315deg, #4F46E5, #8B5CF6)',
-            bottom: '-10%',
-            left: '-15%',
+            width: '500px', height: '400px',
+            background: 'linear-gradient(180deg, rgba(99,102,241,0.4) 0%, rgba(129,140,248,0.3) 50%, rgba(196,181,253,0.15) 100%)',
+            borderRadius: '45% 55% 50% 50% / 50% 45% 55% 50%',
+            filter: 'blur(40px)',
+            top: '40%', left: '45%',
+            transform: 'translate(-50%, -50%)',
             animation: 'blob3 18s ease-in-out infinite',
           }}
         />
-        <div className="absolute inset-0 backdrop-blur-[50px]" />
       </div>
 
       {/* Hero content */}
@@ -120,18 +128,18 @@ export default function Home() {
       <style>{`
         @keyframes blob1 {
           0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-          33% { transform: translate(30px, -40px) rotate(120deg) scale(1.1); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
-          66% { transform: translate(-20px, 30px) rotate(240deg) scale(0.95); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
+          33% { transform: translate(40px, -50px) rotate(120deg) scale(1.12); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
+          66% { transform: translate(-25px, 35px) rotate(240deg) scale(0.93); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
         }
         @keyframes blob2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
-          33% { transform: translate(-40px, 20px) rotate(-120deg) scale(1.05); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-          66% { transform: translate(25px, -35px) rotate(-240deg) scale(1.1); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
+          33% { transform: translate(-50px, 25px) rotate(-120deg) scale(1.08); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
+          66% { transform: translate(30px, -40px) rotate(-240deg) scale(1.15); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
         }
         @keyframes blob3 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
-          33% { transform: translate(35px, 25px) rotate(90deg) scale(0.95); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
-          66% { transform: translate(-30px, -20px) rotate(180deg) scale(1.05); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
+          0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); border-radius: 45% 55% 50% 50% / 50% 45% 55% 50%; }
+          33% { transform: translate(-50%, -50%) translate(45px, 30px) rotate(90deg) scale(0.93); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
+          66% { transform: translate(-50%, -50%) translate(-35px, -25px) rotate(180deg) scale(1.08); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
         }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }

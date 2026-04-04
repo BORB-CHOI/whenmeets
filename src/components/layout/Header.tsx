@@ -16,8 +16,11 @@ export default async function Header() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-lg font-extrabold tracking-tight text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer py-2"
+            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer py-2"
           >
+            <div className="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center text-white text-xs font-extrabold shrink-0">
+              W
+            </div>
             WhenMeets
           </Link>
           {user && (
