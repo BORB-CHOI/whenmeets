@@ -9,13 +9,13 @@ interface UseGridDragOptions {
   onAvailabilityChange: (availability: Availability) => void;
 }
 
-function getCellFromPoint(x: number, y: number): { date: string; slot: number } | null {
+function getCellFromPoint(x: number, y: number): { date: string; slot: string } | null {
   const el = document.elementFromPoint(x, y);
   if (!el) return null;
   const cell = el.closest('[data-date][data-slot]') as HTMLElement | null;
   if (!cell) return null;
   const date = cell.dataset.date!;
-  const slot = parseInt(cell.dataset.slot!, 10);
+  const slot = cell.dataset.slot!;
   return { date, slot };
 }
 
@@ -29,7 +29,7 @@ export default function useGridDrag({
   const draftRef = useRef<Availability>({});
   const erasing = useRef(false);
 
-  function applyToCell(date: string, slot: number) {
+  function applyToCell(date: string, slot: string) {
     const cellKey = `${date}:${slot}`;
     if (cellKey === lastCell.current) return;
     lastCell.current = cellKey;
@@ -39,14 +39,14 @@ export default function useGridDrag({
 
     if (activeMode === 0 || erasing.current) {
       const dateCopy = { ...draft[date] };
-      delete dateCopy[String(slot)];
+      delete dateCopy[slot];
       if (Object.keys(dateCopy).length === 0) {
         delete draft[date];
       } else {
         draft[date] = dateCopy;
       }
     } else {
-      draft[date] = { ...draft[date], [String(slot)]: activeMode };
+      draft[date] = { ...draft[date], [slot]: activeMode };
     }
 
     draftRef.current = draft;
@@ -64,7 +64,7 @@ export default function useGridDrag({
       if (activeMode !== 0) {
         const cell = getCellFromPoint(x, y);
         if (cell) {
-          const existing = availability[cell.date]?.[String(cell.slot)];
+          const existing = availability[cell.date]?.[cell.slot];
           if (existing === activeMode) {
             erasing.current = true;
           }

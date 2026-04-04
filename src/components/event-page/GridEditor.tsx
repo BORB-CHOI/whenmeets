@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Availability } from '@/lib/types';
+import { Availability, EventMode, Participant } from '@/lib/types';
 import DragGrid from '@/components/drag-grid/DragGrid';
 
 interface GridEditorProps {
@@ -13,6 +13,10 @@ interface GridEditorProps {
   availability: Availability;
   onAvailabilityChange: (availability: Availability) => void;
   saving: boolean;
+  participants?: Pick<Participant, 'id' | 'name' | 'availability'>[];
+  currentParticipantId?: string | null;
+  dateOnly?: boolean;
+  mode?: EventMode;
 }
 
 export default function GridEditor({
@@ -24,6 +28,9 @@ export default function GridEditor({
   availability,
   onAvailabilityChange,
   saving,
+  participants,
+  currentParticipantId,
+  dateOnly,
 }: GridEditorProps) {
   return (
     <div className="max-w-lg mx-auto px-4 py-4">
@@ -48,6 +55,9 @@ export default function GridEditor({
         timeEnd={timeEnd}
         availability={availability}
         onAvailabilityChange={onAvailabilityChange}
+        participants={participants}
+        currentParticipantId={currentParticipantId}
+        dateOnly={dateOnly}
       />
 
       {/* Share link */}
