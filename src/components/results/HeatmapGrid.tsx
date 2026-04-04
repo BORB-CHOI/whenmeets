@@ -15,6 +15,19 @@ interface HeatmapGridProps {
   bestSlots?: Set<string>;
 }
 
+const BASE_COLOR = '#4F46E5';
+
+function hexAlpha(alpha: number): string {
+  return alpha.toString(16).padStart(2, '0').toUpperCase();
+}
+
+function computeCellColor(count: number, total: number): string | undefined {
+  if (total === 0 || count === 0) return undefined;
+  if (count === total) return BASE_COLOR + 'FF';
+  const alpha = Math.floor((count / total) * (225 - 30) + 30);
+  return BASE_COLOR + hexAlpha(alpha);
+}
+
 export default function HeatmapGrid({
   dates,
   timeStart,
@@ -29,6 +42,8 @@ export default function HeatmapGrid({
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
 
+  const hasBestSlots = bestSlots && bestSlots.size > 0;
+
   function getCount(date: string, slot: number): number {
     let count = 0;
     for (const p of filtered) {
@@ -37,15 +52,6 @@ export default function HeatmapGrid({
       else if (val === 1 && includeIfNeeded) count++;
     }
     return count;
-  }
-
-  function getColor(count: number): string {
-    if (total === 0 || count === 0) return 'bg-gray-50';
-    const ratio = count / total;
-    if (ratio <= 0.25) return 'bg-indigo-100';
-    if (ratio <= 0.5) return 'bg-indigo-200';
-    if (ratio <= 0.75) return 'bg-indigo-400';
-    return 'bg-indigo-500';
   }
 
   return (
@@ -57,24 +63,40 @@ export default function HeatmapGrid({
         const count = getCount(date, slot);
         const slotKey = `${date}-${slot}`;
         const isBest = bestSlots?.has(slotKey);
-        const dimmed = bestSlots && bestSlots.size > 0 && !isBest;
+
+        // Best slots filter: when active, only best cells get color
+        let bgColor: string | undefined;
+        if (hasBestSlots) {
+          bgColor = isBest ? BASE_COLOR + 'FF' : undefined;
+        } else {
+          bgColor = computeCellColor(count, total);
+        }
+
+        // Hovered participant highlight
+        const isHoveredAvailable =
+          hoveredParticipantId &&
+          filtered.some((p) => {
+            if (p.id !== hoveredParticipantId) return false;
+            const val = p.availability?.[date]?.[String(slot)];
+            return val === 2 || (val === 1 && includeIfNeeded);
+          });
 
         return (
           <div
-            className={`w-full h-3.5 sm:h-4 lg:h-5 border-r border-gray-200 flex items-center justify-center transition-all cursor-pointer
-              ${getColor(count)}
-              ${slot % 4 === 0 ? 'border-t border-gray-300' : slot % 2 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100/50'}
-              ${isBest ? 'ring-2 ring-indigo-500 ring-inset' : ''}
-              ${dimmed ? 'opacity-30' : ''}`}
+            className="w-full h-full relative cursor-pointer"
+            style={{
+              backgroundColor: bgColor,
+              ...(isHoveredAvailable
+                ? {
+                    outline: '1.5px dashed #111827',
+                    outlineOffset: '-1px',
+                    zIndex: 10,
+                  }
+                : {}),
+            }}
             onMouseEnter={() => onCellHover?.(date, slot)}
             onMouseLeave={() => onCellHover?.(null)}
-          >
-            {count > 0 && slot % 4 === 0 && (
-              <span className={`text-[8px] font-medium hidden lg:inline ${count === total ? 'text-white' : 'text-gray-600'}`}>
-                {count}
-              </span>
-            )}
-          </div>
+          />
         );
       }}
     />

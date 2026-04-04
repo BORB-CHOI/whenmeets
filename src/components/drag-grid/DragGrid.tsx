@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Availability, AvailabilityLevel, Participant } from '@/lib/types';
+import { Availability, AvailabilityLevel, EventMode, Participant } from '@/lib/types';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import GridCell from './GridCell';
 import ModeSwitch from './ModeSwitch';
+import CalendarDragGrid from './CalendarDragGrid';
 import useGridDrag from './useGridDrag';
 
 interface DragGridProps {
@@ -16,6 +17,7 @@ interface DragGridProps {
   participants?: Pick<Participant, 'id' | 'name' | 'availability'>[];
   currentParticipantId?: string | null;
   dateOnly?: boolean;
+  eventMode?: EventMode;
 }
 
 export default function DragGrid({
@@ -27,8 +29,10 @@ export default function DragGrid({
   participants,
   currentParticipantId,
   dateOnly,
+  eventMode = 'available',
 }: DragGridProps) {
-  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(2);
+  // Default mode based on event type: unavailable events default to Unavailable(0)
+  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(eventMode === 'unavailable' ? 0 : 2);
 
   const { gridProps } = useGridDrag({
     activeMode,
@@ -75,28 +79,16 @@ export default function DragGrid({
   if (dateOnly) {
     return (
       <div className="flex flex-col gap-3">
-        <ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} />
-        <div className="overflow-x-auto" {...gridProps}>
-          <div className="inline-flex flex-col gap-1">
-            {dates.map((date) => {
-              const slotKey = 'all_day';
-              const value = getCellValue(date, slotKey);
-              const overlayCount = overlayTotal > 0 ? getOverlayCount(date, slotKey) : 0;
-              return (
-                <div key={date} className="flex items-center gap-2">
-                  <GridCell
-                    date={date}
-                    slot={slotKey}
-                    value={value}
-                    wide
-                    overlayCount={overlayTotal > 0 ? overlayCount : undefined}
-                    overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} eventMode={eventMode} />
+        <CalendarDragGrid
+          dates={dates}
+          availability={availability}
+          onAvailabilityChange={onAvailabilityChange}
+          activeMode={activeMode}
+          eventMode={eventMode}
+          overlayCountMap={overlayCountMap}
+          overlayTotal={overlayTotal}
+        />
       </div>
     );
   }
@@ -107,7 +99,7 @@ export default function DragGrid({
       timeStart={timeStart}
       timeEnd={timeEnd}
       columnsProps={gridProps}
-      header={<ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} />}
+      header={<ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} eventMode={eventMode} />}
       renderCell={(date, slot) => {
         const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
         return (

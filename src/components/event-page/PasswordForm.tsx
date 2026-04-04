@@ -39,7 +39,7 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
       <h1 className="text-xl font-bold mb-1">{event.title}</h1>
-      <p className="text-sm text-gray-500 mb-6">이 일정은 비밀번호가 ��요합니다.</p>
+      <p className="text-sm text-gray-500 mb-6">이 이벤트는 비밀번호가 필요합니다.</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="password"

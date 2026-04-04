@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .single();
 
   if (!event) {
-    return { title: '일정을 찾을 수 없습니다 - WhenMeets' };
+    return { title: '이벤트를 찾을 수 없습니다 - WhenMeets' };
   }
 
   const dateCount = event.dates?.length ?? 0;

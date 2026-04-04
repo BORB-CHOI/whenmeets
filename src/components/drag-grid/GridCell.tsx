@@ -4,21 +4,18 @@ import { AvailabilityLevel } from '@/lib/types';
 import { formatDateCompact } from '@/lib/constants';
 
 const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
-  [-1]: 'bg-gray-50',                          // No response yet
-  0: 'bg-red-500/15',                          // Unavailable — red tint
-  1: 'bg-amber-200',                           // If needed
-  2: 'bg-indigo-600/[.47]',                    // Available
+  [-1]: '',                                        // No response yet — transparent
+  0: 'bg-red-500/15',                              // Unavailable — red tint
+  1: 'bg-[#FFE8B8]',                               // If needed — yellow (timeful)
+  2: 'bg-[#4F46E5]/[.47]',                         // Available — indigo
 };
 
 interface GridCellProps {
   date: string;
   slot: number | string;
-  value: AvailabilityLevel | -1;  // -1 = no response
-  /** Show a wider cell with date label (for date-only mode) */
+  value: AvailabilityLevel | -1;
   wide?: boolean;
-  /** Number of other participants available in this cell */
   overlayCount?: number;
-  /** Total number of other participants */
   overlayTotal?: number;
 }
 
@@ -51,14 +48,11 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
     );
   }
 
-  const slotNum = typeof slot === 'number' ? slot : 0;
-
   return (
     <div
       data-date={date}
       data-slot={slot}
-      className={`relative w-[44px] h-3.5 border-r border-gray-200 ${CELL_COLORS[value]} transition-all duration-75 select-none hover:scale-105 cursor-pointer
-        ${slotNum % 4 === 0 ? 'border-t border-gray-300' : slotNum % 2 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100/50'}`}
+      className={`relative w-full h-full ${CELL_COLORS[value]} transition-all duration-75 select-none cursor-pointer`}
     >
       {hasOverlay && (
         <>
@@ -66,7 +60,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
             className="absolute inset-0 bg-indigo-400 pointer-events-none"
             style={{ opacity: overlayOpacity }}
           />
-          <span className="absolute top-0 right-0.5 text-[7px] text-indigo-500 font-medium leading-3.5 pointer-events-none">
+          <span className="absolute top-0 right-0.5 text-[7px] text-indigo-500 font-medium leading-[15px] pointer-events-none">
             {overlayCount}
           </span>
         </>

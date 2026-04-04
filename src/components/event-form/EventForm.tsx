@@ -3,15 +3,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EventMode } from '@/lib/types';
+import SegmentedControl from '@/components/ui/SegmentedControl';
 import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
 
 export default function EventForm() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(() => {
+    const now = new Date();
+    return `새 이벤트 ${now.getMonth() + 1}/${now.getDate()}`;
+  });
   const [dates, setDates] = useState<string[]>([]);
-  const [timeStart, setTimeStart] = useState(36); // 09:00 (15-min slots: 9*4=36)
-  const [timeEnd, setTimeEnd] = useState(84);     // 21:00 (15-min slots: 21*4=84)
+  const [timeStart, setTimeStart] = useState(36);
+  const [timeEnd, setTimeEnd] = useState(84);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -56,7 +60,7 @@ export default function EventForm() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || '일정 생성에 실패했습니다');
+      setError(data.error || '이벤트 생성에 실패했습니다');
       setSubmitting(false);
       return;
     }
@@ -77,72 +81,40 @@ export default function EventForm() {
             setTitle(e.target.value);
             if (titleError) setTitleError(false);
           }}
-          placeholder="일정 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005] ${
+          placeholder="이벤트 제목"
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 ${
             titleError
-              ? 'border-red-500 ring ring-red-500/10 animate-[shake_0.3s_ease-in-out]'
+              ? 'border-red-500 ring ring-red-500/10'
               : 'border-gray-200'
           }`}
           maxLength={100}
         />
       </div>
 
-      {/* Mode toggle: Dates and times / Dates only — Slide Toggle */}
+      {/* Type toggle */}
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-2">유형</label>
-        <div className="relative flex p-0.5 bg-gray-50 border border-gray-200 rounded-full">
-          <div
-            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-white border border-indigo-600/20 rounded-full shadow-sm transition-transform duration-300 ease-in-out"
-            style={{ transform: dateOnly ? 'translateX(calc(100% + 4px))' : 'translateX(0)' }}
-          />
-          <button
-            type="button"
-            onClick={() => setDateOnly(false)}
-            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
-              !dateOnly ? 'text-indigo-600 font-semibold' : 'text-gray-500'
-            }`}
-          >
-            날짜 + 시간
-          </button>
-          <button
-            type="button"
-            onClick={() => setDateOnly(true)}
-            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
-              dateOnly ? 'text-indigo-600 font-semibold' : 'text-gray-500'
-            }`}
-          >
-            날짜만
-          </button>
-        </div>
+        <SegmentedControl
+          options={[
+            { value: 'datetime', label: '날짜 + 시간' },
+            { value: 'dateonly', label: '날짜만' },
+          ]}
+          value={dateOnly ? 'dateonly' : 'datetime'}
+          onChange={(v) => setDateOnly(v === 'dateonly')}
+        />
       </div>
 
-      {/* Response mode: available / unavailable — Slide Toggle */}
+      {/* Response mode */}
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-2">응답 방식</label>
-        <div className="relative flex p-0.5 bg-gray-50 border border-gray-200 rounded-full">
-          <div
-            className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-white border border-indigo-600/20 rounded-full shadow-sm transition-transform duration-300 ease-in-out"
-            style={{ transform: mode === 'unavailable' ? 'translateX(calc(100% + 4px))' : 'translateX(0)' }}
-          />
-          <button
-            type="button"
-            onClick={() => setMode('available')}
-            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
-              mode === 'available' ? 'text-indigo-600 font-semibold' : 'text-gray-500'
-            }`}
-          >
-            되는 시간 수합
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('unavailable')}
-            className={`relative z-10 flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
-              mode === 'unavailable' ? 'text-indigo-600 font-semibold' : 'text-gray-500'
-            }`}
-          >
-            안 되는 시간 수합
-          </button>
-        </div>
+        <SegmentedControl
+          options={[
+            { value: 'available', label: '되는 시간 수합' },
+            { value: 'unavailable', label: '안 되는 시간 수합', variant: 'danger' as const },
+          ]}
+          value={mode}
+          onChange={(v) => setMode(v as EventMode)}
+        />
       </div>
 
       {/* Date picker */}
@@ -153,19 +125,14 @@ export default function EventForm() {
         <DatePicker selectedDates={dates} onDatesChange={setDates} />
       </div>
 
-      {/* Time range — hidden for date-only mode */}
+      {/* Time range */}
       {!dateOnly && (
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-2">
-            시간 범위
-          </label>
-          <TimeRangePicker
-            timeStart={timeStart}
-            timeEnd={timeEnd}
-            onTimeStartChange={setTimeStart}
-            onTimeEndChange={setTimeEnd}
-          />
-        </div>
+        <TimeRangePicker
+          timeStart={timeStart}
+          timeEnd={timeEnd}
+          onTimeStartChange={setTimeStart}
+          onTimeEndChange={setTimeEnd}
+        />
       )}
 
       {/* Optional password */}
@@ -173,9 +140,12 @@ export default function EventForm() {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer flex items-center gap-1"
         >
-          {showPassword ? '비밀번호 제거' : '+ 비밀번호 추가 (선택사항)'}
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          {showPassword ? '비밀번호 제거' : '비밀번호 추가 (선택)'}
         </button>
         {showPassword && (
           <input
@@ -183,20 +153,19 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10 focus:scale-[1.005]"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:outline-none focus:border-indigo-600 focus:ring focus:ring-indigo-600/10"
           />
         )}
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50"
+        className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-[0px_2px_8px_rgba(79,70,229,0.5)] hover:bg-indigo-700 hover:shadow-[0px_4px_12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 cursor-pointer"
       >
-        {submitting ? '생성 중...' : '일정 만들기'}
+        {submitting ? '생성 중...' : '이벤트 만들기'}
       </button>
     </form>
   );

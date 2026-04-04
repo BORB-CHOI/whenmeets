@@ -41,7 +41,7 @@ export default function CalendarImportButton({
   if (!isAuthenticated) return null;
 
   async function handleImport() {
-    if (!confirm('캘린더 일정을 가져오면 현재 입력한 시간이 덮어쓰기됩니다. 계속하시겠습니까?')) {
+    if (!confirm('캘린더 이벤트를 가져오면 현재 입력한 시간이 덮어쓰기됩니다. 계속하시겠습니까?')) {
       return;
     }
 

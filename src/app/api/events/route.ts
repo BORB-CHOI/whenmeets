@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('Event creation failed:', error.message);
-    return NextResponse.json({ error: '일정 생성에 실패했습니다' }, { status: 500 });
+    return NextResponse.json({ error: '이벤트 생성에 실패했습니다' }, { status: 500 });
   }
 
   return NextResponse.json({ id }, { status: 201 });
