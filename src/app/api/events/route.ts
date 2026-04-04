@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAuthServerClient } from '@/lib/supabase/auth-server';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -35,6 +36,16 @@ export async function POST(request: NextRequest) {
   const id = nanoid(10);
   const supabase = createServerClient();
 
+  // Try to get authenticated user (optional — anon creation still works)
+  let userId: string | null = null;
+  try {
+    const authClient = await createAuthServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    // Auth is optional for event creation
+  }
+
   // Validate mode
   const eventMode = mode === 'unavailable' ? 'unavailable' : 'available';
   const isDateOnly = date_only === true;
@@ -48,6 +59,10 @@ export async function POST(request: NextRequest) {
     mode: eventMode,
     date_only: isDateOnly,
   };
+
+  if (userId) {
+    eventData.created_by = userId;
+  }
 
   if (password) {
     eventData.password_hash = await bcrypt.hash(password, 10);
