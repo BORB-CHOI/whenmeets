@@ -42,16 +42,6 @@ export default function AvailabilityGrid({
   const [page, setPage] = useState(0);
   const [containerWidth, setContainerWidth] = useState(GRID_WIDTH);
   const containerRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const movingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleGridMouseMove() {
-    if (gridRef.current) gridRef.current.dataset.moving = '1';
-    if (movingTimer.current) clearTimeout(movingTimer.current);
-    movingTimer.current = setTimeout(() => {
-      if (gridRef.current) delete gridRef.current.dataset.moving;
-    }, 200);
-  }
 
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
@@ -105,8 +95,6 @@ export default function AvailabilityGrid({
 
           {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
           <div
-            ref={gridRef}
-            onMouseMove={handleGridMouseMove}
             data-grid-container=""
             className={`grid${columnsProps ? ' touch-none' : ''}`}
             style={{ flex: 1, minWidth: 0, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
