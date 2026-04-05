@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Availability, AvailabilityLevel } from '@/lib/types';
-import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
+import { useMemo } from 'react';
+import { Availability, AvailabilityLevel, EventMode, Participant } from '@/lib/types';
+import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import GridCell from './GridCell';
-import ModeSwitch from './ModeSwitch';
+import CalendarDragGrid from './CalendarDragGrid';
 import useGridDrag from './useGridDrag';
 
 interface DragGridProps {
@@ -13,6 +13,13 @@ interface DragGridProps {
   timeEnd: number;
   availability: Availability;
   onAvailabilityChange: (availability: Availability) => void;
+  participants?: Pick<Participant, 'id' | 'name' | 'availability'>[];
+  currentParticipantId?: string | null;
+  dateOnly?: boolean;
+  eventMode?: EventMode;
+  activeMode: AvailabilityLevel;
+  onActiveModeChange: (mode: AvailabilityLevel) => void;
+  onCellHover?: (date: string | null, slot?: number | string) => void;
 }
 
 export default function DragGrid({
@@ -21,9 +28,14 @@ export default function DragGrid({
   timeEnd,
   availability,
   onAvailabilityChange,
+  participants,
+  currentParticipantId,
+  dateOnly,
+  eventMode = 'available',
+  activeMode,
+  onActiveModeChange,
+  onCellHover,
 }: DragGridProps) {
-  const [activeMode, setActiveMode] = useState<AvailabilityLevel>(2);
-  const slots = generateSlots(timeStart, timeEnd);
 
   const { gridProps } = useGridDrag({
     activeMode,
@@ -31,51 +43,79 @@ export default function DragGrid({
     onAvailabilityChange,
   });
 
-  function getCellValue(date: string, slot: number): AvailabilityLevel | -1 {
+  // Calculate overlay data: how many OTHER participants are available per cell
+  const otherParticipants = useMemo(() => {
+    if (!participants || !currentParticipantId) return [];
+    return participants.filter((p) => p.id !== currentParticipantId);
+  }, [participants, currentParticipantId]);
+
+  const overlayTotal = otherParticipants.length;
+
+  // Pre-compute overlay counts: O(participants × dates × slots) once, then O(1) lookup per cell
+  const overlayCountMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    for (const p of otherParticipants) {
+      if (!p.availability) continue;
+      for (const [date, slots] of Object.entries(p.availability)) {
+        if (!map[date]) map[date] = {};
+        for (const [slot, val] of Object.entries(slots)) {
+          if (val === 2 || val === 1) {
+            map[date][slot] = (map[date][slot] || 0) + 1;
+          }
+        }
+      }
+    }
+    return map;
+  }, [otherParticipants]);
+
+  function getOverlayCount(date: string, slot: string): number {
+    return overlayCountMap[date]?.[slot] ?? 0;
+  }
+
+  function getCellValue(date: string, slot: number | string): AvailabilityLevel | -1 {
     const dateData = availability[date];
     if (!dateData) return -1;
     const val = dateData[String(slot)];
     return val !== undefined ? val : -1;
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      <ModeSwitch activeMode={activeMode} onModeChange={setActiveMode} />
-
-      <div className="overflow-x-auto">
-        <div className="inline-flex">
-          {/* Time labels column */}
-          <div className="flex flex-col pt-[28px]">
-            {slots.map((slot) => (
-              <div
-                key={slot}
-                className="h-[20px] pr-2 text-[10px] text-gray-400 text-right leading-[20px]"
-              >
-                {slot % 2 === 0 ? slotToTime(slot) : ''}
-              </div>
-            ))}
-          </div>
-
-          {/* Date columns — drag-enabled area */}
-          <div className="inline-flex touch-none" {...gridProps}>
-            {dates.map((date) => (
-              <div key={date} className="flex flex-col">
-                <div className="h-[28px] text-xs font-medium text-gray-600 text-center leading-[28px]">
-                  {formatDateCompact(date)}
-                </div>
-                {slots.map((slot) => (
-                  <GridCell
-                    key={`${date}-${slot}`}
-                    date={date}
-                    slot={slot}
-                    value={getCellValue(date, slot)}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+  if (dateOnly) {
+    return (
+      <div className="flex flex-col gap-3">
+        <CalendarDragGrid
+          dates={dates}
+          availability={availability}
+          onAvailabilityChange={onAvailabilityChange}
+          activeMode={activeMode}
+          eventMode={eventMode}
+          overlayCountMap={overlayCountMap}
+          overlayTotal={overlayTotal}
+        />
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <AvailabilityGrid
+      dates={dates}
+      timeStart={timeStart}
+      timeEnd={timeEnd}
+      columnsProps={gridProps}
+      renderCell={(date, slot) => {
+        const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
+        return (
+          <GridCell
+            key={`${date}-${slot}`}
+            date={date}
+            slot={slot}
+            value={getCellValue(date, slot)}
+            overlayCount={overlayTotal > 0 ? overlayCount : undefined}
+            overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
+            onCellHover={(d, s) => onCellHover?.(d, s)}
+            onCellLeave={() => onCellHover?.(null)}
+          />
+        );
+      }}
+    />
   );
 }

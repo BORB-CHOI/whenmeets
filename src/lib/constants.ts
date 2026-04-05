@@ -7,7 +7,7 @@ export const AVAILABILITY = {
 export const AVAILABILITY_COLORS = {
   0: 'bg-gray-100',       // Unavailable / empty
   1: 'bg-amber-300',      // If needed
-  2: 'bg-emerald-400',    // Available
+  2: 'bg-emerald-600/[.47]',  // Available
 } as const;
 
 export const MODE_LABELS = {
@@ -16,11 +16,14 @@ export const MODE_LABELS = {
   0: '불가능',
 } as const;
 
-/** Convert slot index to "HH:MM" string */
+/** Slots per hour (4 = 15-minute intervals) */
+export const SLOTS_PER_HOUR = 4;
+
+/** Convert slot index to "HH:MM" string (15-min intervals: slot 0=00:00, 4=01:00, 36=09:00) */
 export function slotToTime(slot: number): string {
-  const hours = Math.floor(slot / 2);
-  const minutes = slot % 2 === 0 ? '00' : '30';
-  return `${hours.toString().padStart(2, '0')}:${minutes}`;
+  const hours = Math.floor(slot / SLOTS_PER_HOUR);
+  const minutes = (slot % SLOTS_PER_HOUR) * 15;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
 /** Generate array of slot indices between start (inclusive) and end (exclusive) */
