@@ -1,18 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EventData } from '@/lib/types';
 
 interface NameFormProps {
   event: EventData;
   eventId: string;
-  onJoined: (data: { id: string; token: string; existing?: boolean }) => void;
+  onJoined: (data: { id: string; name: string; token?: string; existing?: boolean }) => void;
 }
 
 export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [existingMatch, setExistingMatch] = useState(false);
+
+  // Debounce name matching against existing participants
+  useEffect(() => {
+    if (!name.trim()) {
+      setExistingMatch(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const match = event.participants.some(
+        (p) => p.name.toLowerCase() === name.trim().toLowerCase(),
+      );
+      setExistingMatch(match);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [name, event.participants]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,18 +38,9 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
     setLoading(true);
     setError('');
     try {
-      // Send stored token if available (for reclaiming existing name)
-      let storedToken: string | null = null;
-      try {
-        const stored = localStorage.getItem(`whenmeets:${eventId}`);
-        if (stored) storedToken = JSON.parse(stored).token;
-      } catch { /* corrupted localStorage */ }
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (storedToken) headers['X-Participant-Token'] = storedToken;
-
       const res = await fetch(`/api/events/${eventId}/participants`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim() }),
       });
 
@@ -65,13 +73,26 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
           maxLength={50}
           autoFocus
         />
+        <AnimatePresence>
+          {existingMatch && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="text-sm text-amber-600"
+            >
+              응답 기록이 있는 사용자입니다. 기존 시간표를 수정합니다.
+            </motion.p>
+          )}
+        </AnimatePresence>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           type="submit"
           disabled={loading}
           className="h-[38px] py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50"
         >
-          {loading ? '참��� 중...' : '참여하기'}
+          {loading ? '참여 중...' : existingMatch ? '수정하기' : '참여하기'}
         </button>
       </form>
     </div>
