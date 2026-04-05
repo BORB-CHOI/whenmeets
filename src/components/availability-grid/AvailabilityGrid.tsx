@@ -71,7 +71,7 @@ export default function AvailabilityGrid({
     <div className="flex flex-col gap-3">
       {header}
 
-      <div className="flex justify-center" ref={containerRef}>
+      <div className="flex justify-center overflow-x-auto" ref={containerRef}>
         <div className="flex items-start w-full" style={{ maxWidth: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: 40 }}>

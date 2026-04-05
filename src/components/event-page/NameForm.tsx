@@ -71,7 +71,6 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
           disabled={loading}
           className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:border-emerald-600 disabled:opacity-50"
           maxLength={50}
-          autoFocus
         />
         <AnimatePresence>
           {existingMatch && (

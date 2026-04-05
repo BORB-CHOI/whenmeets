@@ -17,6 +17,7 @@ import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -634,7 +635,7 @@ export default function EventPageClient({
                       onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
                       className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                     >
-                      <span>"필요하다면.." 숨기기</span>
+                      <span>&quot;필요하다면..&quot; 숨기기</span>
                       <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </div>
@@ -806,6 +807,20 @@ export default function EventPageClient({
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
+      {/* Mobile bottom bar */}
+      <MobileBottomBar
+        participants={event.participants}
+        selectedIds={selectedIds}
+        onSelectedChange={setSelectedIds}
+        slotAvailability={slotAvailability}
+        isEditMode={viewMode === 'edit'}
+        onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
+        saving={saving}
+      />
+
+      {/* Bottom spacer for mobile bottom bar */}
+      <div className="h-16 lg:hidden" />
+
       {/* Toast for copy */}
       <AnimatePresence>
         {copied && (
@@ -814,7 +829,7 @@ export default function EventPageClient({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg lg:bottom-6"
           >
             링크가 복사되었습니다
           </motion.div>
