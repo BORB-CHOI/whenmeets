@@ -341,14 +341,17 @@ export default function EventPageClient({
     const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
       method: 'DELETE',
     });
-    if (res.ok) {
-      // Refresh event data
-      const refreshRes = await fetch(`/api/events/${eventId}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        setEvent(data);
-        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
-      }
+    if (!res.ok) {
+      setDeleteTargetPid(null);
+      setNameError('응답자 삭제에 실패했습니다');
+      return;
+    }
+    // Refresh event data
+    const refreshRes = await fetch(`/api/events/${eventId}`);
+    if (refreshRes.ok) {
+      const data = await refreshRes.json();
+      setEvent(data);
+      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
     }
     setDeleteTargetPid(null);
   }
