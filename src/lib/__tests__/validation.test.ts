@@ -51,8 +51,8 @@ describe('Event creation validation rules', () => {
 
 describe('Participant name validation rules', () => {
   it('rejects empty or whitespace-only names', () => {
-    expect(!'' || !''.trim()).toBe(true);
-    expect(!'   '.trim()).toBe(true);
+    expect(''.trim().length === 0).toBe(true);
+    expect('   '.trim().length === 0).toBe(true);
   });
 
   it('enforces name length limit (50 chars)', () => {

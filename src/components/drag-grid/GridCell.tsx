@@ -35,6 +35,10 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
   const borderOpacity = hasOverlay
     ? Math.min(0.8, 0.2 + (overlayCount! / overlayTotal!) * 0.6)
     : 0;
+  // Fill opacity for wide (date-only) cells: lighter version of borderOpacity
+  const overlayOpacity = hasOverlay
+    ? Math.min(0.5, 0.1 + (overlayCount! / overlayTotal!) * 0.4)
+    : 0;
 
   if (wide) {
     return (
