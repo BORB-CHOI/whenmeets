@@ -90,7 +90,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
             type="checkbox"
             checked={startOnMonday}
             onChange={(e) => setStartOnMonday(e.target.checked)}
-            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+            className="rounded border-gray-300 text-emerald-600 cursor-pointer"
           />
           월요일 시작
         </label>
