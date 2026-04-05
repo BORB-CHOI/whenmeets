@@ -28,9 +28,11 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Remove browser default black focus outline — Tailwind focus:ring handles focus states */
-*:focus {
-  outline: none;
+/* Remove all browser default focus outlines */
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
 }
 
 body {
