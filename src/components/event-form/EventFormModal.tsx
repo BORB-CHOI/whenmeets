@@ -200,7 +200,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                   <label className="text-sm font-medium text-gray-600">
                     날짜 {dates.length > 0 && `(${dates.length}개 선택)`}
                   </label>
-                  <div className="shrink-0 scale-[0.8] origin-right">
+                  <div className="shrink-0">
                     <SegmentedControl
                       options={[
                         { value: 'calendar' as const, label: '캘린더' },

@@ -25,7 +25,7 @@ export default function SegmentedControl<T extends string>({
   const activeVariant = options[activeIndex]?.variant || 'default';
 
   return (
-    <div className="relative flex p-1 bg-gray-100 rounded-lg border border-gray-200 whitespace-nowrap">
+    <div className="relative flex p-1 bg-gray-100 rounded-lg border border-gray-200">
       <div
         className="absolute top-1 bottom-1 bg-white rounded-md transition-all duration-200 ease-out"
         style={{
@@ -42,7 +42,7 @@ export default function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`relative z-10 flex-1 px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer
+            className={`relative z-10 flex-1 px-4 py-2 text-sm whitespace-nowrap rounded-md transition-colors duration-150 cursor-pointer
               ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 hover:text-gray-600'}`}
           >
             {option.label}
