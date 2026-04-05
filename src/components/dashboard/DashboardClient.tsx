@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import EventCard from './EventCard';
 
 interface EventItem {
@@ -37,6 +37,18 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('created');
   const [createdEvents, setCreatedEvents] = useState(initialCreated);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const [tabIndicator, setTabIndicator] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!tabContainerRef.current) return;
+    const buttons = tabContainerRef.current.querySelectorAll('button');
+    const idx = tabs.findIndex(t => t.key === activeTab);
+    const btn = buttons[idx];
+    if (btn) {
+      setTabIndicator({ left: btn.offsetLeft, width: btn.offsetWidth });
+    }
+  }, [activeTab]);
 
   const events = activeTab === 'created' ? createdEvents : participatedEvents;
 
@@ -50,13 +62,13 @@ export default function DashboardClient({
   return (
     <div>
       {/* Tab bar — pill toggle with sliding indicator */}
-      <div className="relative flex gap-1 p-1 bg-gray-50 rounded-full border border-gray-200 w-fit">
+      <div ref={tabContainerRef} className="relative inline-flex gap-1 p-1 bg-gray-50 rounded-full border border-gray-200">
         {/* Sliding indicator */}
         <div
           className="absolute top-1 bottom-1 bg-white rounded-full border border-emerald-600 shadow-sm transition-all duration-200 ease-out"
           style={{
-            width: `calc(${100 / tabs.length}% - 4px)`,
-            left: `calc(${(tabs.findIndex(t => t.key === activeTab) * 100) / tabs.length}% + 2px)`,
+            left: tabIndicator.left,
+            width: tabIndicator.width,
           }}
         />
         {tabs.map((tab) => (
