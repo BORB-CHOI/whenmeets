@@ -149,7 +149,8 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[92vh]"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col"
+            style={{ height: '85vh' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Fixed header */}
