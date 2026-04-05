@@ -8,7 +8,7 @@ interface AvailabilityGridProps {
   timeStart: number;
   timeEnd: number;
   renderCell: (date: string, slot: number) => ReactNode;
-  columnsProps?: React.HTMLAttributes<HTMLDivElement>;
+  columnsProps?: React.HTMLAttributes<HTMLDivElement> & { ref?: (el: HTMLElement | null) => void };
   header?: ReactNode;
   footer?: ReactNode;
   maxColumns?: number;
@@ -96,9 +96,10 @@ export default function AvailabilityGrid({
           {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
           <div
             data-grid-container=""
+            ref={columnsProps?.ref}
             className={`grid${columnsProps ? ' touch-none' : ''}`}
             style={{ flex: 1, minWidth: 0, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
-            {...columnsProps}
+            {...(columnsProps ? (() => { const { ref: _ref, ...rest } = columnsProps; return rest; })() : {})}
           >
             {/* Date headers */}
             {visibleDates.map((date) => {
