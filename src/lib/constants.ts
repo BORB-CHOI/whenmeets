@@ -16,6 +16,9 @@ export const MODE_LABELS = {
   0: '불가능',
 } as const;
 
+/** Cell height in pixels for time-slot grids (heatmap + edit) */
+export const CELL_HEIGHT = 15;
+
 /** Slots per hour (4 = 15-minute intervals) */
 export const SLOTS_PER_HOUR = 4;
 
