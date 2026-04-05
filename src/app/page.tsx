@@ -11,42 +11,31 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
-      {/* Mesh gradient background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 40%, #A7F3D0 70%, #ECFDF5 100%)' }}
-      >
+      {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-white to-emerald-50">
+        {/* Soft radial accents — static, no animation, no blur filter */}
         <div
-          className="absolute opacity-80"
+          className="absolute rounded-full"
           style={{
-            width: '700px', height: '500px',
-            background: 'linear-gradient(135deg, rgba(5,150,105,0.4) 0%, rgba(52,211,153,0.3) 50%, rgba(167,243,208,0.2) 100%)',
-            borderRadius: '40% 60% 55% 45% / 55% 40% 60% 45%',
-            filter: 'blur(50px)',
-            top: '-250px', left: '-150px',
-            animation: 'blob1 12s ease-in-out infinite',
+            width: '60vmax', height: '60vmax',
+            background: 'radial-gradient(circle, rgba(5,150,105,0.08) 0%, transparent 70%)',
+            top: '-20vmax', left: '-10vmax',
           }}
         />
         <div
-          className="absolute opacity-80"
+          className="absolute rounded-full"
           style={{
-            width: '600px', height: '450px',
-            background: 'linear-gradient(225deg, rgba(52,211,153,0.45) 0%, rgba(110,231,183,0.3) 50%, rgba(5,150,105,0.15) 100%)',
-            borderRadius: '50% 50% 45% 55% / 55% 45% 50% 50%',
-            filter: 'blur(50px)',
-            bottom: '-200px', right: '-100px',
-            animation: 'blob2 15s ease-in-out infinite',
+            width: '50vmax', height: '50vmax',
+            background: 'radial-gradient(circle, rgba(52,211,153,0.1) 0%, transparent 70%)',
+            bottom: '-15vmax', right: '-10vmax',
           }}
         />
+        {/* Subtle grid pattern */}
         <div
-          className="absolute"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            width: '500px', height: '400px',
-            background: 'linear-gradient(180deg, rgba(16,185,129,0.35) 0%, rgba(52,211,153,0.25) 50%, rgba(167,243,208,0.15) 100%)',
-            borderRadius: '45% 55% 50% 50% / 50% 45% 55% 50%',
-            filter: 'blur(40px)',
-            top: '40%', left: '45%',
-            transform: 'translate(-50%, -50%)',
-            animation: 'blob3 18s ease-in-out infinite',
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
           }}
         />
       </div>
@@ -95,11 +84,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded ${
-                    item.role === 'creator'
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-emerald-600 bg-emerald-50'
-                  }`}>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-emerald-600 bg-emerald-50">
                     {item.role === 'creator' ? '관리' : '참여'}
                   </span>
                   <button
@@ -126,21 +111,6 @@ export default function Home() {
       <EventFormModal open={showModal} onClose={() => setShowModal(false)} />
 
       <style>{`
-        @keyframes blob1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-          33% { transform: translate(40px, -50px) rotate(120deg) scale(1.12); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
-          66% { transform: translate(-25px, 35px) rotate(240deg) scale(0.93); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
-        }
-        @keyframes blob2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
-          33% { transform: translate(-50px, 25px) rotate(-120deg) scale(1.08); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-          66% { transform: translate(30px, -40px) rotate(-240deg) scale(1.15); border-radius: 45% 55% 60% 40% / 60% 45% 55% 40%; }
-        }
-        @keyframes blob3 {
-          0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); border-radius: 45% 55% 50% 50% / 50% 45% 55% 50%; }
-          33% { transform: translate(-50%, -50%) translate(45px, 30px) rotate(90deg) scale(0.93); border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; }
-          66% { transform: translate(-50%, -50%) translate(-35px, -25px) rotate(180deg) scale(1.08); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-        }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
