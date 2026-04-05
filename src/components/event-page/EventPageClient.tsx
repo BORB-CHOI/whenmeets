@@ -9,6 +9,7 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
 import { generateSlots } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
+import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
 import EventFormModal from '@/components/event-form/EventFormModal';
@@ -47,14 +48,9 @@ interface EventPageClientProps {
 type ViewMode = 'view' | 'edit';
 
 function readStoredSession(eventId: string) {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem(`whenmeets:${eventId}`);
-    if (stored) return JSON.parse(stored) as { participantId: string; name: string; password: string | null };
-  } catch {
-    try { localStorage.removeItem(`whenmeets:${eventId}`); } catch { /* SSR safe */ }
-  }
-  return null;
+  const active = getActiveSession(eventId);
+  if (!active) return null;
+  return { participantId: active.pid, name: active.name, password: active.password };
 }
 
 export default function EventPageClient({
@@ -69,6 +65,7 @@ export default function EventPageClient({
   const [nameInput, setNameInput] = useState('');
   const [nameLoading, setNameLoading] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
@@ -84,6 +81,21 @@ export default function EventPageClient({
       }
     });
   }, []);
+
+  // Debounce name matching for existing participant check
+  useEffect(() => {
+    if (!nameInput.trim()) {
+      setNameExistingMatch(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const match = event.participants.some(
+        (p) => p.name.toLowerCase() === nameInput.trim().toLowerCase(),
+      );
+      setNameExistingMatch(match);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [nameInput, event.participants]);
 
   // Active drag mode (lifted from DragGrid)
   const [activeMode, setActiveMode] = useState<AvailabilityLevel>(
@@ -216,10 +228,7 @@ export default function EventPageClient({
       setParticipantId(data.id);
       setParticipantPassword(null);
       setSession({ participantId: data.id, name: data.name, password: null });
-      localStorage.setItem(
-        `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, name: data.name, password: null }),
-      );
+      upsertSession(eventId, { pid: data.id, name: data.name, password: null });
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
@@ -277,10 +286,7 @@ export default function EventPageClient({
       setParticipantId(data.id);
       setParticipantPassword(namePassword || null);
       setSession({ participantId: data.id, name: data.name, password: namePassword || null });
-      localStorage.setItem(
-        `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, name: data.name, password: namePassword || null }),
-      );
+      upsertSession(eventId, { pid: data.id, name: data.name, password: namePassword || null });
 
       if (data.numbered === true) {
         setNameError('');
@@ -711,6 +717,19 @@ export default function EventPageClient({
                     autoFocus
                     maxLength={50}
                   />
+                  <AnimatePresence>
+                    {nameExistingMatch && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-sm text-amber-600 mt-2"
+                      >
+                        응답 기록이 있는 사용자입니다. 기존 시간표를 수정합니다.
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                   <div className="mt-3">
                     <input
                       type="password"
@@ -737,7 +756,7 @@ export default function EventPageClient({
                     const supabase = createAuthBrowserClient();
                     await supabase.auth.signInWithOAuth({
                       provider: 'google',
-                      options: { redirectTo: window.location.origin + '/auth/callback' },
+                      options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
                     });
                   }}
                   className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-sm font-medium text-gray-700"
@@ -766,7 +785,7 @@ export default function EventPageClient({
                   disabled={nameLoading || !nameInput.trim()}
                   className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {nameLoading ? '참여 중...' : '참여하기'}
+                  {nameLoading ? '참여 중...' : nameExistingMatch ? '수정하기' : '참여하기'}
                 </button>
               </div>
             </motion.div>
