@@ -2,6 +2,25 @@
 
 All notable changes to WhenMeets will be documented in this file.
 
+## [0.2.0.1] - 2026-04-06
+
+### Added
+- ECC (everything-claude-code) 글로벌 설치 + 프로젝트 전용 2-tier 룰 체계
+- 컴포넌트 관계 맵 (.claude/rules/whenmeets-component-map.md)
+- 프로젝트 컨벤션 룰 (.claude/rules/whenmeets-conventions.md)
+- 커밋 전 검증 파이프라인 (.claude/commands/verify.md)
+- PostToolUse tsc 자동 체크 훅 (.claude/settings.json)
+- README.md 전체 개발 프로세스 문서화
+
+### Changed
+- CLAUDE.md: ECC 글로벌 + 프로젝트 로컬 2-tier 구조로 재편
+- Next.js 버전 경고 및 룰 자동 유지 가이드 추가
+
+### Removed
+- AGENTS.md (CLAUDE.md에 머지)
+- TODOS.md (GitHub Issues로 대체)
+- docs/superpowers/plans/ (완료된 과거 구현 플랜)
+
 ## [0.2.0.0] - 2026-04-05
 
 ### Added
