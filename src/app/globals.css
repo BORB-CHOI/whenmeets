@@ -65,9 +65,11 @@ body {
   background: #9CA3AF;
 }
 
-/* Edit mode grid cell hover ring */
-[data-grid-container] [data-date][data-slot]:hover {
+/* Grid cell hover ring — instant emerald, no transition */
+[data-grid-container] [data-date][data-slot]:hover,
+.heatmap-cell:hover {
   outline: 2px solid #059669 !important;
   outline-offset: -2px;
   z-index: 5;
+  transition: none !important;
 }
