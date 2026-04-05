@@ -9,6 +9,7 @@ export async function GET(
   const { id } = await params;
   const supabase = createServerClient();
 
+  // Fetch event first (includes password_hash for auth check)
   const { data: event } = await supabase
     .from('events')
     .select('id, title, dates, time_start, time_end, password_hash')
@@ -19,6 +20,7 @@ export async function GET(
     return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
+  // Auth check BEFORE fetching participants
   if (event.password_hash) {
     const cookie = request.cookies.get(`whenmeets_auth_${id}`);
     if (!cookie || !verifyEventToken(id, cookie.value)) {
@@ -26,6 +28,7 @@ export async function GET(
     }
   }
 
+  // Only fetch participants after auth passes
   const { data: participants } = await supabase
     .from('participants')
     .select('id, name, availability')

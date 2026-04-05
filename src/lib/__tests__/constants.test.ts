@@ -6,24 +6,28 @@ describe('slotToTime', () => {
     expect(slotToTime(0)).toBe('00:00');
   });
 
-  it('converts slot 1 to 00:30', () => {
-    expect(slotToTime(1)).toBe('00:30');
+  it('converts slot 1 to 00:15', () => {
+    expect(slotToTime(1)).toBe('00:15');
   });
 
-  it('converts slot 18 to 09:00', () => {
-    expect(slotToTime(18)).toBe('09:00');
+  it('converts slot 4 to 01:00', () => {
+    expect(slotToTime(4)).toBe('01:00');
   });
 
-  it('converts slot 42 to 21:00', () => {
-    expect(slotToTime(42)).toBe('21:00');
+  it('converts slot 36 to 09:00', () => {
+    expect(slotToTime(36)).toBe('09:00');
   });
 
-  it('converts slot 47 to 23:30', () => {
-    expect(slotToTime(47)).toBe('23:30');
+  it('converts slot 84 to 21:00', () => {
+    expect(slotToTime(84)).toBe('21:00');
   });
 
-  it('converts slot 48 to 24:00', () => {
-    expect(slotToTime(48)).toBe('24:00');
+  it('converts slot 94 to 23:30', () => {
+    expect(slotToTime(94)).toBe('23:30');
+  });
+
+  it('converts slot 96 to 24:00', () => {
+    expect(slotToTime(96)).toBe('24:00');
   });
 });
 

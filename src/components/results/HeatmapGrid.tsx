@@ -1,7 +1,7 @@
 'use client';
 
 import { Participant } from '@/lib/types';
-import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
+import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 
 interface HeatmapGridProps {
   dates: string[];
@@ -10,6 +10,22 @@ interface HeatmapGridProps {
   participants: Pick<Participant, 'id' | 'name' | 'availability'>[];
   selectedIds: Set<string>;
   includeIfNeeded: boolean;
+  hoveredParticipantId?: string | null;
+  onCellHover?: (date: string | null, slot?: number) => void;
+  bestSlots?: Set<string>;
+}
+
+const BASE_COLOR = '#059669'; // Emerald 600
+
+function hexAlpha(alpha: number): string {
+  return alpha.toString(16).padStart(2, '0').toUpperCase();
+}
+
+function computeCellColor(count: number, total: number): string | undefined {
+  if (total === 0 || count === 0) return undefined;
+  if (count === total) return BASE_COLOR + 'E0'; // ~88% opacity for full attendance
+  const alpha = Math.floor((count / total) * (200 - 30) + 30);
+  return BASE_COLOR + hexAlpha(alpha);
 }
 
 export default function HeatmapGrid({
@@ -19,10 +35,14 @@ export default function HeatmapGrid({
   participants,
   selectedIds,
   includeIfNeeded,
+  hoveredParticipantId,
+  onCellHover,
+  bestSlots,
 }: HeatmapGridProps) {
-  const slots = generateSlots(timeStart, timeEnd);
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
+
+  const hasBestSlots = bestSlots && bestSlots.size > 0;
 
   function getCount(date: string, slot: number): number {
     let count = 0;
@@ -34,55 +54,53 @@ export default function HeatmapGrid({
     return count;
   }
 
-  function getColor(count: number): string {
-    if (total === 0 || count === 0) return 'bg-gray-50';
-    const ratio = count / total;
-    if (ratio <= 0.25) return 'bg-emerald-100';
-    if (ratio <= 0.5) return 'bg-emerald-200';
-    if (ratio <= 0.75) return 'bg-emerald-400';
-    return 'bg-emerald-500';
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-flex">
-        {/* Time labels */}
-        <div className="flex flex-col pt-[28px]">
-          {slots.map((slot) => (
-            <div
-              key={slot}
-              className="h-[20px] pr-2 text-[10px] text-gray-400 text-right leading-[20px]"
-            >
-              {slot % 2 === 0 ? slotToTime(slot) : ''}
-            </div>
-          ))}
-        </div>
+    <AvailabilityGrid
+      dates={dates}
+      timeStart={timeStart}
+      timeEnd={timeEnd}
+      renderCell={(date, slot) => {
+        const count = getCount(date, slot);
+        const slotKey = `${date}-${slot}`;
+        const isBest = bestSlots?.has(slotKey);
 
-        {/* Date columns */}
-        {dates.map((date) => (
-          <div key={date} className="flex flex-col">
-            <div className="h-[28px] text-xs font-medium text-gray-600 text-center leading-[28px]">
-              {formatDateCompact(date)}
-            </div>
-            {slots.map((slot) => {
-              const count = getCount(date, slot);
-              return (
-                <div
-                  key={`${date}-${slot}`}
-                  className={`w-[44px] h-[20px] border-r border-gray-200 ${getColor(count)} flex items-center justify-center transition-colors
-                    ${slot % 2 === 0 ? 'border-t border-gray-300' : 'border-t border-gray-100'}`}
-                >
-                  {count > 0 && (
-                    <span className={`text-[9px] font-medium ${count === total ? 'text-white' : 'text-gray-600'}`}>
-                      {count}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+        // Best slots filter: when active, only best cells get color
+        let bgColor: string | undefined;
+        if (hasBestSlots) {
+          bgColor = isBest ? BASE_COLOR + 'FF' : undefined;
+        } else {
+          bgColor = computeCellColor(count, total);
+        }
+
+        // Hovered participant highlight
+        const isHoveredAvailable =
+          hoveredParticipantId &&
+          filtered.some((p) => {
+            if (p.id !== hoveredParticipantId) return false;
+            const val = p.availability?.[date]?.[String(slot)];
+            return val === 2 || (val === 1 && includeIfNeeded);
+          });
+
+        return (
+          <div
+            className="w-full h-full relative cursor-pointer hover:brightness-125 hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1 hover:z-10"
+            style={{ backgroundColor: bgColor }}
+            onMouseEnter={() => onCellHover?.(date, slot)}
+            onMouseLeave={() => onCellHover?.(null)}
+          >
+            {count > 0 && (
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums pointer-events-none select-none"
+                style={{ color: count === total ? 'rgba(255,255,255,0.9)' : 'rgba(5,150,105,0.7)' }}
+              >
+                {count}
+              </span>
+            )}
+            {isHoveredAvailable && (
+              <div className="absolute inset-0 bg-emerald-500/20 ring-2 ring-inset ring-emerald-400" />
+            )}
           </div>
-        ))}
-      </div>
-    </div>
+        );
+      }}
+    />
   );
 }
