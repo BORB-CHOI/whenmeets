@@ -83,7 +83,7 @@ export default function HeatmapGrid({
 
         return (
           <div
-            className="w-full h-full relative cursor-pointer hover:brightness-125 hover:z-10 heatmap-cell"
+            className="w-full h-full relative cursor-pointer hover:brightness-125 hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1 hover:z-10"
             style={{ backgroundColor: bgColor }}
             onMouseEnter={() => onCellHover?.(date, slot)}
             onMouseLeave={() => onCellHover?.(null)}
