@@ -63,12 +63,37 @@ export async function PATCH(
   const body = await request.json();
   const supabase = createServerClient();
 
+  // Verify ownership: only the creator can edit
+  const { data: event } = await supabase
+    .from('events')
+    .select('created_by, password_hash')
+    .eq('id', id)
+    .single();
+
+  if (!event) {
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+  }
+
+  // Auth check: either OAuth creator or password-authenticated user
+  if (event.created_by) {
+    const authClient = await createAuthServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user || user.id !== event.created_by) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  } else if (event.password_hash) {
+    const cookie = request.cookies.get(`whenmeets_auth_${id}`);
+    if (!cookie || !verifyEventToken(id, cookie.value)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   const updateData: Record<string, unknown> = {};
   if (body.title !== undefined) updateData.title = body.title;
   if (body.dates !== undefined) updateData.dates = body.dates;
   if (body.time_start !== undefined) updateData.time_start = body.time_start;
   if (body.time_end !== undefined) updateData.time_end = body.time_end;
-  if (body.mode !== undefined) updateData.mode = body.mode;
+  if (body.mode !== undefined) updateData.mode = body.mode === 'unavailable' ? 'unavailable' : 'available';
   if (body.date_only !== undefined) updateData.date_only = body.date_only;
   if (body.description !== undefined) updateData.description = body.description;
 
