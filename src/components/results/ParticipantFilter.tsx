@@ -10,6 +10,8 @@ interface ParticipantFilterProps {
   onHoverEnd?: () => void;
   /** When a cell is hovered: map of participant id -> availability value at that slot */
   slotAvailability?: Map<string, AvailabilityLevel>;
+  /** If provided, show delete button for each participant */
+  onDelete?: (participantId: string) => void;
 }
 
 export default function ParticipantFilter({
@@ -19,6 +21,7 @@ export default function ParticipantFilter({
   onHover,
   onHoverEnd,
   slotAvailability,
+  onDelete,
 }: ParticipantFilterProps) {
   function toggle(id: string) {
     const next = new Set(selectedIds);
@@ -58,7 +61,7 @@ export default function ParticipantFilter({
               onClick={() => toggle(p.id)}
               onMouseEnter={() => onHover?.(p.id)}
               onMouseLeave={() => onHoverEnd?.()}
-              className={`flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-all
+              className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-all
                 ${!selected ? 'opacity-40' : ''}
                 ${stateClass}
                 ${!hasSlotHover ? 'hover:bg-gray-50' : ''}`}
@@ -68,12 +71,23 @@ export default function ParticipantFilter({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
               </div>
-              <span className="p-name text-sm font-medium text-gray-900">
+              <span className="p-name text-sm font-medium text-gray-900 flex-1">
                 {p.name}
                 {hasSlotHover && slotAvailability!.get(p.id) === 1 && (
                   <span className="text-gray-500">*</span>
                 )}
               </span>
+              {onDelete && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(p.id); }}
+                  className="p-1 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                  title="응답 삭제"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           );
         })}
