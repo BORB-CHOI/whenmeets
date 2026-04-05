@@ -25,7 +25,7 @@ export default function SegmentedControl<T extends string>({
   const activeVariant = options[activeIndex]?.variant || 'default';
 
   return (
-    <div className="relative flex p-1 bg-gray-100 rounded-lg border border-gray-200">
+    <div className="relative flex p-1 bg-gray-100 rounded-lg border border-gray-200 whitespace-nowrap">
       <div
         className="absolute top-1 bottom-1 bg-white rounded-md transition-all duration-200 ease-out"
         style={{
