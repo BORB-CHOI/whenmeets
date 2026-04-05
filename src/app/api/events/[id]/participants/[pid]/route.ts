@@ -130,7 +130,8 @@ export async function DELETE(
   const { error } = await supabase
     .from('participants')
     .delete()
-    .eq('id', pid);
+    .eq('id', pid)
+    .eq('event_id', id);
 
   if (error) {
     return NextResponse.json({ error: '삭제에 실패했습니다' }, { status: 500 });

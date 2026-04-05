@@ -57,9 +57,9 @@ export async function GET(
     } catch { /* no auth */ }
   }
 
-  // If event has a password and user authenticated via cookie, they're the owner
-  if (!isOwner && hasPassword) {
-    isOwner = true; // Already verified cookie above
+  // If event has a password and no created_by (anonymous creator), cookie auth = owner
+  if (!isOwner && hasPassword && !ownerCheck?.created_by) {
+    isOwner = true;
   }
 
   return NextResponse.json({
