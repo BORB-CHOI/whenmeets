@@ -201,29 +201,15 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                   <label className="text-sm font-medium text-gray-600">
                     날짜 {dates.length > 0 && `(${dates.length}개 선택)`}
                   </label>
-                  <div className="flex gap-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => { setDateSelectionMode('calendar'); setDates([]); }}
-                      className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                        dateSelectionMode === 'calendar'
-                          ? 'bg-emerald-100 text-emerald-700 font-medium'
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      캘린더
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setDateSelectionMode('days_of_week'); setDates([]); }}
-                      className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                        dateSelectionMode === 'days_of_week'
-                          ? 'bg-emerald-100 text-emerald-700 font-medium'
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      요일 선택
-                    </button>
+                  <div className="w-fit scale-90 origin-right">
+                    <SegmentedControl
+                      options={[
+                        { value: 'calendar' as const, label: '캘린더' },
+                        { value: 'days_of_week' as const, label: '요일 선택' },
+                      ]}
+                      value={dateSelectionMode}
+                      onChange={(v) => { setDateSelectionMode(v as DateSelectionMode); setDates([]); }}
+                    />
                   </div>
                 </div>
                 {dateSelectionMode === 'calendar' ? (
