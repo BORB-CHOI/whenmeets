@@ -86,6 +86,9 @@ export async function PATCH(
     if (!cookie || !verifyEventToken(id, cookie.value)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+  } else {
+    // Anonymous event without password — no one can edit
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const updateData: Record<string, unknown> = {};
