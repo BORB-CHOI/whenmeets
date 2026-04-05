@@ -22,17 +22,25 @@ npm run dev        # http://localhost:3000
 ### 전체 순서
 
 1. **아이디어** -- `/office-hours` → brainstorming
-2. **플랜 작성** -- `/plan`
-3. **플랜 리뷰** -- `/autoplan` (대규모만)
-4. *새 채팅 (한 세션 = 한 단계 원칙)*
-5. **브랜치 생성** -- `git checkout -b feat/<name>`
-6. **구현** -- rules 자동 적용
-7. *새 채팅 (구현 완료 후)*
-8. **검증** -- `/verify`
-9. **셀프 리뷰** -- `/code-review`
-10. **PR 생성** -- `/ship`
-11. **QA** -- `/qa` (필요 시)
-12. **디자인 리뷰** -- `/design-review` (필요 시)
+2. **디자인** -- `/design-consultation` (새 UI 패턴이 필요할 때만. DESIGN.md 업데이트)
+3. **플랜 작성** -- `/plan` (디자인 결정이 있어야 구체적 플랜 가능)
+4. **플랜 리뷰** -- `/autoplan` (대규모만)
+5. *새 채팅 (한 세션 = 한 단계 원칙)*
+6. **브랜치 생성** -- `git checkout -b feat/<name>`
+7. **구현** -- rules 자동 적용
+8. *새 채팅 (구현 완료 후)*
+9. **검증** -- `/verify`
+10. **셀프 리뷰** -- `/code-review`
+11. **PR 생성** -- `/ship`
+12. **QA** -- `/qa` (필요 시)
+13. **디자인 리뷰** -- `/design-review` (구현이 디자인과 맞는지 검증)
+
+### 디자인 세션 가이드
+
+- 기존 DESIGN.md로 충분하면 디자인 세션 스킵 → 바로 `/plan`
+- 새 UI 패턴이 필요하면 `/design-consultation` → DESIGN.md에 구체적 결정 기록
+- 디자인 결정이 다음 세션까지 이어지려면 **DESIGN.md에 컴포넌트별 상태, 전환, 토큰을 구체적으로 기록**해야 함
+- "대략 이런 느낌"이 아니라 "이 모달은 3단계 상태 전환, 각 단계 높이 320px 고정" 수준으로
 
 ### 새 채팅 분기점
 
@@ -48,6 +56,7 @@ npm run dev        # http://localhost:3000
 | 커맨드 | 언제 | 출처 |
 |--------|------|------|
 | `/office-hours` | 아이디어 검증 | gstack |
+| `/design-consultation` | 새 UI 패턴 디자인 | gstack |
 | `/plan` | 구현 계획 작성 | ECC |
 | `/autoplan` | 플랜 리뷰 (CEO/디자인/엔지니어링) | gstack |
 | `/tdd` | 테스트 먼저 작성 | ECC |
