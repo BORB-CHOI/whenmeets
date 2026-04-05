@@ -28,11 +28,14 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Remove all browser default focus outlines */
-*:focus,
-*:focus-visible,
-*:focus-within {
-  outline: none !important;
+/* Remove browser default BLACK focus outline only */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.4);
+  border-radius: 4px;
 }
 
 body {
