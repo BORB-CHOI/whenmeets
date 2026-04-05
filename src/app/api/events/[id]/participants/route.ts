@@ -59,11 +59,12 @@ export async function POST(
         });
       }
       // Wrong or missing password — auto-number the new name
+      const escapedName = trimmedName.replace(/%/g, '\\%').replace(/_/g, '\\_');
       const { data: similar } = await supabase
         .from('participants')
         .select('name')
         .eq('event_id', id)
-        .like('name', `${trimmedName}-%`);
+        .like('name', `${escapedName}-%`);
 
       let nextNum = 2;
       if (similar && similar.length > 0) {
