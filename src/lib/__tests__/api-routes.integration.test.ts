@@ -15,11 +15,17 @@ vi.mock('@/lib/supabase/server', () => {
     let pendingUpdate: Partial<Row> | null = null;
     let selectColumns: string | null = null;
     const filters: Array<{ column: string; value: unknown }> = [];
+    let likeFilter: { column: string; pattern: string } | null = null;
 
     function applyFilters() {
       rows = [...mockTables[tableName]];
       for (const f of filters) {
         rows = rows.filter((r) => r[f.column] === f.value);
+      }
+      if (likeFilter) {
+        const prefix = likeFilter.pattern.replace(/%$/, '');
+        rows = rows.filter((r) => String(r[likeFilter!.column]).startsWith(prefix));
+        likeFilter = null;
       }
     }
 
@@ -36,12 +42,12 @@ vi.mock('@/lib/supabase/server', () => {
     const builder: Record<string, Function> = {
       select(columns?: string) { selectColumns = columns ?? null; return builder; },
       eq(column: string, value: unknown) { filters.push({ column, value }); return builder; },
+      like(column: string, pattern: string) { likeFilter = { column, pattern }; return builder; },
       order() { return builder; },
       insert(row: Row) {
         // Simulate DB-generated defaults for participants
         if (tableName === 'participants') {
           if (!row.id) row.id = 'gen-p-' + Math.random().toString(36).slice(2, 8);
-          if (!row.token) row.token = 'gen-tok-' + Math.random().toString(36).slice(2, 8);
         }
         pendingInsert = { ...row };
         return builder;
@@ -102,6 +108,19 @@ vi.mock('bcryptjs', () => ({
 
 vi.mock('nanoid', () => ({
   nanoid: () => 'test-id-01',
+}));
+
+vi.mock('@/lib/supabase/auth-server', () => ({
+  createAuthServerClient: async () => ({
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null }),
+    },
+  }),
+}));
+
+vi.mock('@/lib/auth', () => ({
+  verifyEventToken: () => false,
+  signEventToken: (id: string) => `mock-token-${id}`,
 }));
 
 // --- Import routes after mocks ---
@@ -193,8 +212,8 @@ describe('POST /api/events', () => {
     });
     const res = await createEvent(req);
     expect(res.status).toBe(201);
-    expect(mockTables.events[0].time_start).toBe(18);
-    expect(mockTables.events[0].time_end).toBe(42);
+    expect(mockTables.events[0].time_start).toBe(36);
+    expect(mockTables.events[0].time_end).toBe(84);
   });
 });
 
@@ -322,7 +341,6 @@ describe('POST /api/events/[id]/participants', () => {
     expect(res.status).toBe(201);
     const json = await res.json();
     expect(json.id).toBeDefined();
-    expect(json.token).toBeDefined();
     expect(json.existing).toBe(false);
   });
 
@@ -357,13 +375,13 @@ describe('POST /api/events/[id]/participants', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns 409 for duplicate name without matching token', async () => {
+  it('returns existing participant for duplicate name without password', async () => {
     mockTables.events.push({ id: 'evt-1', password_hash: null });
     mockTables.participants.push({
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-alice',
+      password_hash: null,
       availability: {},
     });
 
@@ -372,23 +390,25 @@ describe('POST /api/events/[id]/participants', () => {
       body: { name: 'Alice' },
     });
     const res = await joinEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.existing).toBe(true);
+    expect(json.id).toBe('p-1');
   });
 
-  it('reclaims existing name with valid token', async () => {
+  it('reclaims existing name with correct password', async () => {
     mockTables.events.push({ id: 'evt-1', password_hash: null });
     mockTables.participants.push({
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-alice',
+      password_hash: 'hashed:mypass',
       availability: { '2026-04-10': { '18': 2 } },
     });
 
     const req = createMockRequest('/api/events/evt-1/participants', {
       method: 'POST',
-      body: { name: 'Alice' },
-      headers: { 'X-Participant-Token': 'tok-alice' },
+      body: { name: 'Alice', password: 'mypass' },
     });
     const res = await joinEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
     expect(res.status).toBe(200);
@@ -404,12 +424,12 @@ describe('POST /api/events/[id]/participants', () => {
 describe('PATCH /api/events/[id]/participants/[pid]', () => {
   beforeEach(resetTables);
 
-  it('updates availability with valid token', async () => {
+  it('updates availability for participant without password', async () => {
     mockTables.participants.push({
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-abc',
+      password_hash: null,
       availability: {},
     });
 
@@ -417,7 +437,6 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
     const req = createMockRequest('/api/events/evt-1/participants/p-1', {
       method: 'PATCH',
       body: { availability: newAvailability },
-      headers: { 'X-Participant-Token': 'tok-abc' },
     });
     const res = await updateAvailability(req, {
       params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
@@ -427,7 +446,35 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
     expect(json.ok).toBe(true);
   });
 
-  it('rejects missing token', async () => {
+  it('updates availability with correct password', async () => {
+    mockTables.participants.push({
+      id: 'p-1',
+      event_id: 'evt-1',
+      name: 'Alice',
+      password_hash: 'hashed:mypass',
+      availability: {},
+    });
+
+    const newAvailability = { '2026-04-10': { '18': 2 } };
+    const req = createMockRequest('/api/events/evt-1/participants/p-1', {
+      method: 'PATCH',
+      body: { availability: newAvailability, password: 'mypass' },
+    });
+    const res = await updateAvailability(req, {
+      params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects missing password for password-protected participant', async () => {
+    mockTables.participants.push({
+      id: 'p-1',
+      event_id: 'evt-1',
+      name: 'Alice',
+      password_hash: 'hashed:mypass',
+      availability: {},
+    });
+
     const req = createMockRequest('/api/events/evt-1/participants/p-1', {
       method: 'PATCH',
       body: { availability: {} },
@@ -438,24 +485,34 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
     expect(res.status).toBe(401);
   });
 
-  it('rejects wrong token', async () => {
+  it('rejects wrong password', async () => {
     mockTables.participants.push({
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-abc',
+      password_hash: 'hashed:mypass',
       availability: {},
     });
 
     const req = createMockRequest('/api/events/evt-1/participants/p-1', {
       method: 'PATCH',
-      body: { availability: {} },
-      headers: { 'X-Participant-Token': 'wrong-token' },
+      body: { availability: {}, password: 'wrong' },
     });
     const res = await updateAvailability(req, {
       params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
     });
     expect(res.status).toBe(401);
+  });
+
+  it('returns 404 for non-existent participant', async () => {
+    const req = createMockRequest('/api/events/evt-1/participants/p-999', {
+      method: 'PATCH',
+      body: { availability: {} },
+    });
+    const res = await updateAvailability(req, {
+      params: Promise.resolve({ id: 'evt-1', pid: 'p-999' }),
+    });
+    expect(res.status).toBe(404);
   });
 
   it('rejects invalid availability format (array)', async () => {
@@ -463,14 +520,13 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-abc',
+      password_hash: null,
       availability: {},
     });
 
     const req = createMockRequest('/api/events/evt-1/participants/p-1', {
       method: 'PATCH',
       body: { availability: [1, 2, 3] },
-      headers: { 'X-Participant-Token': 'tok-abc' },
     });
     const res = await updateAvailability(req, {
       params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
@@ -483,37 +539,17 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
       id: 'p-1',
       event_id: 'evt-1',
       name: 'Alice',
-      token: 'tok-abc',
+      password_hash: null,
       availability: {},
     });
 
     const req = createMockRequest('/api/events/evt-1/participants/p-1', {
       method: 'PATCH',
       body: { availability: { '2026-04-10': { '18': 5 } } },
-      headers: { 'X-Participant-Token': 'tok-abc' },
     });
     const res = await updateAvailability(req, {
       params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
     });
     expect(res.status).toBe(400);
-  });
-
-  it('accepts token from body (sendBeacon compatibility)', async () => {
-    mockTables.participants.push({
-      id: 'p-1',
-      event_id: 'evt-1',
-      name: 'Alice',
-      token: 'tok-abc',
-      availability: {},
-    });
-
-    const req = createMockRequest('/api/events/evt-1/participants/p-1', {
-      method: 'PATCH',
-      body: { availability: {}, token: 'tok-abc' },
-    });
-    const res = await updateAvailability(req, {
-      params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
-    });
-    expect(res.status).toBe(200);
   });
 });
