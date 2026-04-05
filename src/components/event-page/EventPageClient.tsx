@@ -110,6 +110,7 @@ export default function EventPageClient({
   const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
   const [showBestTimes, setShowBestTimes] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetPid, setDeleteTargetPid] = useState<string | null>(null);
 
   // Session (localStorage)
   const [session, setSession] = useState(() => {
@@ -334,6 +335,22 @@ export default function EventPageClient({
       }
     } catch { /* ignore */ }
     setViewMode('view');
+  }
+
+  async function handleDeleteParticipant(pid: string) {
+    const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) {
+      // Refresh event data
+      const refreshRes = await fetch(`/api/events/${eventId}`);
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        setEvent(data);
+        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      }
+    }
+    setDeleteTargetPid(null);
   }
 
   async function handleCopyLink() {
@@ -614,6 +631,7 @@ export default function EventPageClient({
                   selectedIds={selectedIds}
                   onSelectedChange={setSelectedIds}
                   slotAvailability={slotAvailability}
+                  onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                 />
               </div>
 
@@ -805,6 +823,17 @@ export default function EventPageClient({
           setShowDeleteConfirm(false);
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* Delete participant confirm modal (owner only) */}
+      <ConfirmModal
+        open={!!deleteTargetPid}
+        title="응답자 삭제"
+        message={`${event.participants.find(p => p.id === deleteTargetPid)?.name ?? ''}의 응답을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+        confirmLabel="삭제"
+        variant="danger"
+        onConfirm={() => { if (deleteTargetPid) handleDeleteParticipant(deleteTargetPid); }}
+        onCancel={() => setDeleteTargetPid(null)}
       />
 
       {/* Mobile bottom bar */}
