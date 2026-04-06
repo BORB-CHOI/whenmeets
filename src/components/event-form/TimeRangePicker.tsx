@@ -38,56 +38,90 @@ function ScrollPicker({
 }) {
   const options = generateOptions();
   const containerRef = useRef<HTMLDivElement>(null);
-  const isScrolling = useRef(false);
 
-  // Mouse drag scrolling (window-level so drag works outside container)
+  // When true, the value-sync useEffect is suppressed to avoid fighting
+  // with an ongoing internal scroll (drag / wheel / click).
+  const internalAction = useRef(false);
+
+  // Refs for latest props so window-level listeners don't hold stale closures
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const disabledCheckRef = useRef(disabledCheck);
+  disabledCheckRef.current = disabledCheck;
+
+  // ── helpers ──────────────────────────────────────────────────────────
+
+  const scrollToIdx = useCallback((idx: number, smooth: boolean) => {
+    containerRef.current?.scrollTo({
+      top: idx * ITEM_H,
+      behavior: smooth ? 'smooth' : 'auto',
+    });
+  }, []);
+
+  /** Snap to the nearest option, call onChange, suppress value-sync for 300ms */
+  function commitScroll() {
+    if (!containerRef.current) return;
+    const idx = Math.round(containerRef.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(idx, options.length - 1));
+    scrollToIdx(clamped, true);
+    const opt = options[clamped];
+    if (!disabledCheckRef.current(opt)) {
+      onChangeRef.current(opt);
+    }
+    internalAction.current = true;
+    setTimeout(() => { internalAction.current = false; }, 300);
+  }
+
+  /** Move exactly N steps from current position */
+  function moveBySteps(steps: number) {
+    if (!containerRef.current) return;
+    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
+    const nextIdx = Math.max(0, Math.min(currentIdx + steps, options.length - 1));
+    if (nextIdx === currentIdx) return;
+    scrollToIdx(nextIdx, true);
+    const opt = options[nextIdx];
+    if (!disabledCheckRef.current(opt)) {
+      onChangeRef.current(opt);
+    }
+    internalAction.current = true;
+    setTimeout(() => { internalAction.current = false; }, 300);
+  }
+
+  // ── value sync (external changes only) ──────────────────────────────
+
+  useEffect(() => {
+    if (internalAction.current) return;
+    const idx = options.indexOf(value);
+    if (idx !== -1) scrollToIdx(idx, false);
+  }, [value, options, scrollToIdx]);
+
+  // ── mouse drag ──────────────────────────────────────────────────────
+
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragScrollTop = useRef(0);
-  const suppressSnap = useRef(false);
 
   function handleMouseDown(e: React.MouseEvent) {
     isDragging.current = true;
+    internalAction.current = true;
     dragStartY.current = e.clientY;
     dragScrollTop.current = containerRef.current?.scrollTop ?? 0;
     e.preventDefault();
     e.stopPropagation();
   }
 
-  function snapToNearest() {
-    if (!containerRef.current) return;
-    const scrollTop = containerRef.current.scrollTop;
-    const idx = Math.round(scrollTop / ITEM_H);
-    const clamped = Math.max(0, Math.min(idx, options.length - 1));
-    const opt = options[clamped];
-
-    // Suppress the useEffect scrollToValue from fighting with this snap
-    suppressSnap.current = true;
-    containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
-
-    if (!disabledCheck(opt)) {
-      onChange(opt);
-    }
-
-    setTimeout(() => { suppressSnap.current = false; }, 300);
-  }
-
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
       if (!isDragging.current || !containerRef.current) return;
       e.preventDefault();
-      const dy = dragStartY.current - e.clientY;
-      containerRef.current.scrollTop = dragScrollTop.current + dy;
+      containerRef.current.scrollTop = dragScrollTop.current + (dragStartY.current - e.clientY);
     }
     function onMouseUp(e: MouseEvent) {
-      if (isDragging.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        isDragging.current = false;
-        // Snap to nearest item after drag release
-        snapToNearest();
-      }
+      if (!isDragging.current) return;
+      e.preventDefault();
+      e.stopPropagation();
       isDragging.current = false;
+      commitScroll();
     }
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp, true);
@@ -98,88 +132,44 @@ function ScrollPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const scrollToValue = useCallback((v: number, smooth = false) => {
-    const idx = options.indexOf(v);
-    if (idx === -1 || !containerRef.current) return;
-    const top = idx * ITEM_H;
-    containerRef.current.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
-  }, [options]);
+  // ── native scroll snap (touch momentum / programmatic) ─────────────
 
-  useEffect(() => {
-    // Don't fight with an in-progress snap animation
-    if (suppressSnap.current) return;
-    scrollToValue(value);
-  }, [value, scrollToValue]);
+  const snapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function handleScroll() {
-    if (!containerRef.current || wheelControlled.current || isDragging.current) return;
-    isScrolling.current = true;
-
-    // Debounce: snap to nearest after scroll stops (touch/momentum only)
-    clearTimeout((containerRef.current as any)._snapTimer);
-    (containerRef.current as any)._snapTimer = setTimeout(() => {
+    if (!containerRef.current || isDragging.current || wheelBusy.current) return;
+    clearTimeout(snapTimer.current);
+    snapTimer.current = setTimeout(() => {
       if (!containerRef.current || isDragging.current) return;
-      snapToNearest();
-      isScrolling.current = false;
-    }, 100);
+      commitScroll();
+    }, 120);
   }
 
-  // Wheel: accumulate delta across devices, snap at threshold
-  const wheelControlled = useRef(false);
-  const wheelAccum = useRef(0);
-  const wheelTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // ── wheel ───────────────────────────────────────────────────────────
+  //
+  // Strategy: always move exactly 1 step per wheel "click".
+  // Block further input until the smooth-scroll animation finishes (~200ms).
+  // This works for mouse wheels, trackpads, and high-precision mice because
+  // we ignore deltaY magnitude entirely — direction only.
+
+  const wheelBusy = useRef(false);
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!containerRef.current) return;
+    if (wheelBusy.current || !containerRef.current) return;
 
-    const delta = e.deltaMode === 1 ? e.deltaY * ITEM_H : e.deltaY;
-    const absDelta = Math.abs(delta);
+    const direction = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+    if (direction === 0) return;
 
-    // Detect device: mouse wheel sends large discrete jumps (>50), trackpad sends small continuous ones
-    const isDiscreteWheel = absDelta > 50;
+    wheelBusy.current = true;
+    moveBySteps(direction);
 
-    let steps: number;
-    if (isDiscreteWheel) {
-      // Mouse wheel: always exactly 1 step per notch, regardless of deltaY magnitude
-      steps = delta > 0 ? 1 : -1;
-      wheelAccum.current = 0;
-    } else {
-      // Trackpad / high-precision: accumulate until threshold reached
-      wheelAccum.current += delta;
-      const threshold = ITEM_H; // 36px — one full item height
-      const raw = Math.trunc(wheelAccum.current / threshold);
-      if (raw === 0) {
-        clearTimeout(wheelTimer.current);
-        wheelTimer.current = setTimeout(() => { wheelAccum.current = 0; }, 200);
-        return;
-      }
-      // Clamp: max 2 steps per event to prevent overshoot on fast swipes
-      steps = Math.max(-2, Math.min(2, raw));
-      wheelAccum.current -= steps * threshold;
-    }
-
-    wheelControlled.current = true;
-    suppressSnap.current = true;
-
-    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
-    const nextIdx = Math.max(0, Math.min(currentIdx + steps, options.length - 1));
-
-    containerRef.current.scrollTo({ top: nextIdx * ITEM_H, behavior: 'smooth' });
-
-    const opt = options[nextIdx];
-    if (!disabledCheck(opt)) {
-      onChange(opt);
-    }
-
-    clearTimeout(wheelTimer.current);
-    wheelTimer.current = setTimeout(() => {
-      wheelControlled.current = false;
-      suppressSnap.current = false;
-      wheelAccum.current = 0;
-    }, 200);
+    // Unblock after smooth scroll settles
+    setTimeout(() => { wheelBusy.current = false; }, 200);
   }
+
+  // ── render ──────────────────────────────────────────────────────────
 
   const halfPad = Math.floor(VISIBLE / 2);
 
@@ -216,7 +206,14 @@ function ScrollPicker({
           return (
             <div
               key={opt}
-              onClick={() => { if (!disabled) { onChange(opt); scrollToValue(opt, true); } }}
+              onClick={() => {
+                if (disabled) return;
+                internalAction.current = true;
+                onChange(opt);
+                const idx = options.indexOf(opt);
+                scrollToIdx(idx, true);
+                setTimeout(() => { internalAction.current = false; }, 300);
+              }}
               className={`flex items-center justify-center cursor-pointer transition-colors
                 ${disabled ? 'text-gray-200 dark:text-gray-700 cursor-not-allowed' : ''}
                 ${selected ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}
