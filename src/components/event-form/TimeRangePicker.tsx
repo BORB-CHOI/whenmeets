@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import * as Select from '@radix-ui/react-select';
 import { SLOTS_PER_HOUR } from '@/lib/constants';
 
 interface TimeRangePickerProps {
@@ -16,219 +16,89 @@ function formatTime(slot: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function generateOptions(): number[] {
-  const opts: number[] = [];
+const SLOTS: number[] = (() => {
+  const arr: number[] = [];
   for (let slot = 0; slot <= 24 * SLOTS_PER_HOUR; slot += 2) {
-    opts.push(slot);
+    arr.push(slot);
   }
-  return opts;
-}
+  return arr;
+})();
 
-const ITEM_H = 36;
-const VISIBLE = 5;
-
-function ScrollPicker({
+function TimeSelect({
   value,
   onChange,
   disabledCheck,
+  label,
 }: {
   value: number;
   onChange: (v: number) => void;
   disabledCheck: (v: number) => boolean;
+  label: string;
 }) {
-  const options = generateOptions();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // When true, the value-sync useEffect is suppressed to avoid fighting
-  // with an ongoing internal scroll (drag / wheel / click).
-  const internalAction = useRef(false);
-
-  // Refs for latest props so window-level listeners don't hold stale closures
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const disabledCheckRef = useRef(disabledCheck);
-  disabledCheckRef.current = disabledCheck;
-
-  // ── helpers ──────────────────────────────────────────────────────────
-
-  const scrollToIdx = useCallback((idx: number, smooth: boolean) => {
-    containerRef.current?.scrollTo({
-      top: idx * ITEM_H,
-      behavior: smooth ? 'smooth' : 'auto',
-    });
-  }, []);
-
-  /** Snap to the nearest option, call onChange, suppress value-sync for 300ms */
-  function commitScroll() {
-    if (!containerRef.current) return;
-    const idx = Math.round(containerRef.current.scrollTop / ITEM_H);
-    const clamped = Math.max(0, Math.min(idx, options.length - 1));
-    scrollToIdx(clamped, true);
-    const opt = options[clamped];
-    if (!disabledCheckRef.current(opt)) {
-      onChangeRef.current(opt);
-    }
-    internalAction.current = true;
-    setTimeout(() => { internalAction.current = false; }, 300);
-  }
-
-  /** Move exactly N steps from current position */
-  function moveBySteps(steps: number) {
-    if (!containerRef.current) return;
-    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
-    const nextIdx = Math.max(0, Math.min(currentIdx + steps, options.length - 1));
-    if (nextIdx === currentIdx) return;
-    scrollToIdx(nextIdx, true);
-    const opt = options[nextIdx];
-    if (!disabledCheckRef.current(opt)) {
-      onChangeRef.current(opt);
-    }
-    internalAction.current = true;
-    setTimeout(() => { internalAction.current = false; }, 300);
-  }
-
-  // ── value sync (external changes only) ──────────────────────────────
-
-  useEffect(() => {
-    if (internalAction.current) return;
-    const idx = options.indexOf(value);
-    if (idx !== -1) scrollToIdx(idx, false);
-  }, [value, options, scrollToIdx]);
-
-  // ── mouse drag ──────────────────────────────────────────────────────
-
-  const isDragging = useRef(false);
-  const dragStartY = useRef(0);
-  const dragScrollTop = useRef(0);
-
-  function handleMouseDown(e: React.MouseEvent) {
-    isDragging.current = true;
-    internalAction.current = true;
-    dragStartY.current = e.clientY;
-    dragScrollTop.current = containerRef.current?.scrollTop ?? 0;
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  useEffect(() => {
-    function onMouseMove(e: MouseEvent) {
-      if (!isDragging.current || !containerRef.current) return;
-      e.preventDefault();
-      containerRef.current.scrollTop = dragScrollTop.current + (dragStartY.current - e.clientY);
-    }
-    function onMouseUp(e: MouseEvent) {
-      if (!isDragging.current) return;
-      e.preventDefault();
-      e.stopPropagation();
-      isDragging.current = false;
-      commitScroll();
-    }
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp, true);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp, true);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── native scroll snap (touch momentum / programmatic) ─────────────
-
-  const snapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  function handleScroll() {
-    if (!containerRef.current || isDragging.current || wheelBusy.current) return;
-    clearTimeout(snapTimer.current);
-    snapTimer.current = setTimeout(() => {
-      if (!containerRef.current || isDragging.current) return;
-      commitScroll();
-    }, 120);
-  }
-
-  // ── wheel ───────────────────────────────────────────────────────────
-  //
-  // Strategy: always move exactly 1 step per wheel "click".
-  // Block further input until the smooth-scroll animation finishes (~200ms).
-  // This works for mouse wheels, trackpads, and high-precision mice because
-  // we ignore deltaY magnitude entirely — direction only.
-
-  const wheelBusy = useRef(false);
-
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (wheelBusy.current || !containerRef.current) return;
-
-    const direction = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
-    if (direction === 0) return;
-
-    wheelBusy.current = true;
-    moveBySteps(direction);
-
-    // Unblock after smooth scroll settles
-    setTimeout(() => { wheelBusy.current = false; }, 200);
-  }
-
-  // ── render ──────────────────────────────────────────────────────────
-
-  const halfPad = Math.floor(VISIBLE / 2);
-
   return (
-    <div
-      className="relative rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
-      style={{ height: ITEM_H * VISIBLE }}
+    <Select.Root
+      value={String(value)}
+      onValueChange={(v) => onChange(Number(v))}
     >
-      {/* Center highlight bar */}
-      <div
-        className="absolute left-0 right-0 pointer-events-none border-y border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/30 z-10"
-        style={{ top: ITEM_H * halfPad, height: ITEM_H }}
-      />
-      {/* Fade top/bottom */}
-      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white dark:from-gray-800 to-transparent pointer-events-none z-20" />
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none z-20" />
-
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        className="h-full overflow-y-auto select-none"
-        style={{
-          scrollbarWidth: 'none',
-          paddingTop: ITEM_H * halfPad,
-          paddingBottom: ITEM_H * halfPad,
-          cursor: 'grab',
-        }}
+      <Select.Trigger
+        aria-label={label}
+        className="flex items-center justify-between w-full rounded-md border border-gray-200 dark:border-gray-700
+          bg-white dark:bg-gray-800 px-3 py-2.5
+          text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums
+          hover:bg-gray-50 dark:hover:bg-gray-750
+          focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
+          transition-colors cursor-pointer"
       >
-        {options.map((opt) => {
-          const disabled = disabledCheck(opt);
-          const selected = opt === value;
-          return (
-            <div
-              key={opt}
-              onClick={() => {
-                if (disabled) return;
-                internalAction.current = true;
-                onChange(opt);
-                const idx = options.indexOf(opt);
-                scrollToIdx(idx, true);
-                setTimeout(() => { internalAction.current = false; }, 300);
-              }}
-              className={`flex items-center justify-center cursor-pointer transition-colors
-                ${disabled ? 'text-gray-200 dark:text-gray-700 cursor-not-allowed' : ''}
-                ${selected ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}
-                ${!selected && !disabled ? 'text-gray-500 dark:text-gray-400' : ''}`}
-              style={{
-                height: ITEM_H,
-                fontSize: selected ? 16 : 14,
-              }}
-            >
-              {formatTime(opt)}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+        <Select.Value />
+        <Select.Icon className="ml-2 text-gray-400">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Select.Icon>
+      </Select.Trigger>
+
+      <Select.Content
+          className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700
+            bg-white dark:bg-gray-800 shadow-lg z-50"
+          position="popper"
+          sideOffset={4}
+          align="center"
+        >
+          <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-white dark:bg-gray-800 text-gray-400 cursor-default">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 7.5L6 4.5L9 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Select.ScrollUpButton>
+
+          <Select.Viewport className="p-1 max-h-50">
+            {SLOTS.map((slot) => {
+              const disabled = disabledCheck(slot);
+              return (
+                <Select.Item
+                  key={slot}
+                  value={String(slot)}
+                  disabled={disabled}
+                  className="relative flex items-center px-3 py-1.5 text-sm tabular-nums rounded-sm
+                    outline-none cursor-pointer select-none
+                    data-disabled:text-gray-300 data-disabled:dark:text-gray-600 data-disabled:pointer-events-none
+                    data-highlighted:bg-emerald-50 data-highlighted:dark:bg-emerald-900/30
+                    data-highlighted:text-emerald-700 data-highlighted:dark:text-emerald-400
+                    data-[state=checked]:font-bold data-[state=checked]:text-emerald-700 data-[state=checked]:dark:text-emerald-400
+                    text-gray-700 dark:text-gray-300"
+                >
+                  <Select.ItemText>{formatTime(slot)}</Select.ItemText>
+                </Select.Item>
+              );
+            })}
+          </Select.Viewport>
+
+          <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-white dark:bg-gray-800 text-gray-400 cursor-default">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Select.ScrollDownButton>
+        </Select.Content>
+    </Select.Root>
   );
 }
 
@@ -241,18 +111,20 @@ export default function TimeRangePicker({
   return (
     <div className="flex items-center gap-3">
       <div className="flex-1">
-        <ScrollPicker
+        <TimeSelect
           value={timeStart}
           onChange={onTimeStartChange}
           disabledCheck={(v) => v >= timeEnd}
+          label="시작 시간"
         />
       </div>
-      <span className="text-gray-400 text-sm font-medium">~</span>
+      <span className="text-gray-400 dark:text-gray-500 text-sm font-medium shrink-0">~</span>
       <div className="flex-1">
-        <ScrollPicker
+        <TimeSelect
           value={timeEnd}
           onChange={onTimeEndChange}
           disabledCheck={(v) => v <= timeStart}
+          label="종료 시간"
         />
       </div>
     </div>

@@ -64,10 +64,8 @@ verify that `whenmeets-component-map.md` still reflects reality. If it doesn't, 
 
 ## Design System
 
-Always read DESIGN.md before making any visual or UI decisions.
-All font choices, colors, spacing, and aesthetic direction are defined there.
-Do not deviate without explicit user approval.
-In QA mode, flag any code that doesn't match DESIGN.md.
+DESIGN.md는 현재 없음 (코드와 불일치하여 삭제됨).
+디자인 판단 시 실제 코드의 기존 패턴을 따를 것. 새로운 디자인 방향이 필요하면 사용자에게 확인.
 
 ## Branch workflow
 
