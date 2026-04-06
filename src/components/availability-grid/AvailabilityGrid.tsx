@@ -149,16 +149,16 @@ export default function AvailabilityGrid({
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                let border = 'border-r border-r-[#ddd9] ';
-                if (isLast) border = 'border-r border-r-[#BDBDBD] ';
-                if (isFirst) border += 'border-l border-l-[#BDBDBD] ';
-                if (hasGapBefore) border += 'border-l border-l-[#BDBDBD] ';
+                let border = 'border-r border-r-gray-200/60 ';
+                if (isLast) border = 'border-r border-r-gray-300 ';
+                if (isFirst) border += 'border-l border-l-gray-300 ';
+                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 ';
 
-                if (isFirstRow) border += 'border-t border-t-[#BDBDBD] ';
-                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-[#ddd9] ';
-                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-dashed border-t-[#ddd9] ';
+                if (isFirstRow) border += 'border-t border-t-gray-300 ';
+                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300/80 ';
+                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-t-gray-200/40 ';
 
-                if (isLastRow) border += 'border-b border-b-[#BDBDBD] ';
+                if (isLastRow) border += 'border-b border-b-gray-300 ';
 
                 const elements = [];
                 if (hasGapBefore) {
