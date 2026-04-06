@@ -55,6 +55,22 @@ These pages display the SAME event data differently. Layout, header, participant
 - Date formatting
 - Responsive breakpoints
 
+### UI Primitives (shadcn 패턴)
+
+공유 UI 컴포넌트. 다른 feature 컴포넌트에서 import하여 사용.
+
+| Component | Role | File |
+|-----------|------|------|
+| `Select` | shadcn Select (Radix 기반) | `src/components/ui/Select.tsx` |
+| `ConfirmModal` | 확인 모달 | `src/components/ui/ConfirmModal.tsx` |
+| `SegmentedControl` | 탭 전환 | `src/components/ui/SegmentedControl.tsx` |
+| `cn()` | className 병합 유틸 | `src/lib/cn.ts` |
+
+**Shared concerns:**
+- 스타일 변경 시 사용하는 모든 feature 컴포넌트에 영향
+- 애니메이션 keyframes → `src/app/globals.css`
+- 커스텀 스크롤바 → `custom-scrollbar` 클래스 in `globals.css`
+
 ### Form System (event creation)
 
 | Component | Role | File |
@@ -63,7 +79,7 @@ These pages display the SAME event data differently. Layout, header, participant
 | `EventFormModal` | Modal wrapper | `src/components/event-form/EventFormModal.tsx` |
 | `DatePicker` | Date selection | `src/components/event-form/DatePicker.tsx` |
 | `DayOfWeekPicker` | Day-of-week selection | `src/components/event-form/DayOfWeekPicker.tsx` |
-| `TimeRangePicker` | Time range selection | `src/components/event-form/TimeRangePicker.tsx` |
+| `TimeRangePicker` | Time range selection (uses ui/Select) | `src/components/event-form/TimeRangePicker.tsx` |
 
 ### Auth Flow
 
