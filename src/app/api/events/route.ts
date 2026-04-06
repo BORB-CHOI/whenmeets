@@ -20,9 +20,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Too many dates (max 60)' }, { status: 400 });
   }
 
-  // Validate dates are ISO format strings
+  // Detect days-of-week mode vs calendar mode
+  const validDayKeys = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+  const isDaysOfWeek = dates.every((d: unknown) => typeof d === 'string' && validDayKeys.has(d));
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dates.every((d: unknown) => typeof d === 'string' && dateRegex.test(d))) {
+  const isCalendar = dates.every((d: unknown) => typeof d === 'string' && dateRegex.test(d));
+
+  if (!isDaysOfWeek && !isCalendar) {
     return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
 
 interface CalendarDragGridProps {
@@ -102,26 +102,38 @@ export default function CalendarDragGrid({
     applyToDate(date);
   }
 
-  function handlePointerMove(e: React.MouseEvent) {
+  function handlePointerMoveAt(clientX: number, clientY: number) {
     if (!isDragging.current) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const el = document.elementFromPoint(clientX, clientY);
     if (!el) return;
     const cell = el.closest('[data-cal-date]') as HTMLElement | null;
     if (!cell) return;
     applyToDate(cell.dataset.calDate!);
   }
 
-  function handlePointerUp() {
+  const handlePointerUp = useCallback(() => {
     isDragging.current = false;
     erasing.current = false;
-  }
+  }, []);
+
+  // Window-level listeners for drag end
+  useEffect(() => {
+    function onEnd() { if (isDragging.current) handlePointerUp(); }
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+    return () => {
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+  }, [handlePointerUp]);
 
   return (
     <div
-      onMouseMove={handlePointerMove}
-      onMouseUp={handlePointerUp}
-      onMouseLeave={handlePointerUp}
-      className="select-none"
+      onMouseMove={(e) => handlePointerMoveAt(e.clientX, e.clientY)}
+      onTouchMove={(e) => { e.preventDefault(); handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY); }}
+      className="select-none touch-none"
     >
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
@@ -152,6 +164,7 @@ export default function CalendarDragGrid({
                   key={dateStr}
                   data-cal-date={dateStr}
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
+                  onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   className={`aspect-square flex items-center justify-center text-sm relative transition-colors
                     ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:brightness-95` : 'bg-gray-50 text-gray-300'}
                     ${isEventDate && value >= 1 ? 'font-semibold text-gray-800' : ''}

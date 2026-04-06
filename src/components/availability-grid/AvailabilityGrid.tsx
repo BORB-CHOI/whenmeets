@@ -1,14 +1,14 @@
 'use client';
 
 import { ReactNode, useState, useMemo, useEffect, useRef } from 'react';
-import { generateSlots, SLOTS_PER_HOUR } from '@/lib/constants';
+import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT } from '@/lib/constants';
 
 interface AvailabilityGridProps {
   dates: string[];
   timeStart: number;
   timeEnd: number;
   renderCell: (date: string, slot: number) => ReactNode;
-  columnsProps?: React.HTMLAttributes<HTMLDivElement>;
+  columnsProps?: React.HTMLAttributes<HTMLDivElement> & { ref?: (el: HTMLElement | null) => void };
   header?: ReactNode;
   footer?: ReactNode;
   maxColumns?: number;
@@ -64,6 +64,28 @@ export default function AvailabilityGrid({
     return dates.slice(start, start + maxColumns);
   }, [dates, page, maxColumns, needsPagination]);
 
+  // Detect date gaps (>1 day between consecutive dates) for visual separator
+  const dateGapIndices = useMemo(() => {
+    const gaps = new Set<number>();
+    for (let i = 1; i < visibleDates.length; i++) {
+      const prev = new Date(visibleDates[i - 1] + 'T00:00:00');
+      const curr = new Date(visibleDates[i] + 'T00:00:00');
+      const diffDays = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 1) gaps.add(i);
+    }
+    return gaps;
+  }, [visibleDates]);
+
+  // Build grid template columns with gap spacers
+  const gridTemplateCols = useMemo(() => {
+    const parts: string[] = [];
+    for (let i = 0; i < visibleDates.length; i++) {
+      if (dateGapIndices.has(i)) parts.push('6px'); // gap spacer
+      parts.push('1fr');
+    }
+    return parts.join(' ');
+  }, [visibleDates.length, dateGapIndices]);
+
   const canPrev = page > 0;
   const canNext = page < totalPages - 1;
 
@@ -71,7 +93,7 @@ export default function AvailabilityGrid({
     <div className="flex flex-col gap-3">
       {header}
 
-      <div className="flex justify-center" ref={containerRef}>
+      <div className="flex justify-center overflow-x-auto" ref={containerRef}>
         <div className="flex items-start w-full" style={{ maxWidth: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: 40 }}>
@@ -79,12 +101,12 @@ export default function AvailabilityGrid({
               <div
                 key={slot}
                 className="flex items-start justify-end pr-3"
-                style={{ height: 32 }}
+                style={{ height: CELL_HEIGHT }}
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
-                    className="text-[13px] text-gray-400 tabular-nums leading-none"
-                    style={{ marginTop: -5 }}
+                    className="text-[10px] text-gray-400 tabular-nums leading-none"
+                    style={{ marginTop: -4 }}
                   >
                     {Math.floor(slot / SLOTS_PER_HOUR)}
                   </span>
@@ -96,22 +118,26 @@ export default function AvailabilityGrid({
           {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
           <div
             data-grid-container=""
+            ref={columnsProps?.ref}
             className={`grid${columnsProps ? ' touch-none' : ''}`}
-            style={{ flex: 1, minWidth: 0, gridTemplateColumns: `repeat(${visibleDates.length}, 1fr)` }}
-            {...columnsProps}
+            style={{ flex: 1, minWidth: 0, gridTemplateColumns: gridTemplateCols }}
+            {...(columnsProps ? (() => { const { ref: _ref, ...rest } = columnsProps; return rest; })() : {})}
           >
             {/* Date headers */}
-            {visibleDates.map((date) => {
+            {visibleDates.map((date, colIdx) => {
               const { num, day } = formatDateHeader(date);
-              return (
+              const elements = [];
+              if (dateGapIndices.has(colIdx)) {
+                elements.push(<div key={`gap-hdr-${colIdx}`} />);
+              }
+              elements.push(
                 <div key={`hdr-${date}`} className="flex items-center justify-center" style={{ height: 40 }}>
-                  <span
-                    className="text-[13px] text-gray-600 tabular-nums"
-                                      >
+                  <span className="text-[13px] text-gray-600 tabular-nums">
                     {num}<span className="font-bold">{day}</span>
                   </span>
                 </div>
               );
+              return elements;
             })}
 
             {/* Grid cells */}
@@ -121,10 +147,12 @@ export default function AvailabilityGrid({
                 const isLast = colIdx === visibleDates.length - 1;
                 const isFirstRow = rowIdx === 0;
                 const isLastRow = rowIdx === slots.length - 1;
+                const hasGapBefore = dateGapIndices.has(colIdx);
 
                 let border = 'border-r border-r-[#ddd9] ';
                 if (isLast) border = 'border-r border-r-[#BDBDBD] ';
                 if (isFirst) border += 'border-l border-l-[#BDBDBD] ';
+                if (hasGapBefore) border += 'border-l border-l-[#BDBDBD] ';
 
                 if (isFirstRow) border += 'border-t border-t-[#BDBDBD] ';
                 else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-[#ddd9] ';
@@ -132,11 +160,16 @@ export default function AvailabilityGrid({
 
                 if (isLastRow) border += 'border-b border-b-[#BDBDBD] ';
 
-                return (
-                  <div key={`${date}-${slot}`} className={border} style={{ height: 32 }}>
+                const elements = [];
+                if (hasGapBefore) {
+                  elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: CELL_HEIGHT }} />);
+                }
+                elements.push(
+                  <div key={`${date}-${slot}`} className={border} style={{ height: CELL_HEIGHT }}>
                     {renderCell(date, slot)}
                   </div>
                 );
+                return elements;
               })
             ))}
           </div>

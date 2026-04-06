@@ -9,6 +9,7 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
 import { generateSlots } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
+import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
 import EventFormModal from '@/components/event-form/EventFormModal';
@@ -16,6 +17,7 @@ import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -47,14 +49,9 @@ interface EventPageClientProps {
 type ViewMode = 'view' | 'edit';
 
 function readStoredSession(eventId: string) {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem(`whenmeets:${eventId}`);
-    if (stored) return JSON.parse(stored) as { participantId: string; name: string; password: string | null };
-  } catch {
-    try { localStorage.removeItem(`whenmeets:${eventId}`); } catch { /* SSR safe */ }
-  }
-  return null;
+  const active = getActiveSession(eventId);
+  if (!active) return null;
+  return { participantId: active.pid, name: active.name, password: active.password };
 }
 
 export default function EventPageClient({
@@ -69,6 +66,7 @@ export default function EventPageClient({
   const [nameInput, setNameInput] = useState('');
   const [nameLoading, setNameLoading] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
@@ -85,6 +83,21 @@ export default function EventPageClient({
     });
   }, []);
 
+  // Debounce name matching for existing participant check
+  useEffect(() => {
+    if (!nameInput.trim()) {
+      setNameExistingMatch(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const match = event.participants.some(
+        (p) => p.name.toLowerCase() === nameInput.trim().toLowerCase(),
+      );
+      setNameExistingMatch(match);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [nameInput, event.participants]);
+
   // Active drag mode (lifted from DragGrid)
   const [activeMode, setActiveMode] = useState<AvailabilityLevel>(
     initialEvent.mode === 'unavailable' ? 0 : 2,
@@ -97,6 +110,7 @@ export default function EventPageClient({
   const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
   const [showBestTimes, setShowBestTimes] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetPid, setDeleteTargetPid] = useState<string | null>(null);
 
   // Session (localStorage)
   const [session, setSession] = useState(() => {
@@ -216,10 +230,7 @@ export default function EventPageClient({
       setParticipantId(data.id);
       setParticipantPassword(null);
       setSession({ participantId: data.id, name: data.name, password: null });
-      localStorage.setItem(
-        `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, name: data.name, password: null }),
-      );
+      upsertSession(eventId, { pid: data.id, name: data.name, password: null });
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
@@ -277,10 +288,7 @@ export default function EventPageClient({
       setParticipantId(data.id);
       setParticipantPassword(namePassword || null);
       setSession({ participantId: data.id, name: data.name, password: namePassword || null });
-      localStorage.setItem(
-        `whenmeets:${eventId}`,
-        JSON.stringify({ participantId: data.id, name: data.name, password: namePassword || null }),
-      );
+      upsertSession(eventId, { pid: data.id, name: data.name, password: namePassword || null });
 
       if (data.numbered === true) {
         setNameError('');
@@ -327,6 +335,25 @@ export default function EventPageClient({
       }
     } catch { /* ignore */ }
     setViewMode('view');
+  }
+
+  async function handleDeleteParticipant(pid: string) {
+    const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      setDeleteTargetPid(null);
+      setNameError('응답자 삭제에 실패했습니다');
+      return;
+    }
+    // Refresh event data
+    const refreshRes = await fetch(`/api/events/${eventId}`);
+    if (refreshRes.ok) {
+      const data = await refreshRes.json();
+      setEvent(data);
+      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+    }
+    setDeleteTargetPid(null);
   }
 
   async function handleCopyLink() {
@@ -607,6 +634,7 @@ export default function EventPageClient({
                   selectedIds={selectedIds}
                   onSelectedChange={setSelectedIds}
                   slotAvailability={slotAvailability}
+                  onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                 />
               </div>
 
@@ -628,7 +656,7 @@ export default function EventPageClient({
                       onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
                       className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                     >
-                      <span>"필요하다면.." 숨기기</span>
+                      <span>&quot;필요하다면..&quot; 숨기기</span>
                       <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </div>
@@ -711,6 +739,19 @@ export default function EventPageClient({
                     autoFocus
                     maxLength={50}
                   />
+                  <AnimatePresence>
+                    {nameExistingMatch && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-sm text-amber-600 mt-2"
+                      >
+                        응답 기록이 있는 사용자입니다. 기존 시간표를 수정합니다.
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                   <div className="mt-3">
                     <input
                       type="password"
@@ -737,7 +778,7 @@ export default function EventPageClient({
                     const supabase = createAuthBrowserClient();
                     await supabase.auth.signInWithOAuth({
                       provider: 'google',
-                      options: { redirectTo: window.location.origin + '/auth/callback' },
+                      options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
                     });
                   }}
                   className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-sm font-medium text-gray-700"
@@ -766,7 +807,7 @@ export default function EventPageClient({
                   disabled={nameLoading || !nameInput.trim()}
                   className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {nameLoading ? '참여 중...' : '참여하기'}
+                  {nameLoading ? '참여 중...' : nameExistingMatch ? '수정하기' : '참여하기'}
                 </button>
               </div>
             </motion.div>
@@ -787,6 +828,31 @@ export default function EventPageClient({
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
+      {/* Delete participant confirm modal (owner only) */}
+      <ConfirmModal
+        open={!!deleteTargetPid}
+        title="응답자 삭제"
+        message={`${event.participants.find(p => p.id === deleteTargetPid)?.name ?? ''}의 응답을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+        confirmLabel="삭제"
+        variant="danger"
+        onConfirm={() => { if (deleteTargetPid) handleDeleteParticipant(deleteTargetPid); }}
+        onCancel={() => setDeleteTargetPid(null)}
+      />
+
+      {/* Mobile bottom bar */}
+      <MobileBottomBar
+        participants={event.participants}
+        selectedIds={selectedIds}
+        onSelectedChange={setSelectedIds}
+        slotAvailability={slotAvailability}
+        isEditMode={viewMode === 'edit'}
+        onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
+        saving={saving}
+      />
+
+      {/* Bottom spacer for mobile bottom bar */}
+      <div className="h-16 lg:hidden" />
+
       {/* Toast for copy */}
       <AnimatePresence>
         {copied && (
@@ -795,7 +861,7 @@ export default function EventPageClient({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg lg:bottom-6"
           >
             링크가 복사되었습니다
           </motion.div>

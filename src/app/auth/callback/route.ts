@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
+  const next = searchParams.get('next');
   // Use env var for redirect base to prevent Host header injection
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 
@@ -30,7 +31,10 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${siteUrl}/dashboard`);
+      // Redirect to the page the user came from, or dashboard as fallback
+      // Only allow relative paths to prevent open redirect
+      const destination = next && next.startsWith('/') ? next : '/dashboard';
+      return NextResponse.redirect(`${siteUrl}${destination}`);
     }
   }
 

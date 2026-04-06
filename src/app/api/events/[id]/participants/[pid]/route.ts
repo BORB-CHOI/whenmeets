@@ -66,6 +66,80 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; pid: string }> }
+) {
+  const { id, pid } = await params;
+  const supabase = createServerClient();
+
+  // Check event ownership — only the event creator can delete participants
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, created_by, password_hash')
+    .eq('id', id)
+    .single();
+
+  if (!event) {
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+  }
+
+  let authorized = false;
+
+  // 1. Check if authenticated user is the event creator
+  if (event.created_by) {
+    try {
+      const { createAuthServerClient } = await import('@/lib/supabase/auth-server');
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user?.id === event.created_by) authorized = true;
+    } catch { /* no auth */ }
+  }
+
+  // 2. For anonymous creators, verify event password via cookie
+  if (!authorized && event.password_hash) {
+    const { verifyEventToken } = await import('@/lib/auth');
+    const cookie = request.cookies.get(`whenmeets_auth_${id}`);
+    if (cookie && verifyEventToken(id, cookie.value)) {
+      authorized = true;
+    }
+  }
+
+  // 3. If event has no password and no creator, check request body for event password
+  if (!authorized && !event.created_by && !event.password_hash) {
+    // Open event with no owner — anyone can delete (use with caution)
+    // For now, disallow to prevent abuse
+    return NextResponse.json({ error: 'Only the event creator can delete participants' }, { status: 403 });
+  }
+
+  if (!authorized) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
+  const { data: participant } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('id', pid)
+    .eq('event_id', id)
+    .single();
+
+  if (!participant) {
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+  }
+
+  const { error } = await supabase
+    .from('participants')
+    .delete()
+    .eq('id', pid)
+    .eq('event_id', id);
+
+  if (error) {
+    return NextResponse.json({ error: '삭제에 실패했습니다' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
 // sendBeacon always sends POST — delegate to PATCH logic
 export async function POST(
   request: NextRequest,
