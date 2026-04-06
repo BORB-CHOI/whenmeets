@@ -59,7 +59,7 @@ export default function SegmentedControl<T extends string>({
             type="button"
             onClick={() => onChange(option.value)}
             className={`relative z-10 flex-1 text-center px-4 py-2 text-sm whitespace-nowrap rounded-md transition-colors duration-150 cursor-pointer
-              ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 hover:text-gray-600'}`}
+              ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
           >
             {option.label}
           </button>
