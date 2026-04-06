@@ -37,6 +37,8 @@ export default function useGridDrag({
   const containerRef = useRef<HTMLElement | null>(null);
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
+  const onDragEndRef = useRef(onDragEnd);
+  onDragEndRef.current = onDragEnd;
 
   function applyToCell(date: string, slot: string) {
     const cellKey = `${date}:${slot}`;
@@ -132,7 +134,9 @@ export default function useGridDrag({
         delete (el as HTMLElement).dataset.erased;
       });
       // Commit draft to React state once on drag end
-      onAvailabilityChangeRef.current({ ...draftRef.current });
+      const committed = { ...draftRef.current };
+      onAvailabilityChangeRef.current(committed);
+      onDragEndRef.current?.(committed);
     }
     isDragging.current = false;
     lastCell.current = null;
