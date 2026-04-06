@@ -76,7 +76,8 @@ body {
   background: #6B7280;
 }
 
-/* Select popover animations (shadcn style) */
+/* Select popover enter animation (shadcn style) */
+/* Note: exit animation은 Radix가 close 시 portal을 즉시 unmount하므로 적용 불가 */
 @keyframes select-in {
   from {
     opacity: 0;
@@ -88,23 +89,8 @@ body {
   }
 }
 
-@keyframes select-out {
-  from {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95) translateY(-4px);
-  }
-}
-
 [data-radix-select-content][data-state="open"] {
   animation: select-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-radix-select-content][data-state="closed"] {
-  animation: select-out 100ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Prevent text selection during drag */
