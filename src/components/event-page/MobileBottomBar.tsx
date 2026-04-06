@@ -36,10 +36,10 @@ export default function MobileBottomBar({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="bg-white border-t border-gray-200 overflow-hidden"
+            className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 overflow-hidden"
           >
             <div className="px-4 py-3 max-h-60 overflow-y-auto">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 응답자 ({participants.length})
               </h3>
               <ParticipantFilter
@@ -55,12 +55,12 @@ export default function MobileBottomBar({
 
       {/* Bottom bar */}
       <div
-        className="bg-white border-t border-gray-200 px-4 flex items-center justify-between gap-3"
+        className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 flex items-center justify-between gap-3"
         style={{ height: 56, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer"
         >
           <svg
             className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}

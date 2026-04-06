@@ -105,7 +105,7 @@ export default function AvailabilityGrid({
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
-                    className="text-[10px] text-gray-400 tabular-nums leading-none"
+                    className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums leading-none"
                     style={{ marginTop: -4 }}
                   >
                     {Math.floor(slot / SLOTS_PER_HOUR)}
@@ -132,7 +132,7 @@ export default function AvailabilityGrid({
               }
               elements.push(
                 <div key={`hdr-${date}`} className="flex items-center justify-center" style={{ height: 40 }}>
-                  <span className="text-[13px] text-gray-600 tabular-nums">
+                  <span className="text-[13px] text-gray-600 dark:text-gray-300 tabular-nums">
                     {num}<span className="font-bold">{day}</span>
                   </span>
                 </div>
@@ -149,16 +149,16 @@ export default function AvailabilityGrid({
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                let border = 'border-r border-r-gray-200/60 ';
-                if (isLast) border = 'border-r border-r-gray-300 ';
-                if (isFirst) border += 'border-l border-l-gray-300 ';
-                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 ';
+                let border = 'border-r border-r-gray-200/60 dark:border-r-gray-700/60 ';
+                if (isLast) border = 'border-r border-r-gray-300 dark:border-r-gray-600 ';
+                if (isFirst) border += 'border-l border-l-gray-300 dark:border-l-gray-600 ';
+                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 dark:border-l-gray-600 ';
 
-                if (isFirstRow) border += 'border-t border-t-gray-300 ';
-                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300/80 ';
-                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-t-gray-200/40 ';
+                if (isFirstRow) border += 'border-t border-t-gray-300 dark:border-t-gray-600 ';
+                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300/80 dark:border-t-gray-600/80 ';
+                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-t-gray-200/40 dark:border-t-gray-700/40 ';
 
-                if (isLastRow) border += 'border-b border-b-gray-300 ';
+                if (isLastRow) border += 'border-b border-b-gray-300 dark:border-b-gray-600 ';
 
                 const elements = [];
                 if (hasGapBefore) {
