@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { AvailabilityLevel } from '@/lib/types';
 import { formatDateCompact } from '@/lib/constants';
 
@@ -29,7 +30,7 @@ interface GridCellProps {
   onCellLeave?: () => void;
 }
 
-export default function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellHover, onCellLeave }: GridCellProps) {
+function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellHover, onCellLeave }: GridCellProps) {
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
   // Border opacity: 0.2 ~ 0.8 based on how many others responded
   const borderOpacity = hasOverlay
@@ -92,3 +93,5 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
     </div>
   );
 }
+
+export default memo(GridCell);
