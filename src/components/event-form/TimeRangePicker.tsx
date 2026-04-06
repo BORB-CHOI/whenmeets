@@ -134,23 +134,32 @@ function ScrollPicker({
     e.stopPropagation();
     if (!containerRef.current) return;
 
-    // Normalize: mouse wheels send ~100 per notch, trackpads send 1-20
     const delta = e.deltaMode === 1 ? e.deltaY * ITEM_H : e.deltaY;
-    wheelAccum.current += delta;
+    const absDelta = Math.abs(delta);
 
-    // Threshold: one ITEM_H worth of scroll triggers 1 step
-    // For mouse wheels (~100-120 per notch), one notch = 1 step instantly
-    // For trackpads (~1-20 per event), accumulates until ITEM_H reached
-    const threshold = ITEM_H * 0.6; // ~22px — responsive but not twitchy
-    const steps = Math.trunc(wheelAccum.current / threshold);
-    if (steps === 0) {
-      // Reset accumulator after idle to prevent drift
-      clearTimeout(wheelTimer.current);
-      wheelTimer.current = setTimeout(() => { wheelAccum.current = 0; }, 200);
-      return;
+    // Detect device: mouse wheel sends large discrete jumps (>50), trackpad sends small continuous ones
+    const isDiscreteWheel = absDelta > 50;
+
+    let steps: number;
+    if (isDiscreteWheel) {
+      // Mouse wheel: always exactly 1 step per notch, regardless of deltaY magnitude
+      steps = delta > 0 ? 1 : -1;
+      wheelAccum.current = 0;
+    } else {
+      // Trackpad / high-precision: accumulate until threshold reached
+      wheelAccum.current += delta;
+      const threshold = ITEM_H; // 36px — one full item height
+      const raw = Math.trunc(wheelAccum.current / threshold);
+      if (raw === 0) {
+        clearTimeout(wheelTimer.current);
+        wheelTimer.current = setTimeout(() => { wheelAccum.current = 0; }, 200);
+        return;
+      }
+      // Clamp: max 2 steps per event to prevent overshoot on fast swipes
+      steps = Math.max(-2, Math.min(2, raw));
+      wheelAccum.current -= steps * threshold;
     }
 
-    wheelAccum.current -= steps * threshold;
     wheelControlled.current = true;
     suppressSnap.current = true;
 
@@ -164,7 +173,6 @@ function ScrollPicker({
       onChange(opt);
     }
 
-    // Reset wheel control after animation settles
     clearTimeout(wheelTimer.current);
     wheelTimer.current = setTimeout(() => {
       wheelControlled.current = false;
