@@ -58,61 +58,11 @@ export async function POST(
           existing: true,
         });
       }
-      // Wrong or missing password — auto-number the new name
-      const escapedName = trimmedName.replace(/%/g, '\\%').replace(/_/g, '\\_');
-      const { data: similar } = await supabase
-        .from('participants')
-        .select('name')
-        .eq('event_id', id)
-        .like('name', `${escapedName}-%`);
-
-      let nextNum = 2;
-      if (similar && similar.length > 0) {
-        for (const p of similar) {
-          const suffix = p.name.replace(`${trimmedName}-`, '');
-          const num = parseInt(suffix, 10);
-          if (!isNaN(num) && num >= nextNum) {
-            nextNum = num + 1;
-          }
-        }
-      }
-
-      const numberedName = `${trimmedName}-${nextNum}`;
-      const insertData: Record<string, unknown> = {
-        event_id: id,
-        name: numberedName,
-        availability: {},
-        password_hash: password ? await bcrypt.hash(password, 10) : null,
-      };
-
-      // Try to get authenticated user (optional)
-      let userId: string | null = null;
-      try {
-        const authClient = await createAuthServerClient();
-        const { data: { user } } = await authClient.auth.getUser();
-        userId = user?.id ?? null;
-      } catch {
-        // Auth is optional
-      }
-      if (userId) insertData.user_id = userId;
-
-      const { data: participant, error } = await supabase
-        .from('participants')
-        .insert(insertData)
-        .select('id, name')
-        .single();
-
-      if (error) {
-        console.error('Participant creation failed:', error.message);
-        return NextResponse.json({ error: '참여 등록에 실패했습니다' }, { status: 500 });
-      }
-
-      return NextResponse.json({
-        id: participant!.id,
-        name: participant!.name,
-        existing: false,
-        numbered: true,
-      }, { status: 201 });
+      // Wrong or missing password — require password authentication
+      return NextResponse.json(
+        { error: '비밀번호가 필요합니다', requires_password: true },
+        { status: 401 },
+      );
     }
 
     // No password — anyone can access
