@@ -157,8 +157,14 @@ export default function CalendarDragGrid({
   return (
     <div
       onMouseMove={(e) => handlePointerMoveAt(e.clientX, e.clientY)}
-      onTouchMove={(e) => { e.preventDefault(); handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY); }}
-      className="select-none touch-none"
+      onTouchMove={(e) => {
+        if (isDragging.current) {
+          e.preventDefault();
+          handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }}
+      className="select-none"
+      style={{ touchAction: 'pan-y' }}
     >
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">

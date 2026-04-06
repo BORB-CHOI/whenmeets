@@ -74,11 +74,7 @@ export default function MobileBottomBar({
         <button
           onClick={onToggleMode}
           disabled={saving}
-          className={`px-5 py-2 text-sm font-semibold rounded-md transition-all cursor-pointer disabled:opacity-70 ${
-            isEditMode
-              ? 'bg-emerald-600 text-white shadow-[var(--shadow-primary)]'
-              : 'bg-emerald-600 text-white shadow-[var(--shadow-primary)]'
-          }`}
+          className="px-5 py-2 text-sm font-semibold rounded-md transition-all cursor-pointer disabled:opacity-70 bg-emerald-600 text-white shadow-[var(--shadow-primary)]"
         >
           {isEditMode ? (saving ? '저장 중...' : '편집 완료') : '내 시간 입력'}
         </button>
