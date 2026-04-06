@@ -337,23 +337,30 @@ export default function EventPageClient({
     setViewMode('view');
   }
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   async function handleDeleteParticipant(pid: string) {
-    const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        setDeleteTargetPid(null);
+        return;
+      }
+      // Refresh event data
+      const refreshRes = await fetch(`/api/events/${eventId}`);
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        setEvent(data);
+        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      }
+    } finally {
+      setIsDeleting(false);
       setDeleteTargetPid(null);
-      setNameError('응답자 삭제에 실패했습니다');
-      return;
     }
-    // Refresh event data
-    const refreshRes = await fetch(`/api/events/${eventId}`);
-    if (refreshRes.ok) {
-      const data = await refreshRes.json();
-      setEvent(data);
-      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
-    }
-    setDeleteTargetPid(null);
   }
 
   async function handleCopyLink() {
