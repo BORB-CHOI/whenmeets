@@ -33,7 +33,7 @@ ECC (everything-claude-code) 글로벌 설치됨. TypeScript, Web, Common 룰이
 ### Project-local (`.claude/rules/`) — whenmeets 전용, 글로벌보다 우선
 
 - **whenmeets-component-map.md** — 컴포넌트 간 관계 맵. 한 컴포넌트 수정 시 관련 컴포넌트 반드시 확인/수정.
-- **whenmeets-conventions.md** — 하드코딩 금지, Pretendard only, 애니메이션 필수, 레이아웃 시프트 금지, 한국어 커밋.
+- **whenmeets-conventions.md** — shadcn/ui 패턴 필수, 하드코딩 금지, Pretendard only, 애니메이션 필수, 자체 스크롤바, 레이아웃 시프트 금지, 한국어 커밋.
 
 ## Commands
 
