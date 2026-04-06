@@ -106,20 +106,38 @@ function ScrollPicker({
     }, 80);
   }
 
-  // Wheel: always move exactly 1 item regardless of scroll speed
+  // Wheel: accumulate delta across devices, snap at threshold
   const wheelControlled = useRef(false);
-  const wheelCooldown = useRef(false);
+  const wheelAccum = useRef(0);
+  const wheelTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (wheelCooldown.current || !containerRef.current) return;
+    if (!containerRef.current) return;
 
-    const direction = e.deltaY > 0 ? 1 : -1;
-    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
-    const nextIdx = Math.max(0, Math.min(currentIdx + direction, options.length - 1));
+    // Normalize: mouse wheels send ~100 per notch, trackpads send 1-20
+    const delta = e.deltaMode === 1 ? e.deltaY * ITEM_H : e.deltaY;
+    wheelAccum.current += delta;
 
+    // Threshold: one ITEM_H worth of scroll triggers 1 step
+    // For mouse wheels (~100-120 per notch), one notch = 1 step instantly
+    // For trackpads (~1-20 per event), accumulates until ITEM_H reached
+    const threshold = ITEM_H * 0.6; // ~22px — responsive but not twitchy
+    const steps = Math.trunc(wheelAccum.current / threshold);
+    if (steps === 0) {
+      // Reset accumulator after idle to prevent drift
+      clearTimeout(wheelTimer.current);
+      wheelTimer.current = setTimeout(() => { wheelAccum.current = 0; }, 200);
+      return;
+    }
+
+    wheelAccum.current -= steps * threshold;
     wheelControlled.current = true;
+
+    const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
+    const nextIdx = Math.max(0, Math.min(currentIdx + steps, options.length - 1));
+
     containerRef.current.scrollTo({ top: nextIdx * ITEM_H, behavior: 'smooth' });
 
     const opt = options[nextIdx];
@@ -127,29 +145,29 @@ function ScrollPicker({
       onChange(opt);
     }
 
-    // Cooldown to prevent rapid-fire scrolling
-    wheelCooldown.current = true;
-    setTimeout(() => {
-      wheelCooldown.current = false;
+    // Reset wheel control after animation settles
+    clearTimeout(wheelTimer.current);
+    wheelTimer.current = setTimeout(() => {
       wheelControlled.current = false;
-    }, 150);
+      wheelAccum.current = 0;
+    }, 120);
   }
 
   const halfPad = Math.floor(VISIBLE / 2);
 
   return (
     <div
-      className="relative rounded-lg border border-gray-200 overflow-hidden bg-white"
+      className="relative rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
       style={{ height: ITEM_H * VISIBLE }}
     >
       {/* Center highlight bar */}
       <div
-        className="absolute left-0 right-0 pointer-events-none border-y border-emerald-200 bg-emerald-50/50 z-10"
+        className="absolute left-0 right-0 pointer-events-none border-y border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/30 z-10"
         style={{ top: ITEM_H * halfPad, height: ITEM_H }}
       />
       {/* Fade top/bottom */}
-      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white to-transparent pointer-events-none z-20" />
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none z-20" />
+      <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-white dark:from-gray-800 to-transparent pointer-events-none z-20" />
+      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none z-20" />
 
       <div
         ref={containerRef}
@@ -172,9 +190,9 @@ function ScrollPicker({
               key={opt}
               onClick={() => { if (!disabled) { onChange(opt); scrollToValue(opt, true); } }}
               className={`flex items-center justify-center cursor-pointer transition-colors
-                ${disabled ? 'text-gray-200 cursor-not-allowed' : ''}
-                ${selected ? 'text-emerald-700 font-bold' : ''}
-                ${!selected && !disabled ? 'text-gray-500' : ''}`}
+                ${disabled ? 'text-gray-200 dark:text-gray-700 cursor-not-allowed' : ''}
+                ${selected ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}
+                ${!selected && !disabled ? 'text-gray-500 dark:text-gray-400' : ''}`}
               style={{
                 height: ITEM_H,
                 fontSize: selected ? 16 : 14,
