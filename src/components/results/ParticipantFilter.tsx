@@ -80,8 +80,8 @@ export default function ParticipantFilter({
               {onDelete && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete(p.id); }}
-                  className="p-1 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                  title="응답 삭제"
+                  className="p-1 text-gray-300 hover:text-red-500 focus:text-red-500 focus-visible:opacity-100 transition-colors opacity-0 group-hover:opacity-100 active:opacity-100 shrink-0"
+                  aria-label={`${p.name} 응답 삭제`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -70,15 +70,20 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
     applyToDate(dateStr);
   }
 
+  const rafId = useRef(0);
+
   function handlePointerMove(e: React.MouseEvent | React.TouchEvent) {
     if (!isDragging.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const el = document.elementFromPoint(clientX, clientY);
-    if (!el) return;
-    const btn = el.closest('[data-date]') as HTMLElement | null;
-    if (!btn) return;
-    applyToDate(btn.dataset.date!);
+    cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(() => {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return;
+      const btn = el.closest('[data-date]') as HTMLElement | null;
+      if (!btn) return;
+      applyToDate(btn.dataset.date!);
+    });
   }
 
   function handlePointerUp() {

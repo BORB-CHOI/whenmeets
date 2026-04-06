@@ -75,25 +75,41 @@ export default function CalendarDragGrid({
     return val !== undefined ? val : -1;
   }
 
+  // Paint cell DOM directly during drag (no React re-render)
+  function paintCell(date: string, value: AvailabilityLevel | -1) {
+    const el = document.querySelector(`[data-cal-date="${date}"]`) as HTMLElement | null;
+    if (!el) return;
+    // Remove old color classes
+    el.classList.remove('bg-gray-100', 'bg-red-200', 'bg-[#FFE8B8]', 'bg-[#86EFAC]');
+    el.classList.add(CELL_COLORS[value]);
+  }
+
   function applyToDate(date: string) {
     if (!dateSet.has(date)) return;
-    const draft = { ...draftRef.current };
+    const draft = draftRef.current;
     if (activeMode === 0 || erasing.current) {
-      const dateCopy = { ...draft[date] };
-      delete dateCopy['all_day'];
-      if (Object.keys(dateCopy).length === 0) delete draft[date];
-      else draft[date] = dateCopy;
+      if (draft[date]) {
+        const dateCopy = { ...draft[date] };
+        delete dateCopy['all_day'];
+        if (Object.keys(dateCopy).length === 0) delete draft[date];
+        else draft[date] = dateCopy;
+      }
+      paintCell(date, -1);
     } else {
       draft[date] = { ...draft[date], all_day: activeMode };
+      paintCell(date, activeMode);
     }
-    draftRef.current = draft;
-    onAvailabilityChange(draft);
   }
 
   function handlePointerDown(date: string) {
     if (!dateSet.has(date)) return;
     isDragging.current = true;
-    draftRef.current = JSON.parse(JSON.stringify(availability));
+    // Shallow clone for draft — mutated during drag, committed on end
+    const clone: Availability = {};
+    for (const d in availability) {
+      clone[d] = { ...availability[d] };
+    }
+    draftRef.current = clone;
     erasing.current = false;
     if (activeMode !== 0) {
       const existing = availability[date]?.['all_day'];
@@ -102,19 +118,28 @@ export default function CalendarDragGrid({
     applyToDate(date);
   }
 
+  const rafId = useRef(0);
+
   function handlePointerMoveAt(clientX: number, clientY: number) {
     if (!isDragging.current) return;
-    const el = document.elementFromPoint(clientX, clientY);
-    if (!el) return;
-    const cell = el.closest('[data-cal-date]') as HTMLElement | null;
-    if (!cell) return;
-    applyToDate(cell.dataset.calDate!);
+    cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(() => {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return;
+      const cell = el.closest('[data-cal-date]') as HTMLElement | null;
+      if (!cell) return;
+      applyToDate(cell.dataset.calDate!);
+    });
   }
 
   const handlePointerUp = useCallback(() => {
+    if (isDragging.current) {
+      // Commit draft to React state once on drag end
+      onAvailabilityChange({ ...draftRef.current });
+    }
     isDragging.current = false;
     erasing.current = false;
-  }, []);
+  }, [onAvailabilityChange]);
 
   // Window-level listeners for drag end
   useEffect(() => {
@@ -132,8 +157,14 @@ export default function CalendarDragGrid({
   return (
     <div
       onMouseMove={(e) => handlePointerMoveAt(e.clientX, e.clientY)}
-      onTouchMove={(e) => { e.preventDefault(); handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY); }}
-      className="select-none touch-none"
+      onTouchMove={(e) => {
+        if (isDragging.current) {
+          e.preventDefault();
+          handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }}
+      className="select-none"
+      style={{ touchAction: 'pan-y' }}
     >
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
