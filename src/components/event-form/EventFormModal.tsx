@@ -228,7 +228,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                     onChange={(e) => setShowTimeRange(e.target.checked)}
                     className="rounded border-gray-300 text-emerald-600 cursor-pointer"
                   />
-                  <span className="text-sm font-medium text-gray-600">특정 시간대 지정</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">특정 시간대 지정</span>
                 </label>
 
                 <AnimatePresence initial={false}>
@@ -258,7 +258,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer flex items-center gap-1"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer flex items-center gap-1"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -279,7 +279,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="비밀번호"
-                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:border-emerald-600"
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 dark:bg-gray-800 dark:text-gray-100"
                       />
                     </motion.div>
                   )}
