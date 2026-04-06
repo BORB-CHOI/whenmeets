@@ -32,4 +32,5 @@ export interface Participant {
 export interface EventData extends Event {
   participants: Pick<Participant, 'id' | 'name' | 'availability' | 'created_at'>[];
   requires_auth?: boolean;
+  is_owner?: boolean;
 }

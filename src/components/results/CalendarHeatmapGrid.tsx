@@ -87,7 +87,7 @@ export default function CalendarHeatmapGrid({
   }
 
   return (
-    <div>
+    <div className="overflow-x-auto">
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
           <h3 className="text-center text-base font-bold text-gray-900 mb-3">{month.label}</h3>

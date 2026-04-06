@@ -40,6 +40,28 @@ export async function GET(
     .eq('event_id', id)
     .order('created_at', { ascending: true });
 
+  // Determine if the current user is the event owner
+  let isOwner = false;
+  // Need created_by to check ownership
+  const { data: ownerCheck } = await supabase
+    .from('events')
+    .select('created_by')
+    .eq('id', id)
+    .single();
+
+  if (ownerCheck?.created_by) {
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user?.id === ownerCheck.created_by) isOwner = true;
+    } catch { /* no auth */ }
+  }
+
+  // If event has a password and no created_by (anonymous creator), cookie auth = owner
+  if (!isOwner && hasPassword && !ownerCheck?.created_by) {
+    isOwner = true;
+  }
+
   return NextResponse.json({
     id: event.id,
     title: event.title,
@@ -52,6 +74,7 @@ export async function GET(
     date_only: event.date_only,
     description: event.description ?? undefined,
     participants: participants ?? [],
+    is_owner: isOwner,
   });
 }
 
