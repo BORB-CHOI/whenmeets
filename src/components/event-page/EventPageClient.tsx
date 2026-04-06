@@ -21,16 +21,16 @@ import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
-    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
-      <span className="text-xs text-gray-300">로딩 중...</span>
+    <div className="w-full h-64 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300 dark:text-gray-500">로딩 중...</span>
     </div>
   ),
 });
 
 const CalendarHeatmapGrid = dynamic(() => import('@/components/results/CalendarHeatmapGrid'), {
   loading: () => (
-    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
-      <span className="text-xs text-gray-300">로딩 중...</span>
+    <div className="w-full h-64 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300 dark:text-gray-500">로딩 중...</span>
     </div>
   ),
 });
@@ -397,8 +397,8 @@ export default function EventPageClient({
       {/* Event header — timeful style */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {dateRange}
             <span
               onClick={() => setShowEditModal(true)}
@@ -409,7 +409,7 @@ export default function EventPageClient({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyLink}
-            className="h-[38px] px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-1.5"
+            className="h-[38px] px-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center gap-1.5"
           >
             {copied ? '복사됨!' : '링크 복사'}
             {!copied && (
@@ -445,7 +445,7 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-emerald-600 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-emerald-600 resize-none dark:bg-gray-800 dark:text-gray-100"
               rows={3}
               autoFocus
             />
@@ -469,14 +469,14 @@ export default function EventPageClient({
           </div>
         ) : description ? (
           <p
-            className="mt-2 text-sm text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+            className="mt-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             onClick={() => setEditingDescription(true)}
           >
             {description}
           </p>
         ) : (
           <p
-            className="mt-2 text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+            className="mt-2 text-sm text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             onClick={() => setEditingDescription(true)}
           >
             + 설명 추가
@@ -540,7 +540,7 @@ export default function EventPageClient({
         </div>
 
         {/* Right: Sidebar */}
-        <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100">
+        <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700">
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight */}
@@ -570,8 +570,8 @@ export default function EventPageClient({
 
               {/* Legend */}
               <div className="mb-5">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">범례</h3>
-                <div className="flex flex-col gap-1.5 text-sm text-gray-600">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">범례</h3>
+                <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-sm bg-emerald-400/60" />
                     <span>Available</span>
@@ -594,7 +594,7 @@ export default function EventPageClient({
               {/* Participant list in edit mode — same interaction as view mode */}
               {event.participants.length > 0 && (
                 <div className="mb-5">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     응답자 ({event.participants.length})
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
@@ -629,7 +629,7 @@ export default function EventPageClient({
           ) : (
             <>
               {/* View mode sidebar — responses + options */}
-              <h2 className="text-base font-bold text-gray-900 mb-3">
+              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
                 응답자 {hoveredSlot && slotAvailability
                   ? `(${Array.from(slotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/${event.participants.length})`
                   : `(${event.participants.length})`}
@@ -647,24 +647,24 @@ export default function EventPageClient({
 
               {/* Options */}
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">옵션</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">옵션</h3>
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => setShowBestTimes(!showBestTimes)}
-                    className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
+                    className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
                   >
                     <span>최적 시간만 보기</span>
-                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-emerald-600' : 'bg-gray-200'}`}>
+                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
                       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${showBestTimes ? 'translate-x-4' : 'translate-x-0.5'}`} />
                     </div>
                   </button>
                   {event.mode !== 'unavailable' && (
                     <button
                       onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
-                      className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
+                      className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
                     >
                       <span>&quot;필요하다면..&quot; 숨기기</span>
-                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200'}`}>
+                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </div>
                     </button>
@@ -716,15 +716,15 @@ export default function EventPageClient({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-2">
-                <h2 className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">내 시간 입력하기</h2>
                 <button
                   onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -734,7 +734,7 @@ export default function EventPageClient({
 
               {/* Body */}
               <div className="px-6 py-4">
-                <p className="text-sm text-gray-500 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
 
                 <form onSubmit={handleNameSubmit}>
                   <input
@@ -742,7 +742,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-emerald-600 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     autoFocus
                     maxLength={50}
                   />
@@ -765,17 +765,17 @@ export default function EventPageClient({
                       value={namePassword}
                       onChange={(e) => setNamePassword(e.target.value)}
                       placeholder="비밀번호 (선택사항)"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-emerald-600 transition-all"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     />
-                    <p className="text-xs text-gray-400 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
                   </div>
                   {nameError && <p className="text-sm text-red-500 mt-2">{nameError}</p>}
                 </form>
 
                 <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs text-gray-400">또는</span>
-                  <div className="flex-1 h-px bg-gray-200" />
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
+                  <span className="text-xs text-gray-400 dark:text-gray-500">또는</span>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
                 </div>
 
                 {/* Google login button */}
@@ -788,7 +788,7 @@ export default function EventPageClient({
                       options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
                     });
                   }}
-                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-sm font-medium text-gray-700"
+                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-200 dark:bg-gray-800"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -805,7 +805,7 @@ export default function EventPageClient({
                 <button
                   type="button"
                   onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   취소
                 </button>

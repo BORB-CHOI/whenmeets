@@ -82,10 +82,10 @@ export default function EventForm() {
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-emerald-600 ${
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-emerald-600 dark:bg-gray-800 dark:text-gray-100 ${
             titleError
               ? 'border-red-500 ring ring-red-500/10'
-              : 'border-gray-200'
+              : 'border-gray-200 dark:border-gray-600'
           }`}
           maxLength={100}
         />
@@ -93,7 +93,7 @@ export default function EventForm() {
 
       {/* Type toggle */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 mb-2">유형</label>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">유형</label>
         <SegmentedControl
           options={[
             { value: 'datetime', label: '날짜 + 시간' },
@@ -106,7 +106,7 @@ export default function EventForm() {
 
       {/* Response mode */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 mb-2">응답 방식</label>
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">응답 방식</label>
         <SegmentedControl
           options={[
             { value: 'available', label: '되는 시간 수합' },
@@ -119,7 +119,7 @@ export default function EventForm() {
 
       {/* Date picker */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 mb-2">
+        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
           날짜 {dates.length > 0 && `(${dates.length}개 선택)`}
         </label>
         <DatePicker selectedDates={dates} onDatesChange={setDates} />
@@ -140,7 +140,7 @@ export default function EventForm() {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer flex items-center gap-1"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer flex items-center gap-1"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -153,7 +153,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:border-emerald-600"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-emerald-600 dark:bg-gray-800 dark:text-gray-100"
           />
         )}
       </div>

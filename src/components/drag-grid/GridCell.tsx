@@ -45,7 +45,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
       <div
         data-date={date}
         data-slot={slot}
-        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer flex items-center justify-between`}
+        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 dark:border-gray-700 ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer flex items-center justify-between`}
       >
         {hasOverlay && (
           <div
@@ -53,7 +53,7 @@ export default function GridCell({ date, slot, value, wide, overlayCount, overla
             style={{ opacity: overlayOpacity }}
           />
         )}
-        <span className="text-sm text-gray-700 relative z-10">{formatDateCompact(date)}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300 relative z-10">{formatDateCompact(date)}</span>
         {hasOverlay && (
           <span className="text-[10px] text-emerald-600 font-medium relative z-10">
             +{overlayCount}

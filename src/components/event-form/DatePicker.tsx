@@ -129,17 +129,17 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
     >
       {/* Month nav */}
       <div className="flex items-center justify-between mb-3">
-        <button type="button" onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 cursor-pointer">
+        <button type="button" onClick={prevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 cursor-pointer">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <span className="font-semibold text-sm text-gray-900">{monthLabel}</span>
-        <button type="button" onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 cursor-pointer">
+        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{monthLabel}</span>
+        <button type="button" onClick={nextMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 cursor-pointer">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-400 mb-1">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -178,9 +178,9 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   className={`h-9 rounded-lg text-sm tabular-nums transition-colors
-                    ${isPast ? 'text-gray-200 cursor-not-allowed' : 'cursor-pointer'}
+                    ${isPast ? 'text-gray-200 dark:text-gray-600 cursor-not-allowed' : 'cursor-pointer'}
                     ${isSelected ? 'bg-emerald-600 text-white font-semibold' : ''}
-                    ${!isSelected && !isPast ? 'hover:bg-gray-100 text-gray-700' : ''}
+                    ${!isSelected && !isPast ? 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300' : ''}
                     ${isToday && !isSelected ? 'ring-1 ring-inset ring-emerald-300' : ''}`}
                 >
                   {day.getDate()}
@@ -193,12 +193,12 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
 
       {/* Footer: hint + count + reset */}
       <div className="mt-1 flex items-center justify-between">
-        <span className="text-xs text-gray-400">드래그로 여러 날짜 선택</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">드래그로 여러 날짜 선택</span>
         {selectedDates.length > 0 && (
           <button
             type="button"
             onClick={() => onDatesChange([])}
-            className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
           >
             초기화
           </button>
