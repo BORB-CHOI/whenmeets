@@ -44,6 +44,7 @@ function ScrollPicker({
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragScrollTop = useRef(0);
+  const suppressSnap = useRef(false);
 
   function handleMouseDown(e: React.MouseEvent) {
     isDragging.current = true;
@@ -51,6 +52,24 @@ function ScrollPicker({
     dragScrollTop.current = containerRef.current?.scrollTop ?? 0;
     e.preventDefault();
     e.stopPropagation();
+  }
+
+  function snapToNearest() {
+    if (!containerRef.current) return;
+    const scrollTop = containerRef.current.scrollTop;
+    const idx = Math.round(scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(idx, options.length - 1));
+    const opt = options[clamped];
+
+    // Suppress the useEffect scrollToValue from fighting with this snap
+    suppressSnap.current = true;
+    containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
+
+    if (!disabledCheck(opt)) {
+      onChange(opt);
+    }
+
+    setTimeout(() => { suppressSnap.current = false; }, 300);
   }
 
   useEffect(() => {
@@ -64,15 +83,19 @@ function ScrollPicker({
       if (isDragging.current) {
         e.preventDefault();
         e.stopPropagation();
+        isDragging.current = false;
+        // Snap to nearest item after drag release
+        snapToNearest();
       }
       isDragging.current = false;
     }
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp, true); // capture phase to prevent modal close
+    window.addEventListener('mouseup', onMouseUp, true);
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp, true);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToValue = useCallback((v: number, smooth = false) => {
@@ -83,27 +106,22 @@ function ScrollPicker({
   }, [options]);
 
   useEffect(() => {
+    // Don't fight with an in-progress snap animation
+    if (suppressSnap.current) return;
     scrollToValue(value);
   }, [value, scrollToValue]);
 
   function handleScroll() {
-    if (!containerRef.current || wheelControlled.current) return;
+    if (!containerRef.current || wheelControlled.current || isDragging.current) return;
     isScrolling.current = true;
 
-    // Debounce: snap to nearest after scroll stops
+    // Debounce: snap to nearest after scroll stops (touch/momentum only)
     clearTimeout((containerRef.current as any)._snapTimer);
     (containerRef.current as any)._snapTimer = setTimeout(() => {
-      if (!containerRef.current) return;
-      const scrollTop = containerRef.current.scrollTop;
-      const idx = Math.round(scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(idx, options.length - 1));
-      const opt = options[clamped];
-      if (!disabledCheck(opt)) {
-        onChange(opt);
-      }
-      containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
+      if (!containerRef.current || isDragging.current) return;
+      snapToNearest();
       isScrolling.current = false;
-    }, 80);
+    }, 100);
   }
 
   // Wheel: accumulate delta across devices, snap at threshold
@@ -134,6 +152,7 @@ function ScrollPicker({
 
     wheelAccum.current -= steps * threshold;
     wheelControlled.current = true;
+    suppressSnap.current = true;
 
     const currentIdx = Math.round(containerRef.current.scrollTop / ITEM_H);
     const nextIdx = Math.max(0, Math.min(currentIdx + steps, options.length - 1));
@@ -149,8 +168,9 @@ function ScrollPicker({
     clearTimeout(wheelTimer.current);
     wheelTimer.current = setTimeout(() => {
       wheelControlled.current = false;
+      suppressSnap.current = false;
       wheelAccum.current = 0;
-    }, 120);
+    }, 200);
   }
 
   const halfPad = Math.floor(VISIBLE / 2);
