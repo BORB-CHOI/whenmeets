@@ -95,27 +95,43 @@ export default function DragGrid({
     );
   }
 
+  // Event delegation for hover — no per-cell callback allocation
+  const handleGridMouseOver = useMemo(() => {
+    if (!onCellHover) return undefined;
+    return (e: React.MouseEvent) => {
+      const cell = (e.target as HTMLElement).closest('[data-date][data-slot]') as HTMLElement | null;
+      if (cell) {
+        onCellHover(cell.dataset.date!, cell.dataset.slot!);
+      }
+    };
+  }, [onCellHover]);
+
+  const handleGridMouseLeave = useMemo(() => {
+    if (!onCellHover) return undefined;
+    return () => onCellHover(null);
+  }, [onCellHover]);
+
   return (
-    <AvailabilityGrid
-      dates={dates}
-      timeStart={timeStart}
-      timeEnd={timeEnd}
-      columnsProps={gridProps}
-      renderCell={(date, slot) => {
-        const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
-        return (
-          <GridCell
-            key={`${date}-${slot}`}
-            date={date}
-            slot={slot}
-            value={getCellValue(date, slot)}
-            overlayCount={overlayTotal > 0 ? overlayCount : undefined}
-            overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
-            onCellHover={(d, s) => onCellHover?.(d, s)}
-            onCellLeave={() => onCellHover?.(null)}
-          />
-        );
-      }}
-    />
+    <div onMouseOver={handleGridMouseOver} onMouseLeave={handleGridMouseLeave}>
+      <AvailabilityGrid
+        dates={dates}
+        timeStart={timeStart}
+        timeEnd={timeEnd}
+        columnsProps={gridProps}
+        renderCell={(date, slot) => {
+          const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
+          return (
+            <GridCell
+              key={`${date}-${slot}`}
+              date={date}
+              slot={slot}
+              value={getCellValue(date, slot)}
+              overlayCount={overlayTotal > 0 ? overlayCount : undefined}
+              overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
+            />
+          );
+        }}
+      />
+    </div>
   );
 }

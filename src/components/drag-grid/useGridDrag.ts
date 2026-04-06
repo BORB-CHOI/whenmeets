@@ -73,8 +73,8 @@ export default function useGridDrag({
     const dx = x2 - x1;
     const dy = y2 - y1;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    // Sample every 4px to catch small cells
-    const steps = Math.max(Math.ceil(dist / 4), 1);
+    // Sample every 8px — balances gap coverage vs DOM query cost
+    const steps = Math.max(Math.ceil(dist / 8), 1);
 
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
@@ -159,6 +159,9 @@ export default function useGridDrag({
     };
   }, [handlePointerEnd]);
 
+  // rAF throttle for pointer move — prevents >60 calls/sec on high-refresh displays
+  const rafId = useRef(0);
+
   const gridProps = {
     ref: (el: HTMLElement | null) => { containerRef.current = el; },
     onMouseDown: (e: React.MouseEvent) => {
@@ -166,7 +169,12 @@ export default function useGridDrag({
       handlePointerStart(e.clientX, e.clientY);
     },
     onMouseMove: (e: React.MouseEvent) => {
-      handlePointerMove(e.clientX, e.clientY);
+      if (!isDragging.current) return;
+      const { clientX, clientY } = e;
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        handlePointerMove(clientX, clientY);
+      });
     },
     // No onMouseUp/onMouseLeave — handled by window listeners
     onTouchStart: (e: React.TouchEvent) => {
@@ -175,8 +183,11 @@ export default function useGridDrag({
     },
     onTouchMove: (e: React.TouchEvent) => {
       e.preventDefault();
-      const touch = e.touches[0];
-      handlePointerMove(touch.clientX, touch.clientY);
+      const { clientX, clientY } = e.touches[0];
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        handlePointerMove(clientX, clientY);
+      });
     },
     // No onTouchEnd/onTouchCancel — handled by window listeners
   };
