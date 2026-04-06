@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
       {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-white to-emerald-50">
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
         {/* Soft radial accents — static, no animation, no blur filter */}
         <div
           className="absolute rounded-full"
@@ -42,13 +42,13 @@ export default function Home() {
 
       {/* Hero content */}
       <h1
-        className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900"
+        className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100"
         style={{ animation: 'fadeInUp 0.6s ease-out both' }}
       >
         WhenMeets
       </h1>
       <p
-        className="mt-3 text-lg text-gray-500 text-center max-w-sm text-balance"
+        className="mt-3 text-lg text-gray-500 dark:text-gray-400 text-center max-w-sm text-balance"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.1s both' }}
       >
         모바일에서도 편하게 쓰는 그룹 일정 조율. 무료, 오픈소스.
@@ -61,7 +61,7 @@ export default function Home() {
         이벤트 만들기
       </button>
       <p
-        className="mt-12 text-xs text-gray-400"
+        className="mt-12 text-xs text-gray-400 dark:text-gray-500"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}
       >
         회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.
@@ -69,22 +69,22 @@ export default function Home() {
 
       {history.length > 0 && (
         <div className="mt-12 w-full max-w-lg px-4" style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">최근 이벤트</h2>
+          <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 mb-3">최근 이벤트</h2>
           <div className="flex flex-col gap-2.5">
             {history.slice(0, 5).map((item) => (
               <a
                 key={item.id}
                 href={`/e/${item.id}`}
-                className="flex items-center justify-between min-h-14 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
+                className="flex items-center justify-between min-h-14 px-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-gray-900 truncate">{item.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.title}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     {item.role === 'creator' ? '내가 만듦' : '참여함'} · {item.dates.length}일
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-emerald-600 bg-emerald-50">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30">
                     {item.role === 'creator' ? '관리' : '참여'}
                   </span>
                   <button

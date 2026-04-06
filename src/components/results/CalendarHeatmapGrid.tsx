@@ -90,18 +90,18 @@ export default function CalendarHeatmapGrid({
     <div className="overflow-x-auto">
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
-          <h3 className="text-center text-base font-bold text-gray-900 mb-3">{month.label}</h3>
+          <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-3">{month.label}</h3>
 
           <div className="grid grid-cols-7 gap-px mb-1">
             {DAY_HEADERS.map((d) => (
-              <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+              <div key={d} className="text-center text-xs font-medium text-gray-400 dark:text-gray-500 py-1">{d}</div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             {month.days.map((dateStr, idx) => {
               if (!dateStr) {
-                return <div key={`empty-${idx}`} className="bg-gray-50 aspect-square" />;
+                return <div key={`empty-${idx}`} className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
               }
 
               const isEventDate = dateSet.has(dateStr);
@@ -114,12 +114,12 @@ export default function CalendarHeatmapGrid({
                 <div
                   key={dateStr}
                   className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer transition-colors
-                    ${isEventDate ? 'hover:brightness-95' : 'bg-gray-50 text-gray-300'}`}
-                  style={{ backgroundColor: isEventDate ? (bg || '#F9FAFB') : undefined }}
+                    ${isEventDate ? 'hover:brightness-95' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
+                  style={{ backgroundColor: isEventDate ? (bg || undefined) : undefined }}
                   onMouseEnter={() => isEventDate && onCellHover?.(dateStr)}
                   onMouseLeave={() => onCellHover?.(null)}
                 >
-                  <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700' : ''}`}>
+                  <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700 dark:text-gray-300' : ''}`}>
                     {day}
                   </span>
                   {count > 0 && isEventDate && (

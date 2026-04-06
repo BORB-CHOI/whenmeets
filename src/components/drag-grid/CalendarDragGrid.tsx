@@ -169,20 +169,20 @@ export default function CalendarDragGrid({
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
           {/* Month header */}
-          <h3 className="text-center text-base font-bold text-gray-900 mb-3">{month.label}</h3>
+          <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-3">{month.label}</h3>
 
           {/* Day-of-week headers */}
           <div className="grid grid-cols-7 gap-px mb-1">
             {DAY_HEADERS.map((d) => (
-              <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+              <div key={d} className="text-center text-xs font-medium text-gray-400 dark:text-gray-500 py-1">{d}</div>
             ))}
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             {month.days.map((dateStr, idx) => {
               if (!dateStr) {
-                return <div key={`empty-${idx}`} className="bg-gray-50 aspect-square" />;
+                return <div key={`empty-${idx}`} className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
               }
 
               const isEventDate = dateSet.has(dateStr);
@@ -197,9 +197,9 @@ export default function CalendarDragGrid({
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   className={`aspect-square flex items-center justify-center text-sm relative transition-colors
-                    ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:brightness-95` : 'bg-gray-50 text-gray-300'}
-                    ${isEventDate && value >= 1 ? 'font-semibold text-gray-800' : ''}
-                    ${isEventDate && value === -1 ? 'text-gray-500' : ''}`}
+                    ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:brightness-95` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
+                    ${isEventDate && value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : ''}
+                    ${isEventDate && value === -1 ? 'text-gray-500 dark:text-gray-400' : ''}`}
                 >
                   {day}
                   {hasOverlay && isEventDate && (
