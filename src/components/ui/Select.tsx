@@ -106,7 +106,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700',
+        'relative z-200 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700',
         'bg-white dark:bg-gray-800 shadow-lg',
         // 애니메이션은 globals.css의 [data-radix-select-content] 규칙으로 처리
         position === 'popper' &&
