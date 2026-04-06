@@ -74,7 +74,8 @@ export function getSessionByPid(eventId: string, pid: string): ParticipantSessio
 /** Get a session by participant name. */
 export function getSessionByName(eventId: string, name: string): ParticipantSession | null {
   const store = readSessionStore(eventId);
-  return store.sessions.find((s) => s.name === name) ?? null;
+  const lower = name.toLowerCase();
+  return store.sessions.find((s) => s.name.toLowerCase() === lower) ?? null;
 }
 
 /** Add or update a session and set it as active. */

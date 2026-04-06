@@ -30,6 +30,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
   }
 
+  // Validate calendar dates are real dates (e.g. reject 2026-02-31)
+  if (isCalendar) {
+    for (const d of dates as string[]) {
+      const [y, m, day] = d.split('-').map(Number);
+      const parsed = new Date(y, m - 1, day);
+      if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== day) {
+        return NextResponse.json({ error: `유효하지 않은 날짜: ${d}` }, { status: 400 });
+      }
+    }
+  }
+
   // Validate time range (15-min slots: 0-96, default 09:00-21:00)
   const start = time_start ?? 36;
   const end = time_end ?? 84;
