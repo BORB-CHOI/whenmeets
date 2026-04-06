@@ -123,15 +123,15 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
     <div className="max-w-5xl mx-auto px-4 py-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{data.event.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{data.event.title}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {data.event.dates.length}일 · {data.participants.length}명 참여
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopySummary}
-            className="h-[38px] px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            className="h-[38px] px-4 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1.5"
           >
             {copied ? '복사됨!' : '링크 복사'}
             {!copied && (
@@ -150,7 +150,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
       </div>
 
       {data.participants.length === 0 ? (
-        <p className="text-gray-400 text-center py-12">아직 응답이 없습니다.</p>
+        <p className="text-gray-400 dark:text-gray-500 text-center py-12">아직 응답이 없습니다.</p>
       ) : (
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left: Heatmap Grid */}
@@ -166,9 +166,9 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
             />
 
             {/* Legend */}
-            <div className="mt-4 flex items-center gap-3 text-xs text-gray-500">
+            <div className="mt-4 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-gray-50 border border-gray-200" />
+                <div className="w-3 h-3 rounded bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
                 <span>0명</span>
               </div>
               <div className="flex items-center gap-1">
@@ -184,7 +184,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
           {/* Right: Responses + Options (timeful style sidebar) */}
           <div className="w-full lg:w-72 shrink-0">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
               응답 ({data.participants.length}/{data.participants.length})
             </h2>
 
@@ -198,14 +198,14 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
             <Link
               href={`/e/${eventId}`}
-              className="mt-3 block text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              className="mt-3 block text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
             >
               + 내 시간 추가
             </Link>
 
             {/* Options */}
-            <div className="mt-5 pt-4 border-t border-gray-100">
-              <label className="flex items-center gap-2.5 text-sm text-gray-600 cursor-pointer">
+            <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <label className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeIfNeeded}
@@ -218,8 +218,8 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
             {/* Best Times */}
             {bestTimes.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-gray-100">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">베스트 타임</h2>
+              <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">베스트 타임</h2>
                 <div className="flex flex-col gap-2">
                   {bestTimes.map((bt, i) => {
                     const endSlot = bt.slot + 1;

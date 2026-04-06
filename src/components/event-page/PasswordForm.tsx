@@ -38,8 +38,8 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
-      <h1 className="text-xl font-bold mb-1">{event.title}</h1>
-      <p className="text-sm text-gray-500 mb-6">이 이벤트는 비밀번호가 필요합니다.</p>
+      <h1 className="text-xl font-bold mb-1 dark:text-gray-100">{event.title}</h1>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">이 이벤트는 비밀번호가 필요합니다.</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="password"
@@ -47,7 +47,7 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호 입력"
           disabled={loading}
-          className="px-4 py-3 border border-gray-200 rounded-md transition-all focus:border-emerald-600 disabled:opacity-50"
+          className="px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-emerald-600 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-100"
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
