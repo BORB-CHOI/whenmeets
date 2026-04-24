@@ -2,6 +2,20 @@
 
 All notable changes to WhenMeets will be documented in this file.
 
+> 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
+
+## [Unreleased] — v0.3.0 작업 중
+
+### Changed
+
+- 버전 관리 일원화: `docs/VERSION` 제거 → `package.json` 단일 출처
+- 메인 \"최근 이벤트\" → \"최근 기록\" 라벨 변경
+- 대시보드와 메인의 삭제 UX 통일 — `InlineDeleteButton` 재사용 컴포넌트 추출
+
+### Fixed
+
+- 저장 중 그리드 입력 차단 — 저장 진행 중 드래그가 React state를 오염시켜 다음 편집/저장에 의도치 않게 반영되던 문제 (#10)
+
 ## [0.2.2.0] - 2026-04-06
 
 ### Changed
