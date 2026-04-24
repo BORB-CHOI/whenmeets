@@ -11,7 +11,8 @@ interface HeatmapGridProps {
   selectedIds: Set<string>;
   includeIfNeeded: boolean;
   hoveredParticipantId?: string | null;
-  onCellHover?: (date: string | null, slot?: number) => void;
+  /** Called on hover. `rect` is the hovered cell's bounding box (viewport coords). */
+  onCellHover?: (date: string | null, slot?: number, rect?: DOMRect) => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
 }
@@ -93,7 +94,7 @@ export default function HeatmapGrid({
           <div
             className="w-full h-full relative cursor-pointer hover:brightness-125 hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1 hover:z-10"
             style={{ backgroundColor: bgColor }}
-            onMouseEnter={() => onCellHover?.(date, slot)}
+            onMouseEnter={(e) => onCellHover?.(date, slot, (e.currentTarget as HTMLElement).getBoundingClientRect())}
             onMouseLeave={() => onCellHover?.(null)}
           >
             {count > 0 && (

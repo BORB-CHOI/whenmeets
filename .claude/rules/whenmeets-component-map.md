@@ -65,6 +65,7 @@ These pages display the SAME event data differently. Layout, header, participant
 | `ConfirmModal` | 확인 모달 | `src/components/ui/ConfirmModal.tsx` |
 | `SegmentedControl` | 탭 전환 | `src/components/ui/SegmentedControl.tsx` |
 | `InlineDeleteButton` | 휴지통 + 삭제/취소 confirm UX | `src/components/ui/InlineDeleteButton.tsx` |
+| `HoverInfoPopover` | 호버 시 앵커 위 표시되는 popover (Portal + framer-motion) | `src/components/ui/HoverInfoPopover.tsx` |
 | `cn()` | className 병합 유틸 | `src/lib/cn.ts` |
 
 **Shared concerns:**
