@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface DayOfWeekPickerProps {
   selectedDays: string[];
@@ -10,7 +10,6 @@ interface DayOfWeekPickerProps {
 const DAYS_SUN_START = ['일', '월', '화', '수', '목', '금', '토'];
 const DAYS_MON_START = ['월', '화', '수', '목', '금', '토', '일'];
 
-// Map Korean day names to a stable key for the dates array
 const DAY_KEYS: Record<string, string> = {
   '일': 'sun',
   '월': 'mon',
@@ -25,13 +24,66 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
   const [startOnMonday, setStartOnMonday] = useState(true);
   const days = startOnMonday ? DAYS_MON_START : DAYS_SUN_START;
 
-  function toggleDay(day: string) {
-    const key = DAY_KEYS[day];
-    if (selectedDays.includes(key)) {
-      onDaysChange(selectedDays.filter((d) => d !== key));
-    } else {
-      onDaysChange([...selectedDays, key]);
+  // Drag state
+  const isDragging = useRef(false);
+  const draftRef = useRef<Set<string>>(new Set(selectedDays));
+  const erasing = useRef(false);
+  const visited = useRef<Set<string>>(new Set());
+
+  // Keep draft in sync with external selectedDays when not dragging
+  useEffect(() => {
+    if (!isDragging.current) {
+      draftRef.current = new Set(selectedDays);
     }
+  }, [selectedDays]);
+
+  function applyToKey(key: string) {
+    if (visited.current.has(key)) return;
+    visited.current.add(key);
+    if (erasing.current) {
+      draftRef.current.delete(key);
+    } else {
+      draftRef.current.add(key);
+    }
+    onDaysChange(Array.from(draftRef.current));
+  }
+
+  function handlePointerDown(key: string) {
+    isDragging.current = true;
+    draftRef.current = new Set(selectedDays);
+    visited.current = new Set();
+    erasing.current = draftRef.current.has(key);
+    applyToKey(key);
+  }
+
+  function handlePointerEnter(key: string) {
+    if (!isDragging.current) return;
+    applyToKey(key);
+  }
+
+  // End drag on window pointer up to handle releases outside the buttons
+  useEffect(() => {
+    function onEnd() {
+      isDragging.current = false;
+      visited.current = new Set();
+    }
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+    return () => {
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
+
+  // Touch drag: track moving finger across buttons
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!isDragging.current) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const btn = el?.closest('[data-day-key]') as HTMLElement | null;
+    if (btn?.dataset.dayKey) applyToKey(btn.dataset.dayKey);
   }
 
   function selectWeekdays() {
@@ -44,22 +96,26 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
 
   return (
     <div>
-      <div className="grid grid-cols-7 gap-2 mb-3">
+      <div
+        className="grid grid-cols-7 gap-2 mb-3 select-none"
+        onTouchMove={handleTouchMove}
+        style={{ touchAction: 'none' }}
+      >
         {days.map((day) => {
           const key = DAY_KEYS[day];
           const selected = selectedDays.includes(key);
-          const isWeekend = day === '토' || day === '일';
           return (
             <button
               type="button"
               key={key}
-              onClick={() => toggleDay(day)}
-              className={`h-10 rounded-lg text-sm font-medium transition-all cursor-pointer
+              data-day-key={key}
+              onMouseDown={(e) => { e.preventDefault(); handlePointerDown(key); }}
+              onMouseEnter={() => handlePointerEnter(key)}
+              onTouchStart={(e) => { e.preventDefault(); handlePointerDown(key); }}
+              className={`h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer
                 ${selected
                   ? 'bg-emerald-600 text-white shadow-sm'
-                  : isWeekend
-                    ? 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
             >
               {day}

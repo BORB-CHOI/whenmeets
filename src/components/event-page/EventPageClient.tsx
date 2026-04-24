@@ -7,7 +7,7 @@ import { Availability, AvailabilityLevel, EventData } from '@/lib/types';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
-import { generateSlots } from '@/lib/constants';
+import { generateSlots, isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
@@ -386,11 +386,17 @@ export default function EventPageClient({
   const sortedDates = [...event.dates].sort();
   const firstDate = sortedDates[0];
   const lastDate = sortedDates[sortedDates.length - 1];
+  const isDayOfWeekMode = event.dates.some(isDayOfWeekKey);
   const fmtShort = (d: string) => {
+    if (isDayOfWeekKey(d)) return DAY_OF_WEEK_LABELS[d];
     const dt = new Date(d + 'T00:00:00');
     return `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
-  const dateRange = firstDate === lastDate ? fmtShort(firstDate) : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
+  const dateRange = isDayOfWeekMode
+    ? event.dates.map((d) => DAY_OF_WEEK_LABELS[d] ?? d).join(', ')
+    : firstDate === lastDate
+      ? fmtShort(firstDate)
+      : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-6">
