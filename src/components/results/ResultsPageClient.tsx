@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Participant } from '@/lib/types';
+import { EventMode, Participant } from '@/lib/types';
 import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
 import ParticipantFilter from './ParticipantFilter';
 import AdBanner from '@/components/ads/AdBanner';
@@ -24,6 +24,7 @@ interface ResultsData {
     dates: string[];
     time_start: number;
     time_end: number;
+    mode?: EventMode;
   };
   participants: Pick<Participant, 'id' | 'name' | 'availability'>[];
 }
@@ -71,13 +72,18 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
     const slots = generateSlots(data.event.time_start, data.event.time_end);
     const results: BestTime[] = [];
 
+    const isUnavailableMode = data.event.mode === 'unavailable';
     for (const date of data.event.dates) {
       for (const slot of slots) {
         let count = 0;
         for (const p of filtered) {
           const val = p.availability?.[date]?.[String(slot)];
-          if (val === 2) count++;
-          else if (val === 1 && includeIfNeeded) count++;
+          if (isUnavailableMode) {
+            if (val !== 0) count++;
+          } else {
+            if (val === 2) count++;
+            else if (val === 1 && includeIfNeeded) count++;
+          }
         }
         if (count > 0) {
           results.push({ date, slot, count });
@@ -163,6 +169,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
               selectedIds={selectedIds}
               includeIfNeeded={includeIfNeeded}
               hoveredParticipantId={hoveredId}
+              eventMode={data.event.mode}
             />
 
             {/* Legend */}
