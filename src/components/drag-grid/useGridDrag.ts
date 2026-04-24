@@ -9,6 +9,7 @@ interface UseGridDragOptions {
   availability: Availability;
   onAvailabilityChange: (availability: Availability) => void;
   onDragEnd?: (availability: Availability) => void;
+  disabled?: boolean;
 }
 
 function getCellFromPoint(x: number, y: number, container?: HTMLElement | null): { date: string; slot: string } | null {
@@ -28,6 +29,7 @@ export default function useGridDrag({
   availability,
   onAvailabilityChange,
   onDragEnd,
+  disabled = false,
 }: UseGridDragOptions) {
   const isDragging = useRef(false);
   const lastCell = useRef<string | null>(null);
@@ -165,10 +167,12 @@ export default function useGridDrag({
   const gridProps = {
     ref: (el: HTMLElement | null) => { containerRef.current = el; },
     onMouseDown: (e: React.MouseEvent) => {
+      if (disabled) return;
       e.preventDefault();
       handlePointerStart(e.clientX, e.clientY);
     },
     onMouseMove: (e: React.MouseEvent) => {
+      if (disabled) return;
       if (!isDragging.current) return;
       const { clientX, clientY } = e;
       cancelAnimationFrame(rafId.current);
@@ -178,10 +182,12 @@ export default function useGridDrag({
     },
     // No onMouseUp/onMouseLeave — handled by window listeners
     onTouchStart: (e: React.TouchEvent) => {
+      if (disabled) return;
       const touch = e.touches[0];
       handlePointerStart(touch.clientX, touch.clientY);
     },
     onTouchMove: (e: React.TouchEvent) => {
+      if (disabled) return;
       e.preventDefault();
       const { clientX, clientY } = e.touches[0];
       cancelAnimationFrame(rafId.current);

@@ -513,6 +513,7 @@ export default function EventPageClient({
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
                 onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: Number(slot ?? 0) } : null)}
+                disabled={saving}
               />
             </>
           ) : event.date_only ? (

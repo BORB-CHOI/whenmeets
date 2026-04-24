@@ -20,6 +20,7 @@ interface DragGridProps {
   activeMode: AvailabilityLevel;
   onActiveModeChange: (mode: AvailabilityLevel) => void;
   onCellHover?: (date: string | null, slot?: number | string) => void;
+  disabled?: boolean;
 }
 
 export default function DragGrid({
@@ -35,12 +36,14 @@ export default function DragGrid({
   activeMode,
   onActiveModeChange,
   onCellHover,
+  disabled,
 }: DragGridProps) {
 
   const { gridProps } = useGridDrag({
     activeMode,
     availability,
     onAvailabilityChange,
+    disabled,
   });
 
   // Calculate overlay data: how many OTHER participants are available per cell
@@ -81,7 +84,7 @@ export default function DragGrid({
 
   if (dateOnly) {
     return (
-      <div className="flex flex-col gap-3">
+      <div className={`flex flex-col gap-3 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
         <CalendarDragGrid
           dates={dates}
           availability={availability}
@@ -90,6 +93,7 @@ export default function DragGrid({
           eventMode={eventMode}
           overlayCountMap={overlayCountMap}
           overlayTotal={overlayTotal}
+          disabled={disabled}
         />
       </div>
     );
@@ -112,7 +116,11 @@ export default function DragGrid({
   }, [onCellHover]);
 
   return (
-    <div onMouseOver={handleGridMouseOver} onMouseLeave={handleGridMouseLeave}>
+    <div
+      onMouseOver={handleGridMouseOver}
+      onMouseLeave={handleGridMouseLeave}
+      className={disabled ? 'opacity-60 pointer-events-none' : ''}
+    >
       <AvailabilityGrid
         dates={dates}
         timeStart={timeStart}
