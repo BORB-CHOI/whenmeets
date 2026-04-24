@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import EventFormModal from '@/components/event-form/EventFormModal';
+import InlineDeleteButton from '@/components/ui/InlineDeleteButton';
 import { getEventHistory, removeEventFromHistory, EventHistoryItem } from '@/lib/event-history';
 
 export default function Home() {
@@ -69,7 +70,7 @@ export default function Home() {
 
       {history.length > 0 && (
         <div className="mt-12 w-full max-w-lg px-4" style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
-          <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 mb-3">최근 이벤트</h2>
+          <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 mb-3">최근 기록</h2>
           <div className="flex flex-col gap-2.5">
             {history.slice(0, 5).map((item) => (
               <a
@@ -87,20 +88,14 @@ export default function Home() {
                   <span className="text-xs font-semibold px-2.5 py-1 rounded text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30">
                     {item.role === 'creator' ? '관리' : '참여'}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
+                  <InlineDeleteButton
+                    title="기록에서 삭제"
+                    className="opacity-0 group-hover:opacity-100"
+                    onConfirm={() => {
                       removeEventFromHistory(item.id);
                       setHistory((h) => h.filter((x) => x.id !== item.id));
                     }}
-                    className="p-1.5 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                    title="기록에서 삭제"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  />
                 </div>
               </a>
             ))}
