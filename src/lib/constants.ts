@@ -38,8 +38,25 @@ export function generateSlots(start: number, end: number): number[] {
   return slots;
 }
 
-/** Format date string "YYYY-MM-DD" to compact display like "Mon 4/7" */
+/** Day-of-week key set for events created with the day-of-week picker */
+export const DAY_OF_WEEK_KEYS = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+
+/** Korean day labels keyed by mon/tue/... */
+export const DAY_OF_WEEK_LABELS: Record<string, string> = {
+  mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
+};
+
+/** Returns true when the entry is a day-of-week key (e.g. "mon") rather than YYYY-MM-DD. */
+export function isDayOfWeekKey(s: string): boolean {
+  return DAY_OF_WEEK_KEYS.has(s);
+}
+
+/** Format date entry to compact display.
+ * - Calendar dates ("YYYY-MM-DD") → "M/D 요일"
+ * - Day-of-week keys ("mon"…"sun") → "월", "화"… (single character)
+ */
 export function formatDateCompact(dateStr: string): string {
+  if (isDayOfWeekKey(dateStr)) return DAY_OF_WEEK_LABELS[dateStr];
   const date = new Date(dateStr + 'T00:00:00');
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return `${date.getMonth() + 1}/${date.getDate()} ${days[date.getDay()]}`;

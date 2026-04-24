@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import type { User } from '@supabase/supabase-js';
 
 export default function AuthButton() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -21,13 +23,18 @@ export default function AuthButton() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
       setLoading(false);
+      // SIGNED_IN/SIGNED_OUT 시 서버 컴포넌트(Header 등) 재렌더로 user 상태 동기화
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        router.refresh();
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router, supabase]);
 
   // Close menu on outside click
   useEffect(() => {
