@@ -2,10 +2,12 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Middleware to refresh Supabase Auth session on every request.
- * This ensures the auth token stays fresh without requiring client-side refresh.
+ * Proxy (Next.js 16+) — refreshes Supabase Auth session on every request,
+ * ensuring auth cookies stay fresh without requiring client-side refresh.
+ *
+ * Replaces the deprecated `middleware.ts` convention.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

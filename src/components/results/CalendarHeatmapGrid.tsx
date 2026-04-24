@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Participant } from '@/lib/types';
+import { EventMode, Participant } from '@/lib/types';
 
 interface CalendarHeatmapGridProps {
   dates: string[];
@@ -10,6 +10,7 @@ interface CalendarHeatmapGridProps {
   includeIfNeeded: boolean;
   onCellHover?: (date: string | null) => void;
   bestSlots?: Set<string>;
+  eventMode?: EventMode;
 }
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -26,6 +27,7 @@ export default function CalendarHeatmapGrid({
   includeIfNeeded,
   onCellHover,
   bestSlots,
+  eventMode = 'available',
 }: CalendarHeatmapGridProps) {
   const dateSet = useMemo(() => new Set(dates), [dates]);
   const filtered = participants.filter((p) => selectedIds.has(p.id));
@@ -65,8 +67,12 @@ export default function CalendarHeatmapGrid({
     let count = 0;
     for (const p of filtered) {
       const val = p.availability?.[date]?.['all_day'];
-      if (val === 2) count++;
-      else if (val === 1 && includeIfNeeded) count++;
+      if (eventMode === 'unavailable') {
+        if (val !== 0) count++;
+      } else {
+        if (val === 2) count++;
+        else if (val === 1 && includeIfNeeded) count++;
+      }
     }
     return count;
   }

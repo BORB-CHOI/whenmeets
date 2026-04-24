@@ -74,3 +74,15 @@ Never commit directly to main. When starting any new task (feature, bugfix, refa
 2. If on main, create a feature branch BEFORE making any changes: `git checkout -b feat/<task-name>` or `fix/<task-name>`
 3. All work happens on the feature branch
 4. Use `/ship` to create a PR back to main
+
+## Versioning
+
+- **Source of truth**: `package.json`의 `version` 필드. SemVer (MAJOR.MINOR.PATCH).
+- 별도 `VERSION` 파일은 **두지 않음** — package.json과의 drift 방지.
+- 버전 변경: `npm version patch|minor|major` 사용 (자동으로 git tag 생성).
+- 릴리즈 시:
+  1. `docs/CHANGELOG.md`의 `## [Unreleased]` 섹션을 `## [x.y.z] - YYYY-MM-DD`로 변경
+  2. `package.json` 버전 bump
+  3. (선택) `docs/v{X.Y.Z}-todos.md` 작업 항목 정리
+  4. PR 머지 후 git tag push
+- 진행 중 작업은 CHANGELOG에 `## [Unreleased]` 섹션으로 누적 기록.

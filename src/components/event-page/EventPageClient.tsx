@@ -7,7 +7,7 @@ import { Availability, AvailabilityLevel, EventData } from '@/lib/types';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
-import { generateSlots } from '@/lib/constants';
+import { generateSlots, slotToTime, isDayOfWeekKey, DAY_OF_WEEK_LABELS, formatDateCompact } from '@/lib/constants';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
@@ -17,6 +17,7 @@ import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import HoverInfoPopover from '@/components/ui/HoverInfoPopover';
 import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
@@ -69,6 +70,7 @@ export default function EventPageClient({
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
@@ -162,13 +164,18 @@ export default function EventPageClient({
     let maxCount = 0;
     const slotCounts: { key: string; count: number }[] = [];
 
+    const isUnavailableMode = event.mode === 'unavailable';
     for (const date of event.dates) {
       for (const slot of slots) {
         let count = 0;
         for (const p of filtered) {
           const val = p.availability?.[date]?.[String(slot)];
-          if (val === 2) count++;
-          else if (val === 1 && includeIfNeeded) count++;
+          if (isUnavailableMode) {
+            if (val !== 0) count++;
+          } else {
+            if (val === 2) count++;
+            else if (val === 1 && includeIfNeeded) count++;
+          }
         }
         if (count > 0) {
           slotCounts.push({ key: `${date}-${slot}`, count });
@@ -386,11 +393,17 @@ export default function EventPageClient({
   const sortedDates = [...event.dates].sort();
   const firstDate = sortedDates[0];
   const lastDate = sortedDates[sortedDates.length - 1];
+  const isDayOfWeekMode = event.dates.some(isDayOfWeekKey);
   const fmtShort = (d: string) => {
+    if (isDayOfWeekKey(d)) return DAY_OF_WEEK_LABELS[d];
     const dt = new Date(d + 'T00:00:00');
     return `${dt.getMonth() + 1}/${dt.getDate()}`;
   };
-  const dateRange = firstDate === lastDate ? fmtShort(firstDate) : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
+  const dateRange = isDayOfWeekMode
+    ? event.dates.map((d) => DAY_OF_WEEK_LABELS[d] ?? d).join(', ')
+    : firstDate === lastDate
+      ? fmtShort(firstDate)
+      : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-6">
@@ -400,10 +413,12 @@ export default function EventPageClient({
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {dateRange}
-            <span
-              onClick={() => setShowEditModal(true)}
-              className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
-            >이벤트 수정</span>
+            {event.is_owner && (
+              <span
+                onClick={() => setShowEditModal(true)}
+                className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
+              >이벤트 수정</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -513,6 +528,7 @@ export default function EventPageClient({
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
                 onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: Number(slot ?? 0) } : null)}
+                disabled={saving}
               />
             </>
           ) : event.date_only ? (
@@ -523,6 +539,7 @@ export default function EventPageClient({
               includeIfNeeded={includeIfNeeded}
               onCellHover={(date) => setHoveredSlot(date ? { date, slot: 0 } : null)}
               bestSlots={showBestTimes ? bestSlots : undefined}
+              eventMode={event.mode}
             />
           ) : (
             <HeatmapGrid
@@ -533,8 +550,12 @@ export default function EventPageClient({
               selectedIds={selectedIds}
               includeIfNeeded={includeIfNeeded}
               hoveredParticipantId={null}
-              onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: slot! } : null)}
+              onCellHover={(date, slot, rect) => {
+                setHoveredSlot(date ? { date, slot: slot! } : null);
+                setHoverRect(rect ?? null);
+              }}
               bestSlots={showBestTimes ? bestSlots : undefined}
+              eventMode={event.mode}
             />
           )}
         </div>
@@ -563,7 +584,14 @@ export default function EventPageClient({
                   <div className={`p-3 rounded-lg text-sm mb-5 ${
                     activeMode === 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                   }`}>
-                    {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ 필요하다면 가능한 시간을 드래그하세요'}
+                    <div className="font-medium">
+                      {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ 필요하다면 가능한 시간을 드래그하세요'}
+                    </div>
+                    {activeMode === 1 && (
+                      <div className="mt-1 text-xs text-amber-700/80 leading-relaxed">
+                        가능은 하지만 우선순위가 낮은 시간. 다른 사람들과 잘 맞지 않으면 이 시간에라도 모일 수 있어요.
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -577,9 +605,14 @@ export default function EventPageClient({
                     <span>Available</span>
                   </div>
                   {event.mode !== 'unavailable' && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-amber-300/50" />
-                      <span>필요하다면..</span>
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-sm bg-amber-300/50 mt-0.5 shrink-0" />
+                      <div className="flex flex-col">
+                        <span>필요하다면..</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
+                          가능은 하지만 우선순위 낮음
+                        </span>
+                      </div>
                     </div>
                   )}
                   {event.mode === 'unavailable' && (
@@ -874,6 +907,92 @@ export default function EventPageClient({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hover info popover (view mode only — edit mode shows sidebar instead) */}
+      {viewMode === 'view' && hoveredSlot && hoverRect && !event.date_only && (
+        <HoverInfoPopover position={hoverRect}>
+          <SlotHoverInfo
+            date={hoveredSlot.date}
+            slot={hoveredSlot.slot}
+            participants={event.participants}
+            selectedIds={selectedIds}
+            includeIfNeeded={includeIfNeeded}
+            mode={event.mode}
+          />
+        </HoverInfoPopover>
+      )}
+    </div>
+  );
+}
+
+interface SlotHoverInfoProps {
+  date: string;
+  slot: number;
+  participants: { id: string; name: string; availability?: Record<string, Record<string, 0 | 1 | 2>> }[];
+  selectedIds: Set<string>;
+  includeIfNeeded: boolean;
+  mode: 'available' | 'unavailable';
+}
+
+function SlotHoverInfo({ date, slot, participants, selectedIds, includeIfNeeded, mode }: SlotHoverInfoProps) {
+  const filtered = participants.filter((p) => selectedIds.has(p.id));
+  const dateLabel = formatDateCompact(date);
+  const timeLabel = `${slotToTime(slot)} – ${slotToTime(slot + 1)}`;
+
+  const available: string[] = [];
+  const ifNeeded: string[] = [];
+  const unavailable: string[] = [];
+  const noResponse: string[] = [];
+
+  for (const p of filtered) {
+    const val = p.availability?.[date]?.[String(slot)];
+    if (val === 2) available.push(p.name);
+    else if (val === 1) ifNeeded.push(p.name);
+    else if (val === 0) unavailable.push(p.name);
+    else noResponse.push(p.name);
+  }
+
+  return (
+    <div className="space-y-1.5 min-w-[180px]">
+      <div className="font-semibold text-[13px] border-b border-white/15 pb-1 mb-1">
+        {dateLabel} · {timeLabel}
+      </div>
+      {mode === 'unavailable' ? (
+        <>
+          {(available.length + noResponse.length) > 0 && (
+            <Row dotClass="bg-emerald-400" label={`가능 ${available.length + noResponse.length}명`} names={[...available, ...noResponse]} />
+          )}
+          {unavailable.length > 0 && (
+            <Row dotClass="bg-red-400" label={`불가능 ${unavailable.length}명`} names={unavailable} />
+          )}
+        </>
+      ) : (
+        <>
+          {available.length > 0 && (
+            <Row dotClass="bg-emerald-400" label={`가능 ${available.length}명`} names={available} />
+          )}
+          {includeIfNeeded && ifNeeded.length > 0 && (
+            <Row dotClass="bg-amber-300" label={`필요하다면 ${ifNeeded.length}명`} names={ifNeeded} />
+          )}
+          {(filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)) > 0 && (
+            <div className="text-[11px] text-white/50">
+              나머지 {filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)}명 무응답/불가
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Row({ dotClass, label, names }: { dotClass: string; label: string; names: string[] }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+        <span className="text-[11px] font-medium text-white/90">{label}</span>
+      </div>
+      <div className="text-[11px] text-white/70 ml-3 leading-tight">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
     </div>
   );
 }
