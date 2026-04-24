@@ -11,6 +11,7 @@ interface CalendarDragGridProps {
   eventMode: EventMode;
   overlayCountMap: Record<string, Record<string, number>>;
   overlayTotal: number;
+  disabled?: boolean;
 }
 
 const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
@@ -33,6 +34,7 @@ export default function CalendarDragGrid({
   activeMode,
   overlayCountMap,
   overlayTotal,
+  disabled,
 }: CalendarDragGridProps) {
   const isDragging = useRef(false);
   const erasing = useRef(false);
@@ -102,6 +104,7 @@ export default function CalendarDragGrid({
   }
 
   function handlePointerDown(date: string) {
+    if (disabled) return;
     if (!dateSet.has(date)) return;
     isDragging.current = true;
     // Shallow clone for draft — mutated during drag, committed on end

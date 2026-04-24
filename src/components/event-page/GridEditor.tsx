@@ -76,6 +76,7 @@ export default function GridEditor({
         eventMode={mode}
         activeMode={activeMode}
         onActiveModeChange={setActiveMode}
+        disabled={saving}
       />
 
       {/* Share link */}
