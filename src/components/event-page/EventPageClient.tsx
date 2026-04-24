@@ -411,10 +411,12 @@ export default function EventPageClient({
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {dateRange}
-            <span
-              onClick={() => setShowEditModal(true)}
-              className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
-            >이벤트 수정</span>
+            {event.is_owner && (
+              <span
+                onClick={() => setShowEditModal(true)}
+                className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
+              >이벤트 수정</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
