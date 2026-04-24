@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useMemo, useEffect, useRef } from 'react';
-import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT } from '@/lib/constants';
+import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT, isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
 
 interface AvailabilityGridProps {
   dates: string[];
@@ -18,6 +18,9 @@ const GRID_WIDTH = 770; // 7 columns * 110px
 const TIME_COL_WIDTH = 44;
 
 function formatDateHeader(dateStr: string): { num: string; day: string } {
+  if (isDayOfWeekKey(dateStr)) {
+    return { num: '', day: DAY_OF_WEEK_LABELS[dateStr] };
+  }
   const date = new Date(dateStr + 'T00:00:00');
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -64,9 +67,11 @@ export default function AvailabilityGrid({
     return dates.slice(start, start + maxColumns);
   }, [dates, page, maxColumns, needsPagination]);
 
-  // Detect date gaps (>1 day between consecutive dates) for visual separator
+  // Detect date gaps (>1 day between consecutive dates) for visual separator.
+  // Day-of-week mode has no calendar gaps — skip detection entirely.
   const dateGapIndices = useMemo(() => {
     const gaps = new Set<number>();
+    if (visibleDates.some(isDayOfWeekKey)) return gaps;
     for (let i = 1; i < visibleDates.length; i++) {
       const prev = new Date(visibleDates[i - 1] + 'T00:00:00');
       const curr = new Date(visibleDates[i] + 'T00:00:00');
