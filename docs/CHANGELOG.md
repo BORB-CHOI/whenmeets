@@ -4,17 +4,35 @@ All notable changes to WhenMeets will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
-## [Unreleased] — v0.3.0 작업 중
+## [Unreleased]
+
+## [0.3.0] - 2026-04-24
+
+### Added
+
+- `InlineDeleteButton` — 휴지통 + 삭제/취소 confirm UX 재사용 컴포넌트 (대시보드/메인 통합)
+- `HoverInfoPopover` — 앵커 위 표시되는 호버 popover (Portal + framer-motion)
+- 결과 히트맵 cell 호버 시 시간대별 가능/불가/필요하다면 인원 + 이름 popover 표시 (#6)
+- 요일 선택 모드 드래그 선택/해제 (캘린더 모드와 동일 패턴) (#3)
+- '필요하다면..' 영역에 timeful 스타일 설명 문구 — 편집 가이드 부연 + 범례 subtext (#8)
 
 ### Changed
 
-- 버전 관리 일원화: `docs/VERSION` 제거 → `package.json` 단일 출처
-- 메인 \"최근 이벤트\" → \"최근 기록\" 라벨 변경
-- 대시보드와 메인의 삭제 UX 통일 — `InlineDeleteButton` 재사용 컴포넌트 추출
+- 메인 페이지 \"최근 이벤트\" → \"최근 기록\" 라벨
+- 메인 페이지 X 버튼 → 대시보드와 동일한 휴지통 + confirm UX로 통일
+- 이벤트 생성 모달 비밀번호 추가 버튼: 가시성이 낮던 텍스트 링크 → outline pill 버튼 (활성 시 빨강) (#1)
+- 요일 픽커 토/일 색상 dim 제거 — 평일과 동일 가독성 (#2)
+- 버전 관리 일원화: `docs/VERSION` 제거 → `package.json`의 `version` 필드가 단일 source of truth, SemVer 정상화
+- `middleware.ts` → `proxy.ts` (Next.js 16 deprecation 해소)
 
 ### Fixed
 
 - 저장 중 그리드 입력 차단 — 저장 진행 중 드래그가 React state를 오염시켜 다음 편집/저장에 의도치 않게 반영되던 문제 (#10)
+- 요일 모드 그리드 렌더링 깨짐 — `formatDateCompact`/`formatDateHeader`가 'mon' 같은 키를 Date로 파싱하면서 NaN을 반환하던 문제, 헤더와 dateRange 양쪽 분기 추가 (#4)
+- 안 되는 시간(unavailable) 모드 결과 히트맵이 비어보이던 문제 — 모든 카운트 로직(HeatmapGrid/CalendarHeatmapGrid/ResultsPageClient/EventPageClient bestSlots)이 val=0을 집계하지 않아 결과/베스트 타임이 비어있던 문제, eventMode 분기로 'val !== 0'을 가능 카운트로 사용 (#5)
+- 비-소유자에게 노출되던 '이벤트 수정' 링크가 PATCH 시 403 → `event.is_owner` 일 때만 노출 (#7)
+- 로그인 후 메인으로 복귀해도 비로그인 UI가 그대로 보이던 문제 — `onAuthStateChange`에서 `router.refresh()` 호출하여 서버 컴포넌트 재렌더 (#9)
+- 모바일 그리드가 우측으로 치우쳐 보이던 문제 — `flex justify-center` + `w-full` 조합을 block + `mx-auto` 방식으로 변경 (#11)
 
 ## [0.2.2.0] - 2026-04-06
 
