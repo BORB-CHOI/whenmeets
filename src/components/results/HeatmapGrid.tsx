@@ -1,6 +1,6 @@
 'use client';
 
-import { Participant } from '@/lib/types';
+import { EventMode, Participant } from '@/lib/types';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 
 interface HeatmapGridProps {
@@ -13,6 +13,7 @@ interface HeatmapGridProps {
   hoveredParticipantId?: string | null;
   onCellHover?: (date: string | null, slot?: number) => void;
   bestSlots?: Set<string>;
+  eventMode?: EventMode;
 }
 
 const BASE_COLOR = '#059669'; // Emerald 600
@@ -38,6 +39,7 @@ export default function HeatmapGrid({
   hoveredParticipantId,
   onCellHover,
   bestSlots,
+  eventMode = 'available',
 }: HeatmapGridProps) {
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
@@ -48,8 +50,13 @@ export default function HeatmapGrid({
     let count = 0;
     for (const p of filtered) {
       const val = p.availability?.[date]?.[String(slot)];
-      if (val === 2) count++;
-      else if (val === 1 && includeIfNeeded) count++;
+      if (eventMode === 'unavailable') {
+        // 안 되는 시간 모드: val=0(불가)으로 표시되지 않은 참가자는 가능으로 간주
+        if (val !== 0) count++;
+      } else {
+        if (val === 2) count++;
+        else if (val === 1 && includeIfNeeded) count++;
+      }
     }
     return count;
   }
@@ -78,6 +85,7 @@ export default function HeatmapGrid({
           filtered.some((p) => {
             if (p.id !== hoveredParticipantId) return false;
             const val = p.availability?.[date]?.[String(slot)];
+            if (eventMode === 'unavailable') return val !== 0;
             return val === 2 || (val === 1 && includeIfNeeded);
           });
 

@@ -12,7 +12,7 @@ export async function GET(
   // Fetch event first (includes password_hash for auth check)
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, password_hash')
+    .select('id, title, dates, time_start, time_end, mode, password_hash')
     .eq('id', id)
     .single();
 
@@ -42,6 +42,7 @@ export async function GET(
       dates: event.dates,
       time_start: event.time_start,
       time_end: event.time_end,
+      mode: event.mode,
     },
     participants: participants ?? [],
   });

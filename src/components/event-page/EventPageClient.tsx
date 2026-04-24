@@ -162,13 +162,18 @@ export default function EventPageClient({
     let maxCount = 0;
     const slotCounts: { key: string; count: number }[] = [];
 
+    const isUnavailableMode = event.mode === 'unavailable';
     for (const date of event.dates) {
       for (const slot of slots) {
         let count = 0;
         for (const p of filtered) {
           const val = p.availability?.[date]?.[String(slot)];
-          if (val === 2) count++;
-          else if (val === 1 && includeIfNeeded) count++;
+          if (isUnavailableMode) {
+            if (val !== 0) count++;
+          } else {
+            if (val === 2) count++;
+            else if (val === 1 && includeIfNeeded) count++;
+          }
         }
         if (count > 0) {
           slotCounts.push({ key: `${date}-${slot}`, count });
@@ -530,6 +535,7 @@ export default function EventPageClient({
               includeIfNeeded={includeIfNeeded}
               onCellHover={(date) => setHoveredSlot(date ? { date, slot: 0 } : null)}
               bestSlots={showBestTimes ? bestSlots : undefined}
+              eventMode={event.mode}
             />
           ) : (
             <HeatmapGrid
@@ -542,6 +548,7 @@ export default function EventPageClient({
               hoveredParticipantId={null}
               onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: slot! } : null)}
               bestSlots={showBestTimes ? bestSlots : undefined}
+              eventMode={event.mode}
             />
           )}
         </div>
