@@ -33,7 +33,7 @@ ECC (everything-claude-code) 글로벌 설치됨. TypeScript, Web, Common 룰이
 ### Project-local (`.claude/rules/`) — whenmeets 전용, 글로벌보다 우선
 
 - **whenmeets-component-map.md** — 컴포넌트 간 관계 맵. 한 컴포넌트 수정 시 관련 컴포넌트 반드시 확인/수정.
-- **whenmeets-conventions.md** — 하드코딩 금지, Pretendard only, 애니메이션 필수, 레이아웃 시프트 금지, 한국어 커밋.
+- **whenmeets-conventions.md** — shadcn/ui 패턴 필수, 하드코딩 금지, Pretendard only, 애니메이션 필수, 자체 스크롤바, 레이아웃 시프트 금지, 한국어 커밋.
 
 ## Commands
 
@@ -64,10 +64,8 @@ verify that `whenmeets-component-map.md` still reflects reality. If it doesn't, 
 
 ## Design System
 
-Always read DESIGN.md before making any visual or UI decisions.
-All font choices, colors, spacing, and aesthetic direction are defined there.
-Do not deviate without explicit user approval.
-In QA mode, flag any code that doesn't match DESIGN.md.
+DESIGN.md는 현재 없음 (코드와 불일치하여 삭제됨).
+디자인 판단 시 실제 코드의 기존 패턴을 따를 것. 새로운 디자인 방향이 필요하면 사용자에게 확인.
 
 ## Branch workflow
 

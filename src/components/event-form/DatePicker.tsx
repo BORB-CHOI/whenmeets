@@ -74,6 +74,8 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
 
   function handlePointerMove(e: React.MouseEvent | React.TouchEvent) {
     if (!isDragging.current) return;
+    // Prevent page scroll during drag on touch devices
+    if ('touches' in e) e.preventDefault();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     cancelAnimationFrame(rafId.current);
@@ -176,7 +178,7 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
                   disabled={isPast}
                   data-date={dateStr}
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-                  onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
+                  onTouchStart={() => { handlePointerDown(dateStr); }}
                   className={`h-9 rounded-lg text-sm tabular-nums transition-colors
                     ${isPast ? 'text-gray-200 dark:text-gray-600 cursor-not-allowed' : 'cursor-pointer'}
                     ${isSelected ? 'bg-emerald-600 text-white font-semibold' : ''}

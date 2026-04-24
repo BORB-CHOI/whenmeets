@@ -2,6 +2,13 @@
 
 All notable changes to WhenMeets will be documented in this file.
 
+## [0.2.2.0] - 2026-04-06
+
+### Changed
+- 시간 선택기를 shadcn/ui 패턴 Select 컴포넌트로 교체 (열림/닫힘 애니메이션, 자체 스크롤바, Portal 렌더링)
+- UI 컴포넌트 라이브러리 기반을 shadcn/ui 패턴으로 전환 (cn 유틸리티, forwardRef, Radix 기반)
+- 프로젝트 컨벤션 문서에 shadcn 패턴 작성 규칙 추가
+
 ## [0.2.1.0] - 2026-04-06
 
 ### Added
