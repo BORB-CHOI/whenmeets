@@ -19,9 +19,9 @@ interface HoverInfoPopoverProps {
   /** When null, popover is hidden */
   position: HoverInfoPosition | null;
   children: React.ReactNode;
-  /** Vertical offset above the anchor in pixels. Default 8. */
+  /** Gap from the anchor in pixels. Default 14. */
   offset?: number;
-  /** Maximum width of the popover. Default 240. */
+  /** Maximum width of the popover. Default 160. */
   maxWidth?: number;
 }
 
@@ -34,8 +34,8 @@ interface HoverInfoPopoverProps {
 export default function HoverInfoPopover({
   position,
   children,
-  offset = 8,
-  maxWidth = 240,
+  offset = 10,
+  maxWidth = 160,
 }: HoverInfoPopoverProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -55,13 +55,11 @@ export default function HoverInfoPopover({
           transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
           className="fixed z-[200] pointer-events-none"
           style={{
-            left: clampHorizontal(position.x + position.width / 2, maxWidth),
-            top: position.y - offset,
-            transform: 'translate(-50%, -100%)',
+            ...getPopoverPosition(position, maxWidth, offset),
             maxWidth,
           }}
         >
-          <div className="rounded-lg bg-gray-900/95 dark:bg-gray-800/95 text-white text-xs shadow-lg backdrop-blur-sm px-3 py-2 leading-relaxed">
+          <div className="rounded-md border border-emerald-200/80 bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 text-xs shadow-md backdrop-blur-md px-2 py-1 leading-relaxed">
             {children}
           </div>
         </motion.div>
@@ -71,10 +69,29 @@ export default function HoverInfoPopover({
   );
 }
 
-function clampHorizontal(centerX: number, popoverWidth: number): number {
-  if (typeof window === 'undefined') return centerX;
-  const half = popoverWidth / 2;
-  const min = half + 8;
-  const max = window.innerWidth - half - 8;
-  return Math.max(min, Math.min(max, centerX));
+function getPopoverPosition(
+  position: HoverInfoPosition,
+  popoverWidth: number,
+  offset: number,
+): { left: number; top: number; transform: string } {
+  const fallback = {
+    left: position.x + position.width + offset,
+    top: position.y + position.height / 2,
+    transform: 'translateY(-50%)',
+  };
+
+  if (typeof window === 'undefined') return fallback;
+
+  const margin = 8;
+  const preferredLeft = position.x + position.width + offset;
+  const hasRoomOnRight = preferredLeft + popoverWidth + margin <= window.innerWidth;
+  const left = hasRoomOnRight
+    ? preferredLeft
+    : Math.max(margin, position.x - popoverWidth - offset);
+
+  return {
+    left,
+    top: Math.max(margin, Math.min(window.innerHeight - margin, fallback.top)),
+    transform: 'translateY(-50%)',
+  };
 }

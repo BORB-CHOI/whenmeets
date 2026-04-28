@@ -83,12 +83,12 @@ export default function CalendarHeatmapGrid({
     const slotKey = `${date}-all_day`;
 
     if (hasBestSlots) {
-      return bestSlots!.has(slotKey) ? BASE_COLOR + 'FF' : undefined;
+      return bestSlots!.has(slotKey) ? BASE_COLOR : undefined;
     }
 
     if (total === 0 || count === 0) return undefined;
-    if (count === total) return BASE_COLOR + 'FF';
-    const alpha = Math.floor((count / total) * (225 - 30) + 30);
+    if (count === total) return BASE_COLOR;
+    const alpha = Math.floor((count / total) * (185 - 35) + 35);
     return BASE_COLOR + alpha.toString(16).padStart(2, '0').toUpperCase();
   }
 
@@ -114,7 +114,7 @@ export default function CalendarHeatmapGrid({
               const bg = getCellBg(dateStr);
               const day = parseInt(dateStr.split('-')[2]);
               const count = isEventDate ? getCount(dateStr) : 0;
-              const isFullColor = bg && bg.endsWith('FF');
+              const isFullColor = bg === BASE_COLOR;
 
               return (
                 <div

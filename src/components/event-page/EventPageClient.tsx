@@ -17,7 +17,7 @@ import ParticipantFilter from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import HoverInfoPopover from '@/components/ui/HoverInfoPopover';
+import HoverInfoPopover, { type HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
@@ -70,7 +70,8 @@ export default function EventPageClient({
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
-  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
+  const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number } | null>(null);
+  const [hoverRect, setHoverRect] = useState<HoverInfoPosition | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
@@ -198,6 +199,16 @@ export default function EventPageClient({
     }
     return map;
   }, [hoveredSlot, event.participants]);
+
+  const mobileSlotAvailability = useMemo(() => {
+    if (!mobileSlotSheet) return undefined;
+    const map = new Map<string, 0 | 1 | 2>();
+    for (const p of event.participants) {
+      const val = p.availability?.[mobileSlotSheet.date]?.[String(mobileSlotSheet.slot)];
+      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+    }
+    return map;
+  }, [mobileSlotSheet, event.participants]);
 
   // Password state
   if (initialState.type === 'password' && !session) {
@@ -411,20 +422,30 @@ export default function EventPageClient({
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {dateRange}
+          <p className="mt-1 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+            <span>{dateRange}</span>
             {event.is_owner && (
               <span
                 onClick={() => setShowEditModal(true)}
-                className="ml-3 text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                className="text-emerald-600 hover:text-emerald-800 cursor-pointer"
               >이벤트 수정</span>
             )}
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              aria-label={copied ? '링크 복사됨' : '링크 복사'}
+              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 sm:hidden"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+              </svg>
+            </button>
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyLink}
-            className="h-[38px] px-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center gap-1.5"
+            className="hidden sm:flex h-[38px] px-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer items-center gap-1.5"
           >
             {copied ? '복사됨!' : '링크 복사'}
             {!copied && (
@@ -436,7 +457,7 @@ export default function EventPageClient({
           {viewMode === 'view' ? (
             <button
               onClick={handleEditClick}
-              className="h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer"
+              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
             >
               내 시간 입력
             </button>
@@ -444,7 +465,7 @@ export default function EventPageClient({
             <button
               onClick={handleFinishEditing}
               disabled={saving}
-              className="h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
             >
               {saving ? '저장 중...' : '편집 완료'}
             </button>
@@ -484,19 +505,19 @@ export default function EventPageClient({
           </div>
         ) : description ? (
           <p
-            className="mt-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-            onClick={() => setEditingDescription(true)}
+            className={`mt-2 text-sm text-gray-500 dark:text-gray-400 transition-colors ${event.is_owner ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-300' : ''}`}
+            onClick={() => event.is_owner && setEditingDescription(true)}
           >
             {description}
           </p>
-        ) : (
+        ) : event.is_owner ? (
           <p
             className="mt-2 text-sm text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             onClick={() => setEditingDescription(true)}
           >
             + 설명 추가
           </p>
-        )}
+        ) : null}
       </div>
 
       {/* Main content: 2-column layout */}
@@ -554,6 +575,7 @@ export default function EventPageClient({
                 setHoveredSlot(date ? { date, slot: slot! } : null);
                 setHoverRect(rect ?? null);
               }}
+              onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
             />
@@ -561,7 +583,7 @@ export default function EventPageClient({
         </div>
 
         {/* Right: Sidebar */}
-        <div className="w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700">
+        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700">
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight */}
@@ -881,17 +903,65 @@ export default function EventPageClient({
 
       {/* Mobile bottom bar */}
       <MobileBottomBar
-        participants={event.participants}
-        selectedIds={selectedIds}
-        onSelectedChange={setSelectedIds}
-        slotAvailability={slotAvailability}
         isEditMode={viewMode === 'edit'}
         onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
         saving={saving}
+        dates={event.dates}
+        timeStart={event.time_start}
+        timeEnd={event.time_end}
+        onCalendarImport={handleAvailabilityChange}
       />
 
+      <AnimatePresence>
+        {viewMode === 'view' && mobileSlotSheet && mobileSlotAvailability && !event.date_only && (
+          <motion.div
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.35 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 36 || info.velocity.y > 450) setMobileSlotSheet(null);
+            }}
+            className="fixed inset-x-0 bottom-[72px] z-40 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 lg:hidden"
+          >
+            <div className="flex justify-center pt-2">
+              <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+            <div className="max-h-[48vh] overflow-y-auto px-5 pb-5 pt-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/{event.participants.length})
+                  </h3>
+                  <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
+                    {formatDateCompact(mobileSlotSheet.date)} · {slotToTime(mobileSlotSheet.slot)} – {slotToTime(mobileSlotSheet.slot + 1)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileSlotSheet(null)}
+                  className="rounded-md px-2 py-1 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                >
+                  닫기
+                </button>
+              </div>
+              <ParticipantFilter
+                participants={event.participants}
+                selectedIds={selectedIds}
+                onSelectedChange={setSelectedIds}
+                slotAvailability={mobileSlotAvailability}
+                onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom spacer for mobile bottom bar */}
-      <div className="h-16 lg:hidden" />
+      <div className="h-24 lg:hidden" />
 
       {/* Toast for copy */}
       <AnimatePresence>
@@ -914,10 +984,6 @@ export default function EventPageClient({
           <SlotHoverInfo
             date={hoveredSlot.date}
             slot={hoveredSlot.slot}
-            participants={event.participants}
-            selectedIds={selectedIds}
-            includeIfNeeded={includeIfNeeded}
-            mode={event.mode}
           />
         </HoverInfoPopover>
       )}
@@ -928,13 +994,13 @@ export default function EventPageClient({
 interface SlotHoverInfoProps {
   date: string;
   slot: number;
-  participants: { id: string; name: string; availability?: Record<string, Record<string, 0 | 1 | 2>> }[];
-  selectedIds: Set<string>;
-  includeIfNeeded: boolean;
-  mode: 'available' | 'unavailable';
+  participants?: { id: string; name: string; availability?: Record<string, Record<string, 0 | 1 | 2>> }[];
+  selectedIds?: Set<string>;
+  includeIfNeeded?: boolean;
+  mode?: 'available' | 'unavailable';
 }
 
-function SlotHoverInfo({ date, slot, participants, selectedIds, includeIfNeeded, mode }: SlotHoverInfoProps) {
+function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<string>(), includeIfNeeded = false, mode = 'available' }: SlotHoverInfoProps) {
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const dateLabel = formatDateCompact(date);
   const timeLabel = `${slotToTime(slot)} – ${slotToTime(slot + 1)}`;
@@ -953,8 +1019,8 @@ function SlotHoverInfo({ date, slot, participants, selectedIds, includeIfNeeded,
   }
 
   return (
-    <div className="space-y-1.5 min-w-[180px]">
-      <div className="font-semibold text-[13px] border-b border-white/15 pb-1 mb-1">
+    <div className="whitespace-nowrap">
+      <div className="font-semibold text-[11px] tabular-nums">
         {dateLabel} · {timeLabel}
       </div>
       {mode === 'unavailable' ? (
@@ -975,7 +1041,7 @@ function SlotHoverInfo({ date, slot, participants, selectedIds, includeIfNeeded,
             <Row dotClass="bg-amber-300" label={`필요하다면 ${ifNeeded.length}명`} names={ifNeeded} />
           )}
           {(filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)) > 0 && (
-            <div className="text-[11px] text-white/50">
+            <div className="text-[11px] text-white/55">
               나머지 {filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)}명 무응답/불가
             </div>
           )}
@@ -990,7 +1056,7 @@ function Row({ dotClass, label, names }: { dotClass: string; label: string; name
     <div>
       <div className="flex items-center gap-1.5">
         <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-        <span className="text-[11px] font-medium text-white/90">{label}</span>
+        <span className="text-[11px] font-medium text-white/85">{label}</span>
       </div>
       <div className="text-[11px] text-white/70 ml-3 leading-tight">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
     </div>

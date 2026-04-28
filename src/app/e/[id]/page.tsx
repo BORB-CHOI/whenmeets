@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
 import EventPageClient from '@/components/event-page/EventPageClient';
 
@@ -15,7 +16,7 @@ export default async function EventPage({ params }: Props) {
   // Fetch event in one query (includes password_hash for auth check)
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description')
+    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description, created_by')
     .eq('id', id)
     .single();
 
@@ -56,6 +57,7 @@ export default async function EventPage({ params }: Props) {
           date_only: event.date_only ?? false,
           description: event.description ?? undefined,
           requires_auth: true,
+          is_owner: false,
           participants: [],
         }}
         initialState={{ type: 'password' }}
@@ -69,6 +71,17 @@ export default async function EventPage({ params }: Props) {
     .select('id, name, availability, created_at')
     .eq('event_id', id)
     .order('created_at', { ascending: true });
+
+  let isOwner = false;
+  if (event.created_by) {
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      isOwner = user?.id === event.created_by;
+    } catch {
+      isOwner = false;
+    }
+  }
 
   return (
     <EventPageClient
@@ -85,6 +98,7 @@ export default async function EventPage({ params }: Props) {
         date_only: event.date_only ?? false,
         description: event.description ?? undefined,
         participants: participants ?? [],
+        is_owner: isOwner,
       }}
       initialState={{ type: 'ready' }}
     />
