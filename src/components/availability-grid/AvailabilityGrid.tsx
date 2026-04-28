@@ -16,6 +16,7 @@ interface AvailabilityGridProps {
 
 const GRID_WIDTH = 770; // 7 columns * 110px
 const TIME_COL_WIDTH = 44;
+const HEADER_HEIGHT = 48;
 
 function formatDateHeader(dateStr: string): { num: string; day: string } {
   if (isDayOfWeekKey(dateStr)) {
@@ -101,7 +102,7 @@ export default function AvailabilityGrid({
       <div className="overflow-x-auto" ref={containerRef}>
         <div className="flex items-start mx-auto" style={{ width: '100%', maxWidth: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
-          <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: 40 }}>
+          <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: HEADER_HEIGHT }}>
             {slots.map((slot) => (
               <div
                 key={slot}
@@ -136,9 +137,10 @@ export default function AvailabilityGrid({
                 elements.push(<div key={`gap-hdr-${colIdx}`} />);
               }
               elements.push(
-                <div key={`hdr-${date}`} className="flex items-center justify-center" style={{ height: 40 }}>
-                  <span className="text-[13px] text-gray-600 dark:text-gray-300 tabular-nums">
-                    {num}<span className="font-bold">{day}</span>
+                <div key={`hdr-${date}`} className="flex items-center justify-center px-1" style={{ height: HEADER_HEIGHT }}>
+                  <span className="flex flex-col items-center justify-center gap-0.5 text-center text-gray-600 dark:text-gray-300 tabular-nums leading-tight">
+                    {num && <span className="text-[11px] font-medium">{num}</span>}
+                    <span className="text-[12px] font-bold">{day}</span>
                   </span>
                 </div>
               );

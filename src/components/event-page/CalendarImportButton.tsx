@@ -11,6 +11,7 @@ interface CalendarImportButtonProps {
   timeStart: number;
   timeEnd: number;
   onImport: (availability: Availability) => void;
+  variant?: 'default' | 'compact';
 }
 
 export default function CalendarImportButton({
@@ -18,6 +19,7 @@ export default function CalendarImportButton({
   timeStart,
   timeEnd,
   onImport,
+  variant = 'default',
 }: CalendarImportButtonProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,12 +72,18 @@ export default function CalendarImportButton({
     }
   }
 
+  const isCompact = variant === 'compact';
+
   return (
     <div className="flex flex-col gap-1">
       <button
         onClick={() => setShowImportConfirm(true)}
         disabled={loading}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50"
+        className={
+          isCompact
+            ? 'flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50'
+            : 'flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50'
+        }
       >
         {loading ? (
           <>
@@ -117,7 +125,7 @@ export default function CalendarImportButton({
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            캘린더에서 가져오기
+            {isCompact ? '캘린더' : '캘린더에서 가져오기'}
           </>
         )}
       </button>

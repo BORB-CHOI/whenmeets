@@ -16,9 +16,9 @@ interface CalendarDragGridProps {
 
 const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: 'bg-gray-100',
-  0: 'bg-red-200',
-  1: 'bg-[#FFE8B8]',
-  2: 'bg-[#86EFAC]',
+  0: 'bg-red-400/45',
+  1: 'bg-amber-300/55',
+  2: 'bg-emerald-600/[.47]',
 };
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -82,7 +82,7 @@ export default function CalendarDragGrid({
     const el = document.querySelector(`[data-cal-date="${date}"]`) as HTMLElement | null;
     if (!el) return;
     // Remove old color classes
-    el.classList.remove('bg-gray-100', 'bg-red-200', 'bg-[#FFE8B8]', 'bg-[#86EFAC]');
+    el.classList.remove('bg-gray-100', 'bg-red-400/45', 'bg-amber-300/55', 'bg-emerald-600/[.47]');
     el.classList.add(CELL_COLORS[value]);
   }
 

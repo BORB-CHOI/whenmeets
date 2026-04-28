@@ -13,7 +13,7 @@ export async function GET(
   // Single query: fetch event with password_hash included (strip from response)
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description')
+    .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description, created_by')
     .eq('id', id)
     .single();
 
@@ -42,24 +42,12 @@ export async function GET(
 
   // Determine if the current user is the event owner
   let isOwner = false;
-  // Need created_by to check ownership
-  const { data: ownerCheck } = await supabase
-    .from('events')
-    .select('created_by')
-    .eq('id', id)
-    .single();
-
-  if (ownerCheck?.created_by) {
+  if (event.created_by) {
     try {
       const authClient = await createAuthServerClient();
       const { data: { user } } = await authClient.auth.getUser();
-      if (user?.id === ownerCheck.created_by) isOwner = true;
+      if (user?.id === event.created_by) isOwner = true;
     } catch { /* no auth */ }
-  }
-
-  // If event has a password and no created_by (anonymous creator), cookie auth = owner
-  if (!isOwner && hasPassword && !ownerCheck?.created_by) {
-    isOwner = true;
   }
 
   return NextResponse.json({
@@ -103,11 +91,6 @@ export async function PATCH(
     const { data: { user } } = await authClient.auth.getUser();
     if (!user || user.id !== event.created_by) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-  } else if (event.password_hash) {
-    const cookie = request.cookies.get(`whenmeets_auth_${id}`);
-    if (!cookie || !verifyEventToken(id, cookie.value)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   } else {
     // Anonymous event without password — no one can edit
