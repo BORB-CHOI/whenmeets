@@ -6,6 +6,18 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+
+- `.env.example`에 commit돼 있던 실제 secret 제거 후 placeholder로 정리. **공개 리포(GitHub)에 노출됐던 키는 별도 회전 필요**: Supabase service_role / anon key, COOKIE_SECRET.
+
+### Changed
+
+- Supabase 신규 API 키 시스템(`sb_publishable_` / `sb_secret_`)으로 마이그레이션. 환경변수 이름 변경:
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` → `SUPABASE_SECRET_KEY`
+  - 영향 파일: `src/lib/supabase/{client,server,auth-client,auth-server}.ts`, `src/proxy.ts`, `src/app/auth/callback/route.ts`
+  - 배포 시 Vercel/로컬 env 양쪽에 새 이름으로 값 설정 후 재배포 필요 (`NEXT_PUBLIC_*`은 빌드 타임 substitution).
+
 ## [0.3.0] - 2026-04-24
 
 ### Added
