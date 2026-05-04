@@ -102,6 +102,18 @@ These pages display the SAME event data differently. Layout, header, participant
 | `Footer` | Footer | `src/components/layout/Footer.tsx` |
 | `CreateEventButton` | Event creation button | `src/components/layout/CreateEventButton.tsx` |
 
+### MyPage (profile)
+
+| Component | Role | File |
+|-----------|------|------|
+| `MyPageClient` | 프로필(이름) 편집 클라이언트 | `src/components/mypage/MyPageClient.tsx` |
+| `/mypage` route | 마이페이지 SSR + auth gate | `src/app/mypage/page.tsx` |
+
+**Shared concerns:**
+- `AuthButton` 드롭다운에서 `/mypage`로 이동 — 메뉴 항목 변경 시 두 곳 모두 확인
+- 이름 변경은 Supabase Auth `user_metadata.full_name` 업데이트
+- 변경 후 `router.refresh()`로 Header/AuthButton 동기화
+
 ## Modification Rules
 
 1. **Grid color change** → update `AVAILABILITY_COLORS` in `constants.ts` → verify all 7 grid components

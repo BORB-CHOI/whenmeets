@@ -72,12 +72,8 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
 
   const rafId = useRef(0);
 
-  function handlePointerMove(e: React.MouseEvent | React.TouchEvent) {
+  function handleMoveAt(clientX: number, clientY: number) {
     if (!isDragging.current) return;
-    // Prevent page scroll during drag on touch devices
-    if ('touches' in e) e.preventDefault();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     cancelAnimationFrame(rafId.current);
     rafId.current = requestAnimationFrame(() => {
       const el = document.elementFromPoint(clientX, clientY);
@@ -86,6 +82,10 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
       if (!btn) return;
       applyToDate(btn.dataset.date!);
     });
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    handleMoveAt(e.clientX, e.clientY);
   }
 
   function handlePointerUp() {
@@ -123,10 +123,28 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
     else setViewMonth(viewMonth + 1);
   }
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Native (non-passive) touchmove so preventDefault works
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    function onTouchMoveNative(e: TouchEvent) {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      handleMoveAt(touch.clientX, touch.clientY);
+    }
+    el.addEventListener('touchmove', onTouchMoveNative, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMoveNative);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
-      onMouseMove={handlePointerMove}
-      onTouchMove={handlePointerMove}
+      ref={rootRef}
+      onMouseMove={handleMouseMove}
       className="select-none"
     >
       {/* Month nav */}

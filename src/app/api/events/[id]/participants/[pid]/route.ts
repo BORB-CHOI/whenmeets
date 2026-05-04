@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
+import { createAuthServerClient } from '@/lib/supabase/auth-server';
 
 export async function PATCH(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function PATCH(
 
   const { data: participant } = await supabase
     .from('participants')
-    .select('id, password_hash')
+    .select('id, password_hash, user_id')
     .eq('id', pid)
     .eq('event_id', id)
     .single();
@@ -22,13 +23,29 @@ export async function PATCH(
     return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
   }
 
-  // If participant has a password, verify it
-  if (participant.password_hash) {
+  // Ownership check: a participant bound to a logged-in user can only be
+  // edited by that same user. This prevents a different account (or a stale
+  // localStorage session) from editing someone else's schedule by knowing pid.
+  if (participant.user_id) {
+    let currentUserId: string | null = null;
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      currentUserId = user?.id ?? null;
+    } catch {
+      // ignore
+    }
+    if (currentUserId !== participant.user_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+  } else if (participant.password_hash) {
+    // Anonymous-with-password slot: verify password
     const { password } = body;
     if (!password || !(await bcrypt.compare(password, participant.password_hash))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
+  // Anonymous-no-password slot: shared-edit (legacy behavior)
 
   const { availability } = body;
 

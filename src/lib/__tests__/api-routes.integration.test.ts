@@ -15,7 +15,7 @@ vi.mock('@/lib/supabase/server', () => {
     let pendingUpdate: Partial<Row> | null = null;
     let selectColumns: string | null = null;
     const filters: Array<{ column: string; value: unknown }> = [];
-    let likeFilter: { column: string; pattern: string } | null = null;
+    let likeFilter: { column: string; pattern: string; ci?: boolean } | null = null;
 
     function applyFilters() {
       rows = [...mockTables[tableName]];
@@ -23,8 +23,15 @@ vi.mock('@/lib/supabase/server', () => {
         rows = rows.filter((r) => r[f.column] === f.value);
       }
       if (likeFilter) {
-        const prefix = likeFilter.pattern.replace(/%$/, '');
-        rows = rows.filter((r) => String(r[likeFilter!.column]).startsWith(prefix));
+        const lf = likeFilter;
+        const norm = (s: string) => (lf.ci ? s.toLowerCase() : s);
+        const pat = norm(lf.pattern);
+        if (pat.endsWith('%')) {
+          const prefix = pat.slice(0, -1);
+          rows = rows.filter((r) => norm(String(r[lf.column])).startsWith(prefix));
+        } else {
+          rows = rows.filter((r) => norm(String(r[lf.column])) === pat);
+        }
         likeFilter = null;
       }
     }
@@ -43,6 +50,12 @@ vi.mock('@/lib/supabase/server', () => {
       select(columns?: string) { selectColumns = columns ?? null; return builder; },
       eq(column: string, value: unknown) { filters.push({ column, value }); return builder; },
       like(column: string, pattern: string) { likeFilter = { column, pattern }; return builder; },
+      ilike(column: string, pattern: string) { likeFilter = { column, pattern, ci: true }; return builder; },
+      maybeSingle() {
+        applyFilters();
+        if (rows.length === 0) return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: pickColumns(rows[0]), error: null });
+      },
       order() { return builder; },
       insert(row: Row) {
         // Simulate DB-generated defaults for participants

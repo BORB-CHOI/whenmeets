@@ -77,14 +77,25 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
     };
   }, []);
 
-  // Touch drag: track moving finger across buttons
-  function handleTouchMove(e: React.TouchEvent) {
-    if (!isDragging.current) return;
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const btn = el?.closest('[data-day-key]') as HTMLElement | null;
-    if (btn?.dataset.dayKey) applyToKey(btn.dataset.dayKey);
-  }
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Native (non-passive) touchmove so we can preventDefault and stop scroll while dragging.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    function onTouchMoveNative(e: TouchEvent) {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const btn = target?.closest('[data-day-key]') as HTMLElement | null;
+      if (btn?.dataset.dayKey) applyToKey(btn.dataset.dayKey);
+    }
+    el.addEventListener('touchmove', onTouchMoveNative, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMoveNative);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function selectWeekdays() {
     onDaysChange(['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -97,8 +108,8 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
   return (
     <div>
       <div
+        ref={rootRef}
         className="grid grid-cols-7 gap-2 mb-3 select-none"
-        onTouchMove={handleTouchMove}
         style={{ touchAction: 'none' }}
       >
         {days.map((day) => {
