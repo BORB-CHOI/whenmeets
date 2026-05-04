@@ -5,6 +5,9 @@ import { EventMode, Participant } from '@/lib/types';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
+// Touch movement threshold (px) — beyond this, treat as scroll instead of tap.
+const TAP_MOVEMENT_THRESHOLD = 8;
+
 interface HeatmapGridProps {
   dates: string[];
   timeStart: number;
@@ -47,6 +50,8 @@ export default function HeatmapGrid({
   eventMode = 'available',
 }: HeatmapGridProps) {
   const touchPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStart = useRef<{ x: number; y: number; pid: number } | null>(null);
+  const touchMoved = useRef(false);
   const filtered = participants.filter((p) => selectedIds.has(p.id));
   const total = filtered.length;
 
@@ -118,9 +123,6 @@ export default function HeatmapGrid({
             onPointerEnter={(e) => {
               if (e.pointerType === 'mouse') emitHoverAtPointer(e);
             }}
-            onPointerMove={(e) => {
-              if (e.pointerType === 'mouse') emitHoverAtPointer(e);
-            }}
             onPointerLeave={() => {
               clearTouchPreviewTimer();
               onCellHover?.(null);
@@ -130,26 +132,44 @@ export default function HeatmapGrid({
                 onCellSelect?.(date, slot);
                 return;
               }
-              onCellSelect?.(date, slot);
+              // Touch: defer onCellSelect until pointerUp so we can distinguish
+              // tap from scroll (a scroll should NOT open the bottom sheet).
+              touchStart.current = { x: e.clientX, y: e.clientY, pid: e.pointerId };
+              touchMoved.current = false;
               clearTouchPreviewTimer();
-              const x = e.clientX;
-              const y = e.clientY;
-              touchPreviewTimer.current = setTimeout(() => {
-                onCellHover?.(date, slot, {
-                  x,
-                  y: y - 42,
-                  width: 0,
-                  height: 0,
-                });
-              }, 280);
+            }}
+            onPointerMove={(e) => {
+              if (e.pointerType === 'mouse') {
+                emitHoverAtPointer(e);
+                return;
+              }
+              // Touch move: detect scroll intent
+              const ts = touchStart.current;
+              if (!ts || ts.pid !== e.pointerId) return;
+              if (touchMoved.current) return;
+              const dx = e.clientX - ts.x;
+              const dy = e.clientY - ts.y;
+              if (dx * dx + dy * dy > TAP_MOVEMENT_THRESHOLD * TAP_MOVEMENT_THRESHOLD) {
+                touchMoved.current = true;
+                clearTouchPreviewTimer();
+              }
             }}
             onPointerUp={(e) => {
               if (e.pointerType === 'mouse') return;
+              const ts = touchStart.current;
+              touchStart.current = null;
               clearTouchPreviewTimer();
               onCellHover?.(null);
+              // Only treat as tap if pointer didn't move (i.e. not a scroll).
+              if (ts && ts.pid === e.pointerId && !touchMoved.current) {
+                onCellSelect?.(date, slot);
+              }
+              touchMoved.current = false;
             }}
             onPointerCancel={(e) => {
               if (e.pointerType === 'mouse') return;
+              touchStart.current = null;
+              touchMoved.current = false;
               clearTouchPreviewTimer();
               onCellHover?.(null);
             }}

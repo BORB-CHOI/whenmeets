@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Availability, AvailabilityLevel } from '@/lib/types';
 import { CELL_CSS_COLORS } from './GridCell';
 
@@ -12,16 +12,24 @@ interface UseGridDragOptions {
   disabled?: boolean;
 }
 
-function getCellFromPoint(x: number, y: number, container?: HTMLElement | null): { date: string; slot: string } | null {
+interface CellCoord {
+  date: string;
+  slot: string;
+  dateIdx: number;
+  slotIdx: number;
+}
+
+function getCellFromPoint(x: number, y: number, container?: HTMLElement | null): CellCoord | null {
   const el = document.elementFromPoint(x, y);
   if (!el) return null;
-  // Scope to grid container to avoid matching cells in other grids
   if (container && !container.contains(el)) return null;
   const cell = el.closest('[data-date][data-slot]') as HTMLElement | null;
   if (!cell) return null;
   const date = cell.dataset.date!;
   const slot = cell.dataset.slot!;
-  return { date, slot };
+  const dateIdx = Number(cell.dataset.dateIdx ?? -1);
+  const slotIdx = Number(cell.dataset.slotIdx ?? -1);
+  return { date, slot, dateIdx, slotIdx };
 }
 
 export default function useGridDrag({
@@ -32,99 +40,121 @@ export default function useGridDrag({
   disabled = false,
 }: UseGridDragOptions) {
   const isDragging = useRef(false);
-  const lastCell = useRef<string | null>(null);
-  const lastPoint = useRef<{ x: number; y: number } | null>(null);
+  const startCell = useRef<CellCoord | null>(null);
   const draftRef = useRef<Availability>({});
+  const baselineRef = useRef<Availability>({});
   const erasing = useRef(false);
   const containerRef = useRef<HTMLElement | null>(null);
+  const [containerEl, setContainerEl] = useState<HTMLElement | null>(null);
+  const paintedKeys = useRef<Set<string>>(new Set());
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
   const onDragEndRef = useRef(onDragEnd);
   onDragEndRef.current = onDragEnd;
 
-  function applyToCell(date: string, slot: string) {
-    const cellKey = `${date}:${slot}`;
-    if (cellKey === lastCell.current) return;
-    lastCell.current = cellKey;
-
-    const draft = draftRef.current;
-    if (!draft[date]) draft[date] = {};
-
-    if (erasing.current) {
-      delete draft[date][slot];
-      if (Object.keys(draft[date]).length === 0) delete draft[date];
-    } else {
-      draft[date][slot] = activeMode;
-    }
-
-    // Paint DOM directly instead of triggering React re-render
-    const cellEl = containerRef.current?.querySelector(`[data-date="${date}"][data-slot="${slot}"]`) as HTMLElement | null;
-    if (cellEl) {
-      if (erasing.current) {
-        cellEl.style.backgroundColor = 'white';
-        cellEl.dataset.erased = '1';
+  function paintCell(date: string, slot: string, mode: 'apply' | 'erase' | 'reset') {
+    const cellEl = containerRef.current?.querySelector(
+      `[data-date="${date}"][data-slot="${slot}"]`,
+    ) as HTMLElement | null;
+    if (!cellEl) return;
+    if (mode === 'reset') {
+      const baseVal = baselineRef.current[date]?.[slot];
+      if (baseVal === undefined) {
+        cellEl.style.backgroundColor = '';
+        delete cellEl.dataset.erased;
       } else {
-        cellEl.style.backgroundColor = CELL_CSS_COLORS[activeMode];
+        cellEl.style.backgroundColor = CELL_CSS_COLORS[baseVal];
         delete cellEl.dataset.erased;
       }
+    } else if (mode === 'erase') {
+      cellEl.style.backgroundColor = 'white';
+      cellEl.dataset.erased = '1';
+    } else {
+      cellEl.style.backgroundColor = CELL_CSS_COLORS[activeMode];
+      delete cellEl.dataset.erased;
     }
   }
 
-  // Interpolate between two points to fill in gaps during fast mouse movement
-  function interpolateAndApply(x1: number, y1: number, x2: number, y2: number) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    // Sample every 8px — balances gap coverage vs DOM query cost
-    const steps = Math.max(Math.ceil(dist / 8), 1);
+  function applyRectangle(start: CellCoord, end: CellCoord) {
+    if (!containerRef.current) return;
+    const minDate = Math.min(start.dateIdx, end.dateIdx);
+    const maxDate = Math.max(start.dateIdx, end.dateIdx);
+    const minSlot = Math.min(start.slotIdx, end.slotIdx);
+    const maxSlot = Math.max(start.slotIdx, end.slotIdx);
 
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const ix = x1 + dx * t;
-      const iy = y1 + dy * t;
-      const cell = getCellFromPoint(ix, iy, containerRef.current);
-      if (cell) applyToCell(cell.date, cell.slot);
+    // Reset draft to baseline (snapshot taken at drag start)
+    const draft: Availability = {};
+    for (const d in baselineRef.current) {
+      draft[d] = { ...baselineRef.current[d] };
     }
+
+    // Reset previously painted cells back to baseline
+    paintedKeys.current.forEach((key) => {
+      const [date, slot] = key.split('|');
+      paintCell(date, slot, 'reset');
+    });
+    const newPainted = new Set<string>();
+
+    // Iterate over all cells in container with index in range
+    const cells = containerRef.current.querySelectorAll('[data-date][data-slot]');
+    cells.forEach((node) => {
+      const el = node as HTMLElement;
+      const dIdx = Number(el.dataset.dateIdx ?? -1);
+      const sIdx = Number(el.dataset.slotIdx ?? -1);
+      if (dIdx < minDate || dIdx > maxDate || sIdx < minSlot || sIdx > maxSlot) return;
+
+      const date = el.dataset.date!;
+      const slot = el.dataset.slot!;
+
+      if (erasing.current) {
+        if (draft[date]) {
+          delete draft[date][slot];
+          if (Object.keys(draft[date]).length === 0) delete draft[date];
+        }
+        paintCell(date, slot, 'erase');
+      } else {
+        if (!draft[date]) draft[date] = {};
+        draft[date][slot] = activeMode;
+        paintCell(date, slot, 'apply');
+      }
+      newPainted.add(`${date}|${slot}`);
+    });
+
+    paintedKeys.current = newPainted;
+    draftRef.current = draft;
   }
 
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
-      isDragging.current = true;
-      // Shallow clone for draft — mutated during drag, committed on end
-      const clone: Availability = {};
-      for (const d in availability) {
-        clone[d] = { ...availability[d] };
-      }
-      draftRef.current = clone;
-      lastCell.current = null;
-      lastPoint.current = { x, y };
-
-      // Toggle: if first cell already matches activeMode, erase instead
-      erasing.current = false;
       const cell = getCellFromPoint(x, y, containerRef.current);
-      if (cell) {
-        const existing = availability[cell.date]?.[cell.slot];
-        if (existing === activeMode) {
-          erasing.current = true;
-        }
-        applyToCell(cell.date, cell.slot);
+      if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;
+
+      isDragging.current = true;
+      startCell.current = cell;
+      paintedKeys.current = new Set();
+
+      // Snapshot baseline (state before drag)
+      const baseline: Availability = {};
+      for (const d in availability) {
+        baseline[d] = { ...availability[d] };
       }
+      baselineRef.current = baseline;
+
+      // Toggle: if anchor cell already matches activeMode, the rectangle erases
+      const existing = availability[cell.date]?.[cell.slot];
+      erasing.current = existing === activeMode;
+
+      applyRectangle(cell, cell);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeMode, availability]
+    [activeMode, availability],
   );
 
   const handlePointerMove = useCallback((x: number, y: number) => {
-    if (!isDragging.current) return;
-
-    // Interpolate from last point to current point to prevent gaps
-    if (lastPoint.current) {
-      interpolateAndApply(lastPoint.current.x, lastPoint.current.y, x, y);
-    } else {
-      const cell = getCellFromPoint(x, y, containerRef.current);
-      if (cell) applyToCell(cell.date, cell.slot);
-    }
-    lastPoint.current = { x, y };
+    if (!isDragging.current || !startCell.current) return;
+    const cell = getCellFromPoint(x, y, containerRef.current);
+    if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;
+    applyRectangle(startCell.current, cell);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMode]);
 
@@ -135,14 +165,13 @@ export default function useGridDrag({
         (el as HTMLElement).style.backgroundColor = '';
         delete (el as HTMLElement).dataset.erased;
       });
-      // Commit draft to React state once on drag end
       const committed = { ...draftRef.current };
       onAvailabilityChangeRef.current(committed);
       onDragEndRef.current?.(committed);
     }
     isDragging.current = false;
-    lastCell.current = null;
-    lastPoint.current = null;
+    startCell.current = null;
+    paintedKeys.current = new Set();
     erasing.current = false;
   }, []);
 
@@ -161,11 +190,39 @@ export default function useGridDrag({
     };
   }, [handlePointerEnd]);
 
-  // rAF throttle for pointer move — prevents >60 calls/sec on high-refresh displays
+  // rAF throttle for pointer move
   const rafId = useRef(0);
 
+  // Native touchmove listener with { passive: false } to allow preventDefault.
+  // React's synthetic onTouchMove is passive by default, which causes
+  // "Unable to preventDefault inside passive event listener invocation" errors.
+  useEffect(() => {
+    if (!containerEl) return;
+
+    function onTouchMoveNative(e: TouchEvent) {
+      if (disabled) return;
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const { clientX, clientY } = touch;
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        handlePointerMove(clientX, clientY);
+      });
+    }
+
+    containerEl.addEventListener('touchmove', onTouchMoveNative, { passive: false });
+    return () => {
+      containerEl.removeEventListener('touchmove', onTouchMoveNative);
+    };
+  }, [containerEl, disabled, handlePointerMove]);
+
   const gridProps = {
-    ref: (el: HTMLElement | null) => { containerRef.current = el; },
+    ref: (el: HTMLElement | null) => {
+      containerRef.current = el;
+      setContainerEl(el);
+    },
     onMouseDown: (e: React.MouseEvent) => {
       if (disabled) return;
       e.preventDefault();
@@ -180,22 +237,12 @@ export default function useGridDrag({
         handlePointerMove(clientX, clientY);
       });
     },
-    // No onMouseUp/onMouseLeave — handled by window listeners
     onTouchStart: (e: React.TouchEvent) => {
       if (disabled) return;
       const touch = e.touches[0];
       handlePointerStart(touch.clientX, touch.clientY);
     },
-    onTouchMove: (e: React.TouchEvent) => {
-      if (disabled) return;
-      e.preventDefault();
-      const { clientX, clientY } = e.touches[0];
-      cancelAnimationFrame(rafId.current);
-      rafId.current = requestAnimationFrame(() => {
-        handlePointerMove(clientX, clientY);
-      });
-    },
-    // No onTouchEnd/onTouchCancel — handled by window listeners
+    // touchmove is attached natively in useEffect above with { passive: false }
   };
 
   return { gridProps };

@@ -607,7 +607,7 @@ export default function EventPageClient({
                     activeMode === 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     <div className="font-medium">
-                      {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ 필요하다면 가능한 시간을 드래그하세요'}
+                      {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ If Needed 시간을 드래그하세요'}
                     </div>
                     {activeMode === 1 && (
                       <div className="mt-1 text-xs text-amber-700/80 leading-relaxed">
@@ -622,15 +622,20 @@ export default function EventPageClient({
               <div className="mb-5">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-sm bg-emerald-400/60" />
-                    <span>Available</span>
+                  <div className="flex items-start gap-2">
+                    <div className="w-4 h-4 rounded-sm bg-emerald-400/60 mt-0.5 shrink-0" />
+                    <div className="flex flex-col">
+                      <span>Available</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
+                        확실히 가능한 시간
+                      </span>
+                    </div>
                   </div>
                   {event.mode !== 'unavailable' && (
                     <div className="flex items-start gap-2">
                       <div className="w-4 h-4 rounded-sm bg-amber-300/50 mt-0.5 shrink-0" />
                       <div className="flex flex-col">
-                        <span>필요하다면..</span>
+                        <span>If Needed</span>
                         <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
                           가능은 하지만 우선순위 낮음
                         </span>
@@ -718,7 +723,7 @@ export default function EventPageClient({
                       onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
                       className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
                     >
-                      <span>&quot;필요하다면..&quot; 숨기기</span>
+                      <span>&quot;If Needed&quot; 숨기기</span>
                       <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </div>
@@ -925,7 +930,7 @@ export default function EventPageClient({
             onDragEnd={(_, info) => {
               if (info.offset.y > 36 || info.velocity.y > 450) setMobileSlotSheet(null);
             }}
-            className="fixed inset-x-0 bottom-[72px] z-40 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 lg:hidden"
+            className="fixed inset-x-0 bottom-[72px] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 lg:hidden"
           >
             <div className="flex justify-center pt-2">
               <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
@@ -1038,7 +1043,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
             <Row dotClass="bg-emerald-400" label={`가능 ${available.length}명`} names={available} />
           )}
           {includeIfNeeded && ifNeeded.length > 0 && (
-            <Row dotClass="bg-amber-300" label={`필요하다면 ${ifNeeded.length}명`} names={ifNeeded} />
+            <Row dotClass="bg-amber-300" label={`If Needed ${ifNeeded.length}명`} names={ifNeeded} />
           )}
           {(filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)) > 0 && (
             <div className="text-[11px] text-white/55">

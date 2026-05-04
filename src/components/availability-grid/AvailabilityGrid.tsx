@@ -7,7 +7,7 @@ interface AvailabilityGridProps {
   dates: string[];
   timeStart: number;
   timeEnd: number;
-  renderCell: (date: string, slot: number) => ReactNode;
+  renderCell: (date: string, slot: number, indices?: { dateIdx: number; slotIdx: number }) => ReactNode;
   columnsProps?: React.HTMLAttributes<HTMLDivElement> & { ref?: (el: HTMLElement | null) => void };
   header?: ReactNode;
   footer?: ReactNode;
@@ -15,7 +15,9 @@ interface AvailabilityGridProps {
 }
 
 const GRID_WIDTH = 770; // 7 columns * 110px
-const TIME_COL_WIDTH = 44;
+const timeColWidth_DESKTOP = 44;
+const timeColWidth_MOBILE = 24;
+const MOBILE_BREAKPOINT = 640;
 const HEADER_HEIGHT = 48;
 
 function formatDateHeader(dateStr: string): { num: string; day: string } {
@@ -45,6 +47,7 @@ export default function AvailabilityGrid({
   const slots = generateSlots(timeStart, timeEnd);
   const [page, setPage] = useState(0);
   const [containerWidth, setContainerWidth] = useState(GRID_WIDTH);
+  const [timeColWidth, setTimeColWidth] = useState(timeColWidth_DESKTOP);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.ceil(dates.length / maxColumns);
@@ -52,9 +55,12 @@ export default function AvailabilityGrid({
 
   useEffect(() => {
     function updateWidth() {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
+      const tcw = isMobile ? timeColWidth_MOBILE : timeColWidth_DESKTOP;
+      setTimeColWidth(tcw);
       if (containerRef.current) {
-        const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + TIME_COL_WIDTH;
-        setContainerWidth(Math.min(GRID_WIDTH, available - TIME_COL_WIDTH - (needsPagination ? 80 : 0) - 16));
+        const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
+        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0) - 16));
       }
     }
     updateWidth();
@@ -100,13 +106,13 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto" ref={containerRef}>
-        <div className="flex items-start mx-auto" style={{ width: '100%', maxWidth: containerWidth + TIME_COL_WIDTH + (needsPagination ? 80 : 0) }}>
+        <div className="flex items-start mx-auto" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
-          <div className="shrink-0 flex flex-col" style={{ width: TIME_COL_WIDTH, paddingTop: HEADER_HEIGHT }}>
+          <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
             {slots.map((slot) => (
               <div
                 key={slot}
-                className="flex items-start justify-end pr-3"
+                className="flex items-start justify-end pr-1.5 sm:pr-3"
                 style={{ height: CELL_HEIGHT }}
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
@@ -173,7 +179,7 @@ export default function AvailabilityGrid({
                 }
                 elements.push(
                   <div key={`${date}-${slot}`} className={border} style={{ height: CELL_HEIGHT }}>
-                    {renderCell(date, slot)}
+                    {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
                   </div>
                 );
                 return elements;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
 
 interface CalendarDragGridProps {
@@ -157,15 +157,30 @@ export default function CalendarDragGrid({
     };
   }, [handlePointerUp]);
 
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+
+  // Native (non-passive) touchmove so preventDefault works on mobile.
+  // React's synthetic onTouchMove is passive by default in modern React.
+  useEffect(() => {
+    if (!rootEl) return;
+    function onTouchMoveNative(e: TouchEvent) {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      handlePointerMoveAt(touch.clientX, touch.clientY);
+    }
+    rootEl.addEventListener('touchmove', onTouchMoveNative, { passive: false });
+    return () => {
+      rootEl.removeEventListener('touchmove', onTouchMoveNative);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rootEl]);
+
   return (
     <div
+      ref={setRootEl}
       onMouseMove={(e) => handlePointerMoveAt(e.clientX, e.clientY)}
-      onTouchMove={(e) => {
-        if (isDragging.current) {
-          e.preventDefault();
-          handlePointerMoveAt(e.touches[0].clientX, e.touches[0].clientY);
-        }
-      }}
       className="select-none"
       style={{ touchAction: 'pan-y' }}
     >

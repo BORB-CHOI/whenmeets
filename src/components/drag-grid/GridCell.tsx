@@ -26,11 +26,13 @@ interface GridCellProps {
   wide?: boolean;
   overlayCount?: number;
   overlayTotal?: number;
+  dateIdx?: number;
+  slotIdx?: number;
   onCellHover?: (date: string, slot: number | string) => void;
   onCellLeave?: () => void;
 }
 
-function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellHover, onCellLeave }: GridCellProps) {
+function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx, slotIdx, onCellHover, onCellLeave }: GridCellProps) {
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
   // Border opacity: 0.2 ~ 0.8 based on how many others responded
   const borderOpacity = hasOverlay
@@ -46,6 +48,8 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellH
       <div
         data-date={date}
         data-slot={slot}
+        data-date-idx={dateIdx}
+        data-slot-idx={slotIdx}
         className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 dark:border-gray-700 ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer flex items-center justify-between`}
       >
         {hasOverlay && (
@@ -68,6 +72,8 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, onCellH
     <div
       data-date={date}
       data-slot={slot}
+      data-date-idx={dateIdx}
+      data-slot-idx={slotIdx}
       className={`relative w-full h-full ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer`}
       onMouseEnter={() => onCellHover?.(date, slot)}
       onMouseLeave={() => onCellLeave?.()}

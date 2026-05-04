@@ -126,13 +126,15 @@ export default function DragGrid({
         timeStart={timeStart}
         timeEnd={timeEnd}
         columnsProps={gridProps}
-        renderCell={(date, slot) => {
+        renderCell={(date, slot, indices) => {
           const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
           return (
             <GridCell
               key={`${date}-${slot}`}
               date={date}
               slot={slot}
+              dateIdx={indices?.dateIdx}
+              slotIdx={indices?.slotIdx}
               value={getCellValue(date, slot)}
               overlayCount={overlayTotal > 0 ? overlayCount : undefined}
               overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}

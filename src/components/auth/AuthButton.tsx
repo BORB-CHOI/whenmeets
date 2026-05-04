@@ -123,6 +123,12 @@ export default function AuthButton() {
             >
               대시보드
             </a>
+            <a
+              href="/mypage"
+              className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              마이페이지
+            </a>
             <button
               onClick={handleSignOut}
               className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
