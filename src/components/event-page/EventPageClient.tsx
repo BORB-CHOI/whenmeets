@@ -112,8 +112,15 @@ export default function EventPageClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(initialEvent.participants.map((p) => p.id)),
   );
-  const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
+  const [userIncludeIfNeeded, setUserIncludeIfNeeded] = useState(true);
+  const [hoveredParticipantId, setHoveredParticipantId] = useState<string | null>(null);
   const [showBestTimes, setShowBestTimes] = useState(false);
+
+  // 1명 단독 또는 호버 미리보기 시 If Needed 강제 ON
+  const isSingleSelection = selectedIds.size === 1;
+  const effectiveIncludeIfNeeded = hoveredParticipantId !== null || isSingleSelection
+    ? true
+    : userIncludeIfNeeded;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetPid, setDeleteTargetPid] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -178,7 +185,7 @@ export default function EventPageClient({
             if (val !== 0) count++;
           } else {
             if (val === 2) count++;
-            else if (val === 1 && includeIfNeeded) count++;
+            else if (val === 1 && effectiveIncludeIfNeeded) count++;
           }
         }
         if (count > 0) {
@@ -190,7 +197,7 @@ export default function EventPageClient({
 
     // Only slots with the maximum count are "best"
     return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
-  }, [event, selectedIds, includeIfNeeded]);
+  }, [event, selectedIds, effectiveIncludeIfNeeded]);
 
   // Hover: per-participant availability level at hovered slot (for sidebar styling)
   const slotAvailability = useMemo(() => {
@@ -592,7 +599,8 @@ export default function EventPageClient({
                 dates={event.dates}
                 participants={event.participants}
                 selectedIds={selectedIds}
-                includeIfNeeded={includeIfNeeded}
+                includeIfNeeded={effectiveIncludeIfNeeded}
+                hoveredParticipantId={hoveredParticipantId}
                 onCellHover={(date) => {
                   participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
                   setHoveredSlot(date ? { date, slot: 0 } : null);
@@ -610,8 +618,8 @@ export default function EventPageClient({
               timeEnd={event.time_end}
               participants={event.participants}
               selectedIds={selectedIds}
-              includeIfNeeded={includeIfNeeded}
-              hoveredParticipantId={null}
+              includeIfNeeded={effectiveIncludeIfNeeded}
+              hoveredParticipantId={hoveredParticipantId}
               onCellHover={(date, slot, rect) => {
                 participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
                 setHoveredSlot(date ? { date, slot: slot! } : null);
@@ -741,6 +749,8 @@ export default function EventPageClient({
                   participants={event.participants}
                   selectedIds={selectedIds}
                   onSelectedChange={setSelectedIds}
+                  onHover={setHoveredParticipantId}
+                  onHoverEnd={() => setHoveredParticipantId(null)}
                   onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                 />
               </div>
@@ -758,11 +768,19 @@ export default function EventPageClient({
                   </button>
                   {event.mode !== 'unavailable' && (
                     <button
-                      onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
-                      className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
+                      onClick={() => !isSingleSelection && setUserIncludeIfNeeded(!userIncludeIfNeeded)}
+                      disabled={isSingleSelection}
+                      className={`flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 min-h-11 ${
+                        isSingleSelection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
-                      <span>&quot;If Needed&quot; 숨기기</span>
-                      <ToggleSwitch checked={!includeIfNeeded} />
+                      <span>
+                        &quot;If Needed&quot; 숨기기
+                        {isSingleSelection && (
+                          <span className="ml-1 text-[10px] text-gray-400">(1명 단독 시 자동 표시)</span>
+                        )}
+                      </span>
+                      <ToggleSwitch checked={!effectiveIncludeIfNeeded} />
                     </button>
                   )}
                 </div>
@@ -976,7 +994,7 @@ export default function EventPageClient({
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/{event.participants.length})
+                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded)).length}/{event.participants.length})
                   </h3>
                   <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
                     {formatDateCompact(mobileSlotSheet.date)} · {slotToTime(mobileSlotSheet.slot)} – {slotToTime(mobileSlotSheet.slot + 1)}
