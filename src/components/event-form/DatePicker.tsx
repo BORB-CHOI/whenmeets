@@ -208,9 +208,9 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
                   }}
                   className={`h-9 rounded-lg text-sm tabular-nums transition-colors
                     ${isPast ? 'text-gray-200 dark:text-gray-600 cursor-not-allowed' : 'cursor-pointer'}
-                    ${isSelected ? 'bg-emerald-600 text-white font-semibold' : ''}
+                    ${isSelected ? 'bg-teal-600 text-white font-semibold' : ''}
                     ${!isSelected && !isPast ? 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300' : ''}
-                    ${isToday && !isSelected ? 'ring-1 ring-inset ring-emerald-300' : ''}`}
+                    ${isToday && !isSelected ? 'ring-1 ring-inset ring-teal-300' : ''}`}
                 >
                   {day.getDate()}
                 </button>

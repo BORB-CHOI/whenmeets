@@ -11,10 +11,10 @@ export default function Header() {
         <div className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-gray-900 dark:text-gray-100 hover:text-emerald-600 transition-colors cursor-pointer py-2"
+            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-gray-900 dark:text-gray-100 hover:text-teal-600 transition-colors cursor-pointer py-2"
           >
             <svg className="w-7 h-7 shrink-0" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#059669" />
+              <rect width="32" height="32" rx="8" fill="#00897B" />
               <path d="M7 10h3l3.5 9.5L17 12l3.5 7.5L24 10h3l-5.5 14h-2.5L16 17l-3 7H10.5L7 10z" fill="white" strokeLinejoin="round" />
             </svg>
             <span className="hidden sm:inline">WhenMeets</span>

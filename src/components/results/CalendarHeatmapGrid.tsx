@@ -14,7 +14,7 @@ interface CalendarHeatmapGridProps {
 }
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const BASE_COLOR = '#059669';
+const BASE_COLOR = '#00897B';
 
 function parseDate(s: string) {
   return new Date(s + 'T00:00:00');
@@ -151,14 +151,14 @@ export default function CalendarHeatmapGrid({
                   key={dateStr}
                   data-cal-date={isEventDate ? dateStr : undefined}
                   className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer
-                    ${isEventDate ? 'hover:outline hover:outline-2 hover:outline-emerald-500 hover:-outline-offset-2' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
+                    ${isEventDate ? 'hover:outline hover:outline-2 hover:outline-teal-500 hover:-outline-offset-2' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
                   style={{ backgroundColor: isEventDate ? (bg || undefined) : undefined }}
                 >
                   <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700 dark:text-gray-300' : ''}`}>
                     {day}
                   </span>
                   {count > 0 && isEventDate && (
-                    <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-emerald-500'}`}>
+                    <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-teal-500'}`}>
                       {count}
                     </span>
                   )}

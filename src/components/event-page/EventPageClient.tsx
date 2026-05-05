@@ -445,7 +445,7 @@ export default function EventPageClient({
             {event.is_owner && (
               <span
                 onClick={() => setShowEditModal(true)}
-                className="text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                className="text-teal-600 hover:text-teal-800 cursor-pointer"
               >이벤트 수정</span>
             )}
             <button
@@ -455,7 +455,7 @@ export default function EventPageClient({
               className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 sm:hidden"
             >
               {copied ? (
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               ) : (
@@ -481,7 +481,7 @@ export default function EventPageClient({
           {viewMode === 'view' ? (
             <button
               onClick={handleEditClick}
-              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
+              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
             >
               편집
             </button>
@@ -497,7 +497,7 @@ export default function EventPageClient({
               <button
                 onClick={handleFinishEditing}
                 disabled={saving}
-                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
+                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
               >
                 {saving ? '저장 중...' : '편집 완료'}
               </button>
@@ -514,14 +514,14 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-emerald-600 resize-none dark:bg-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-teal-600 resize-none dark:bg-gray-800 dark:text-gray-100"
               rows={3}
               autoFocus
             />
             <div className="flex gap-2 mt-2">
               <button
                 onClick={saveDescription}
-                className="text-sm text-emerald-600 font-medium hover:text-emerald-800 cursor-pointer"
+                className="text-sm text-teal-600 font-medium hover:text-teal-800 cursor-pointer"
               >
                 저장
               </button>
@@ -563,7 +563,7 @@ export default function EventPageClient({
               <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
                 event.mode === 'unavailable'
                   ? 'bg-red-50 text-red-700 border border-red-200'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-teal-50 text-teal-700 border border-teal-200'
               }`}>
                 {event.mode === 'unavailable'
                   ? (event.date_only ? '⛔ 안 되는 날짜를 선택해주세요' : '⛔ 안 되는 시간을 선택해주세요')
@@ -640,7 +640,7 @@ export default function EventPageClient({
                     />
                   </div>
                   <div className={`p-3 rounded-lg text-sm mb-5 ${
-                    activeMode === 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                    activeMode === 2 ? 'bg-teal-50 text-teal-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     <div className="font-medium">
                       {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ If Needed 시간을 드래그하세요'}
@@ -659,7 +659,7 @@ export default function EventPageClient({
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex items-start gap-2">
-                    <div className="w-4 h-4 rounded-sm bg-emerald-400/60 mt-0.5 shrink-0" />
+                    <div className="w-4 h-4 rounded-sm bg-teal-400/60 mt-0.5 shrink-0" />
                     <div className="flex flex-col">
                       <span>Available</span>
                       <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
@@ -831,7 +831,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     autoFocus
                     maxLength={50}
                   />
@@ -854,7 +854,7 @@ export default function EventPageClient({
                       value={namePassword}
                       onChange={(e) => setNamePassword(e.target.value)}
                       placeholder="비밀번호 (선택사항)"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     />
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
                   </div>
@@ -901,7 +901,7 @@ export default function EventPageClient({
                 <button
                   onClick={handleNameSubmit}
                   disabled={nameLoading || !nameInput.trim()}
-                  className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-sm font-semibold bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {nameLoading ? '참여 중...' : nameExistingMatch ? '수정하기' : '참여하기'}
                 </button>
@@ -1061,7 +1061,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
       {mode === 'unavailable' ? (
         <>
           {(available.length + noResponse.length) > 0 && (
-            <Row dotClass="bg-emerald-400" label={`가능 ${available.length + noResponse.length}명`} names={[...available, ...noResponse]} />
+            <Row dotClass="bg-teal-400" label={`가능 ${available.length + noResponse.length}명`} names={[...available, ...noResponse]} />
           )}
           {unavailable.length > 0 && (
             <Row dotClass="bg-red-400" label={`불가능 ${unavailable.length}명`} names={unavailable} />
@@ -1070,7 +1070,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
       ) : (
         <>
           {available.length > 0 && (
-            <Row dotClass="bg-emerald-400" label={`가능 ${available.length}명`} names={available} />
+            <Row dotClass="bg-teal-400" label={`가능 ${available.length}명`} names={available} />
           )}
           {includeIfNeeded && ifNeeded.length > 0 && (
             <Row dotClass="bg-amber-300" label={`If Needed ${ifNeeded.length}명`} names={ifNeeded} />
@@ -1096,7 +1096,7 @@ function ToggleSwitch({ checked }: { checked: boolean }) {
   const knobTransition = mountedRef.current ? 'transition-transform duration-200' : '';
 
   return (
-    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
+    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-teal-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm ${knobTransition} ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
     </div>
   );

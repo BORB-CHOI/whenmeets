@@ -148,7 +148,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
           </button>
           <Link
             href={`/e/${eventId}`}
-            className="h-[38px] px-4 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-hover)] transition-all flex items-center"
+            className="h-[38px] px-4 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-hover)] transition-all flex items-center"
           >
             내 시간 수정
           </Link>
@@ -179,11 +179,11 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                 <span>0명</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-emerald-200" />
+                <div className="w-3 h-3 rounded bg-teal-200" />
                 <span>일부</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-emerald-500" />
+                <div className="w-3 h-3 rounded bg-teal-500" />
                 <span>전원</span>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
             <Link
               href={`/e/${eventId}`}
-              className="mt-3 block text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
+              className="mt-3 block text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
             >
               + 내 시간 추가
             </Link>
@@ -217,7 +217,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                   type="checkbox"
                   checked={includeIfNeeded}
                   onChange={(e) => setIncludeIfNeeded(e.target.checked)}
-                  className="rounded border-gray-300 text-emerald-600"
+                  className="rounded border-gray-300 text-teal-600"
                 />
                 &quot;되면 가능&quot; 포함
               </label>
@@ -238,10 +238,10 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
                         key={`${bt.date}-${bt.slot}-${i}`}
                         className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg border border-gray-100"
                       >
-                        <span className={`text-sm font-medium tabular-nums ${ratio >= 0.75 ? 'text-emerald-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium tabular-nums ${ratio >= 0.75 ? 'text-teal-700' : 'text-gray-700'}`}>
                           {formatDateCompact(bt.date)} {slotToTime(bt.slot)}-{slotToTime(endSlot)}
                         </span>
-                        <span className={`text-sm font-semibold ${ratio >= 0.75 ? 'text-emerald-600' : 'text-gray-500'}`}>
+                        <span className={`text-sm font-semibold ${ratio >= 0.75 ? 'text-teal-600' : 'text-gray-500'}`}>
                           {bt.count}/{total}명
                         </span>
                       </div>

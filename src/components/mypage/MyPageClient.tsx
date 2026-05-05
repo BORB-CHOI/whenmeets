@@ -77,7 +77,7 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <div className="w-full h-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 text-lg font-bold">
+            <div className="w-full h-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center text-teal-700 dark:text-teal-300 text-lg font-bold">
               {initial}
             </div>
           )}
@@ -99,7 +99,7 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
           onChange={(e) => { setName(e.target.value); if (error) setError(''); }}
           placeholder="이름을 입력하세요"
           maxLength={50}
-          className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-emerald-600 dark:bg-gray-900 dark:text-gray-100"
+          className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-teal-600 dark:bg-gray-900 dark:text-gray-100"
         />
         <p className="text-xs text-gray-400 dark:text-gray-500">
           이벤트 참여 시 다른 사용자에게 표시되는 이름입니다.
@@ -123,7 +123,7 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
           <button
             type="submit"
             disabled={saving || !dirty}
-            className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="px-5 py-2 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {saving ? '저장 중...' : '저장'}
           </button>
@@ -134,7 +134,7 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="text-sm text-emerald-600 dark:text-emerald-400 font-medium"
+                className="text-sm text-teal-600 dark:text-teal-400 font-medium"
               >
                 저장되었습니다
                 {syncInfo && syncInfo.updated > 0 && ` · ${syncInfo.updated}개 이벤트에 반영`}

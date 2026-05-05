@@ -13,13 +13,13 @@ export default function Home() {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
       {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-teal-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
         {/* Soft radial accents — static, no animation, no blur filter */}
         <div
           className="absolute rounded-full"
           style={{
             width: '60vmax', height: '60vmax',
-            background: 'radial-gradient(circle, rgba(5,150,105,0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(0,137,123,0.08) 0%, transparent 70%)',
             top: '-20vmax', left: '-10vmax',
           }}
         />
@@ -27,7 +27,7 @@ export default function Home() {
           className="absolute rounded-full"
           style={{
             width: '50vmax', height: '50vmax',
-            background: 'radial-gradient(circle, rgba(52,211,153,0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(77,182,172,0.1) 0%, transparent 70%)',
             bottom: '-15vmax', right: '-10vmax',
           }}
         />
@@ -56,7 +56,7 @@ export default function Home() {
       </p>
       <button
         onClick={() => setShowModal(true)}
-        className="mt-8 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all text-lg cursor-pointer"
+        className="mt-8 px-8 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all text-lg cursor-pointer"
         style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
       >
         이벤트 만들기
@@ -85,7 +85,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30">
                     {item.role === 'creator' ? '관리' : '참여'}
                   </span>
                   <InlineDeleteButton

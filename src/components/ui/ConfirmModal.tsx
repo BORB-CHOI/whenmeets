@@ -54,7 +54,7 @@ export default function ConfirmModal({
                 className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors cursor-pointer ${
                   variant === 'danger'
                     ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
                 }`}
               >
                 {confirmLabel}

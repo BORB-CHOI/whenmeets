@@ -59,7 +59,7 @@ export default function HoverInfoPopover({
             maxWidth,
           }}
         >
-          <div className="rounded-md border border-emerald-200/80 bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 text-xs shadow-md backdrop-blur-md px-2 py-1 leading-relaxed">
+          <div className="rounded-md border border-teal-200/80 bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 text-xs shadow-md backdrop-blur-md px-2 py-1 leading-relaxed">
             {children}
           </div>
         </motion.div>

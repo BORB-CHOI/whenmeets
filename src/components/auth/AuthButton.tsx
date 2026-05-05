@@ -60,7 +60,7 @@ export default function AuthButton() {
     return (
       <button
         onClick={handleSignIn}
-        className="h-9 px-4 bg-emerald-600 text-white text-sm font-semibold rounded-md shadow-(--shadow-primary) hover:bg-emerald-700 hover:shadow-(--shadow-primary-hover) hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer whitespace-nowrap"
+        className="h-9 px-4 bg-teal-600 text-white text-sm font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer whitespace-nowrap"
       >
         로그인
       </button>
@@ -72,7 +72,7 @@ export default function AuthButton() {
       {/* Profile avatar button */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="w-8 h-8 rounded-full overflow-hidden border-2 border-transparent hover:border-emerald-300 transition-colors cursor-pointer"
+        className="w-8 h-8 rounded-full overflow-hidden border-2 border-transparent hover:border-teal-300 transition-colors cursor-pointer"
       >
         {user.user_metadata?.avatar_url ? (
           <img
@@ -82,7 +82,7 @@ export default function AuthButton() {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="w-full h-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-sm font-bold">
+          <div className="w-full h-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-bold">
             {(user.user_metadata?.full_name?.[0] || user.email?.[0] || 'U').toUpperCase()}
           </div>
         )}

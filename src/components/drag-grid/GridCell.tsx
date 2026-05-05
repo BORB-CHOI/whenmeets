@@ -8,7 +8,7 @@ export const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: '',                                        // No response yet — transparent
   0: 'bg-red-400/45',                              // Unavailable
   1: 'bg-amber-300/55',                            // If needed
-  2: 'bg-emerald-600/[.47]',                       // Available
+  2: 'bg-teal-600/[.47]',                       // Available
 };
 
 // Raw CSS values for direct DOM painting during drag (avoids React re-renders)
@@ -16,7 +16,7 @@ export const CELL_CSS_COLORS: Record<AvailabilityLevel | -1, string> = {
   [-1]: '',
   0: 'rgba(248,113,113,0.45)',
   1: 'rgba(252,211,77,0.55)',
-  2: 'rgba(5,150,105,0.47)',
+  2: 'rgba(0,137,123,0.47)',
 };
 
 interface GridCellProps {
@@ -54,13 +54,13 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx
       >
         {hasOverlay && (
           <div
-            className="absolute inset-0 rounded-lg bg-emerald-600 pointer-events-none"
+            className="absolute inset-0 rounded-lg bg-teal-600 pointer-events-none"
             style={{ opacity: overlayOpacity }}
           />
         )}
         <span className="text-sm text-gray-700 dark:text-gray-300 relative z-10">{formatDateCompact(date)}</span>
         {hasOverlay && (
-          <span className="text-[10px] text-emerald-600 font-medium relative z-10">
+          <span className="text-[10px] text-teal-600 font-medium relative z-10">
             +{overlayCount}
           </span>
         )}
@@ -83,7 +83,7 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx
         <div
           className="absolute inset-0.5 pointer-events-none rounded-sm"
           style={{
-            outline: `1.5px dashed rgba(5,150,105,${borderOpacity})`,
+            outline: `1.5px dashed rgba(0,137,123,${borderOpacity})`,
             outlineOffset: '-1px',
           }}
         />
@@ -91,7 +91,7 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx
       {hasOverlay && overlayCount! > 0 && (
         <span
           className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none"
-          style={{ color: `rgba(5,150,105,${Math.min(1, borderOpacity + 0.2)})` }}
+          style={{ color: `rgba(0,137,123,${Math.min(1, borderOpacity + 0.2)})` }}
         >
           {overlayCount}
         </span>
