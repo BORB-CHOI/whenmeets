@@ -12,21 +12,21 @@ interface SegmentedControlProps<T extends string> {
 
 const GLOW: Record<SegmentedVariant, string> = {
   default: '0 0 0 1.5px rgba(0, 137, 123, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0, 137, 123, 0.1)',
-  danger: '0 0 0 1.5px rgba(220, 38, 38, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(220, 38, 38, 0.1)',
-  warning: '0 0 0 1.5px rgba(217, 119, 6, 0.35), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(252, 211, 77, 0.25)',
+  danger: '0 0 0 1.5px rgba(220, 38, 38, 0.18), 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(220, 38, 38, 0.08)',
+  warning: '0 0 0 1.5px rgba(217, 119, 6, 0.18), 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(252, 211, 77, 0.12)',
 };
 
 const TEXT: Record<SegmentedVariant, string> = {
   default: 'text-teal-700',
   danger: 'text-red-700',
-  warning: 'text-amber-800',
+  warning: 'text-amber-700',
 };
 
-// active indicator(슬라이더)의 배경 — variant별로 다른 색
+// active indicator 배경 — variant별 옅은 톤
 const INDICATOR_BG: Record<SegmentedVariant, string> = {
   default: 'bg-white',
-  danger: 'bg-white',
-  warning: 'bg-amber-200',
+  danger: 'bg-red-50',
+  warning: 'bg-amber-50',
 };
 
 export default function SegmentedControl<T extends string>({
