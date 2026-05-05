@@ -18,7 +18,7 @@ import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import HoverInfoPopover, { type HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
+import HoverPopoverPortal, { type HoverPopoverHandle } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
@@ -70,14 +70,13 @@ export default function EventPageClient({
   const [nameError, setNameError] = useState('');
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
   const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number } | null>(null);
-  const [hoverRect, setHoverRect] = useState<HoverInfoPosition | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
   const [supabase] = useState(() => createAuthBrowserClient());
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
+  const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
   const hoverRafRef = useRef<number>(0);
 
   const scheduleHoverUpdate = useCallback((fn: () => void) => {
@@ -208,17 +207,6 @@ export default function EventPageClient({
     return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
   }, [event, selectedIds, effectiveIncludeIfNeeded]);
 
-  // Hover: per-participant availability level at hovered slot (for sidebar styling)
-  const slotAvailability = useMemo(() => {
-    if (!hoveredSlot) return undefined;
-    const map = new Map<string, 0 | 1 | 2>();
-    for (const p of event.participants) {
-      const val = p.availability?.[hoveredSlot.date]?.[String(hoveredSlot.slot)];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
-    }
-    return map;
-  }, [hoveredSlot, event.participants]);
-
   const mobileSlotAvailability = useMemo(() => {
     if (!mobileSlotSheet) return undefined;
     const map = new Map<string, 0 | 1 | 2>();
@@ -289,8 +277,7 @@ export default function EventPageClient({
 
   // Handle "Edit availability" click
   async function handleEditClick() {
-    setHoveredSlot(null);
-    setHoverRect(null);
+    hoverPopoverRef.current?.update(null);
     setMobileSlotSheet(null);
     if (session) {
       setViewMode('edit');
@@ -613,7 +600,6 @@ export default function EventPageClient({
                 onCellHover={(date) => {
                   scheduleHoverUpdate(() => {
                     participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
-                    setHoveredSlot(date ? { date, slot: 0 } : null);
                   });
                 }}
                 bestSlots={showBestTimes ? bestSlots : undefined}
@@ -634,8 +620,9 @@ export default function EventPageClient({
               onCellHover={(date, slot, rect) => {
                 scheduleHoverUpdate(() => {
                   participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
-                  setHoveredSlot(date ? { date, slot: slot! } : null);
-                  setHoverRect(rect ?? null);
+                  hoverPopoverRef.current?.update(
+                    date && rect ? { date, slot: slot!, position: rect } : null,
+                  );
                 });
               }}
               onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
@@ -1052,13 +1039,11 @@ export default function EventPageClient({
       </AnimatePresence>
 
       {/* Hover info popover (view mode only — edit mode shows sidebar instead) */}
-      {viewMode === 'view' && hoveredSlot && hoverRect && !event.date_only && (
-        <HoverInfoPopover position={hoverRect}>
-          <SlotHoverInfo
-            date={hoveredSlot.date}
-            slot={hoveredSlot.slot}
-          />
-        </HoverInfoPopover>
+      {viewMode === 'view' && !event.date_only && (
+        <HoverPopoverPortal
+          ref={hoverPopoverRef}
+          renderContent={(date, slot) => <SlotHoverInfo date={date} slot={slot} />}
+        />
       )}
     </div>
   );
