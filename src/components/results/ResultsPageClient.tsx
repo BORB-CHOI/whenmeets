@@ -46,9 +46,15 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(initialData.participants.map((p) => p.id)),
   );
-  const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
+  const [userIncludeIfNeeded, setUserIncludeIfNeeded] = useState(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // 1명 단독 또는 호버 미리보기 시 If Needed 강제 ON
+  const isSingleSelection = selectedIds.size === 1;
+  const effectiveIncludeIfNeeded = hoveredId !== null || isSingleSelection
+    ? true
+    : userIncludeIfNeeded;
 
   const handleRealtimeUpdate = useCallback(() => {
     fetch(`/api/events/${eventId}/results`)
@@ -83,7 +89,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
             if (val !== 0) count++;
           } else {
             if (val === 2) count++;
-            else if (val === 1 && includeIfNeeded) count++;
+            else if (val === 1 && effectiveIncludeIfNeeded) count++;
           }
         }
         if (count > 0) {
@@ -94,7 +100,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
     results.sort((a, b) => b.count - a.count);
     return results.slice(0, 5);
-  }, [data, selectedIds, includeIfNeeded]);
+  }, [data, selectedIds, effectiveIncludeIfNeeded]);
 
   // Copy summary to clipboard
   async function handleCopySummary() {
@@ -169,7 +175,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
               timeEnd={data.event.time_end}
               participants={data.participants}
               selectedIds={selectedIds}
-              includeIfNeeded={includeIfNeeded}
+              includeIfNeeded={effectiveIncludeIfNeeded}
               hoveredParticipantId={hoveredId}
               eventMode={data.event.mode}
             />
@@ -198,14 +204,22 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
 
             {/* Options */}
             <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <label className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+              <label
+                className={`flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400 ${
+                  isSingleSelection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+              >
                 <input
                   type="checkbox"
-                  checked={includeIfNeeded}
-                  onChange={(e) => setIncludeIfNeeded(e.target.checked)}
+                  checked={effectiveIncludeIfNeeded}
+                  disabled={isSingleSelection}
+                  onChange={(e) => setUserIncludeIfNeeded(e.target.checked)}
                   className="rounded border-gray-300 text-teal-600"
                 />
                 &quot;되면 가능&quot; 포함
+                {isSingleSelection && (
+                  <span className="text-[10px] text-gray-400">(1명 단독 시 자동 ON)</span>
+                )}
               </label>
             </div>
 
