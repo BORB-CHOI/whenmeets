@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import EventCard from './EventCard';
 
 interface EventItem {
@@ -37,18 +37,8 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('created');
   const [createdEvents, setCreatedEvents] = useState(initialCreated);
-  const tabContainerRef = useRef<HTMLDivElement>(null);
-  const [tabIndicator, setTabIndicator] = useState({ left: 0, width: 0 });
-
-  useEffect(() => {
-    if (!tabContainerRef.current) return;
-    const buttons = tabContainerRef.current.querySelectorAll('button');
-    const idx = tabs.findIndex(t => t.key === activeTab);
-    const btn = buttons[idx];
-    if (btn) {
-      setTabIndicator({ left: btn.offsetLeft, width: btn.offsetWidth });
-    }
-  }, [activeTab]);
+  const [animateTab, setAnimateTab] = useState(false);
+  const activeIndex = tabs.findIndex(t => t.key === activeTab);
 
   const events = activeTab === 'created' ? createdEvents : participatedEvents;
 
@@ -62,19 +52,25 @@ export default function DashboardClient({
   return (
     <div>
       {/* Tab bar — pill toggle with sliding indicator */}
-      <div ref={tabContainerRef} className="relative inline-flex gap-1 p-1 bg-gray-50 rounded-full border border-gray-200">
+      <div className="relative inline-grid grid-cols-2 gap-1 p-1 bg-gray-50 rounded-full border border-gray-200">
         {/* Sliding indicator */}
         <div
-          className="absolute top-1 bottom-1 bg-white rounded-full border border-emerald-600 shadow-sm transition-all duration-200 ease-out"
+          className={`absolute top-1 bottom-1 bg-white rounded-full border border-emerald-600 shadow-sm ${
+            animateTab ? 'transition-transform duration-200 ease-out' : ''
+          }`}
           style={{
-            left: tabIndicator.left,
-            width: tabIndicator.width,
+            left: 4,
+            width: 'calc((100% - 8px) / 2)',
+            transform: `translateX(${Math.max(0, activeIndex) * 100}%)`,
           }}
         />
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setAnimateTab(true);
+              setActiveTab(tab.key);
+            }}
             className={`relative z-10 px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-150 cursor-pointer flex items-center gap-1.5 ${
               activeTab === tab.key
                 ? 'text-emerald-600 font-semibold'
