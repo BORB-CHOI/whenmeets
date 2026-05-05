@@ -47,18 +47,25 @@ export default function HeatmapGrid({
   const touchStart = useRef<{ x: number; y: number; pid: number; date: string; slot: number } | null>(null);
   const touchMoved = useRef(false);
   const lastHoveredKey = useRef<string | null>(null);
-  const filtered = useMemo(
-    () => participants.filter((p) => selectedIds.has(p.id)),
-    [participants, selectedIds],
-  );
+  const filtered = useMemo(() => {
+    if (hoveredParticipantId) {
+      const hovered = participants.find((p) => p.id === hoveredParticipantId);
+      return hovered ? [hovered] : [];
+    }
+    return participants.filter((p) => selectedIds.has(p.id));
+  }, [participants, selectedIds, hoveredParticipantId]);
   const total = filtered.length;
 
   const hasBestSlots = bestSlots && bestSlots.size > 0;
   const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
 
+  // 호버 중에는 If Needed 강제 ON, 또는 1명 단독 시도 자동 ON
+  const effectiveIncludeIfNeeded = hoveredParticipantId || filtered.length === 1
+    ? true
+    : includeIfNeeded;
+
   const cellStats = useMemo(() => {
     const counts = new Map<string, number>();
-    const hovered = new Set<string>();
 
     for (const p of filtered) {
       for (const date of dates) {
@@ -67,18 +74,17 @@ export default function HeatmapGrid({
           const val = slotsForDate?.[String(slot)];
           const isAvailable = eventMode === 'unavailable'
             ? val !== 0
-            : val === 2 || (val === 1 && includeIfNeeded);
+            : val === 2 || (val === 1 && effectiveIncludeIfNeeded);
           if (!isAvailable) continue;
 
           const key = `${date}-${slot}`;
           counts.set(key, (counts.get(key) ?? 0) + 1);
-          if (p.id === hoveredParticipantId) hovered.add(key);
         }
       }
     }
 
-    return { counts, hovered };
-  }, [dates, eventMode, filtered, hoveredParticipantId, includeIfNeeded, slots]);
+    return { counts };
+  }, [dates, eventMode, filtered, effectiveIncludeIfNeeded, slots]);
 
   function clearTouchPreviewTimer() {
     if (touchPreviewTimer.current) {
@@ -181,8 +187,6 @@ export default function HeatmapGrid({
           hasBestSlots: !!hasBestSlots,
         });
 
-        const isHoveredAvailable = hoveredParticipantId && cellStats.hovered.has(slotKey);
-
         return (
           <div
             data-date={date}
@@ -196,9 +200,6 @@ export default function HeatmapGrid({
               >
                 {count}
               </span>
-            )}
-            {isHoveredAvailable && (
-              <div className="absolute inset-0 bg-teal-500/20 ring-2 ring-inset ring-teal-400" />
             )}
           </div>
         );
