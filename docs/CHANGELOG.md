@@ -6,12 +6,33 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
-### Security
+## [0.4.0] - 2026-05-06
 
-- `.env.example`에 commit돼 있던 실제 secret 제거 후 placeholder로 정리. **공개 리포(GitHub)에 노출됐던 키는 별도 회전 필요**: Supabase service_role / anon key, COOKIE_SECRET.
+### Added
+
+- `useAuthUser` 훅 + `HeaderDashboardLink` 컴포넌트 — Header 서버 컴포넌트의 사용자 의존성 제거
+- `ParticipantFilter.previewSlot` imperative API — 호버 슬롯 응답자 미리보기 (ref 기반)
+- `ToggleSwitch` 추출 — 마운트 전 transition 끄기로 첫 렌더 점프 제거
+- harness PreToolUse 훅 (`pre-bash-block-destructive-git`, `pre-edit-block-large-delete`) — 위험 git 명령 + 100줄 초과 단일 삭제 차단
 
 ### Changed
 
+- 헤더: 비동기 서버 컴포넌트 → 동기. 사용자 상태는 클라이언트 훅에서 처리
+- `proxy.ts` 세션 갱신 범위: 전 경로 → `/dashboard`, `/mypage`, `/auth`만 (공개 페이지 round-trip 제거)
+- 대시보드 탭 + `SegmentedControl` 인디케이터: ref 측정 → CSS grid + `translateX`
+- 결과 히트맵/필터 호버 미리보기: prop drill → ref imperative
+- 드래그 그리드: 셀별 `onMouseEnter` → 컨테이너 이벤트 위임 + `contain: paint` + 드래그 중 호버 ring 분리
+- 이벤트 페이지 편집 모드: 진입/완료/취소 분리. 취소 버튼(빨강 outline) 추가
+- `auth/callback/route.ts`: localhost는 자기 origin, 그 외만 `NEXT_PUBLIC_SITE_URL` (host header injection 방지하면서 로컬 개발 깨지지 않게)
+
+### Fixed
+
+- 시간대 호버 popover 회귀 — view 모드 `HeatmapGrid` `onCellHover`에서 `setHoveredSlot`/`setHoverRect` 누락으로 popover 미표시 (#6)
+- 드래그 중 cell 호버 outline 깜빡임
+
+### Security
+
+- `.env.example`에 commit돼 있던 실제 secret 제거 후 placeholder로 정리. **공개 리포(GitHub)에 노출됐던 키는 별도 회전 필요**: Supabase service_role / anon key, COOKIE_SECRET.
 - Supabase 신규 API 키 시스템(`sb_publishable_` / `sb_secret_`)으로 마이그레이션. 환경변수 이름 변경:
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY` → `SUPABASE_SECRET_KEY`
