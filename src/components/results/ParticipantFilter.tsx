@@ -1,5 +1,6 @@
 'use client';
 
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { AvailabilityLevel } from '@/lib/types';
 
 interface ParticipantFilterProps {
@@ -14,7 +15,13 @@ interface ParticipantFilterProps {
   onDelete?: (participantId: string) => void;
 }
 
-export default function ParticipantFilter({
+export interface ParticipantFilterHandle {
+  previewSlot: (slotAvailability: Map<string, AvailabilityLevel> | null) => void;
+}
+
+const UNAVAILABLE_CLASSES = ['[&_.p-name]:line-through', '[&_.p-name]:text-gray-400', '[&_.p-icon]:opacity-40'];
+
+const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterProps>(function ParticipantFilter({
   participants,
   selectedIds,
   onSelectedChange,
@@ -22,7 +29,37 @@ export default function ParticipantFilter({
   onHoverEnd,
   slotAvailability,
   onDelete,
-}: ParticipantFilterProps) {
+}, ref) {
+  const rowRefs = useRef(new Map<string, HTMLDivElement>());
+  const ifNeededRefs = useRef(new Map<string, HTMLSpanElement>());
+  const legendRef = useRef<HTMLParagraphElement | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    previewSlot(nextSlotAvailability) {
+      let hasIfNeeded = false;
+
+      for (const p of participants) {
+        const row = rowRefs.current.get(p.id);
+        if (!row) continue;
+
+        row.classList.remove('bg-[#FFE8B8]', 'rounded', ...UNAVAILABLE_CLASSES);
+        const marker = ifNeededRefs.current.get(p.id);
+        if (marker) marker.hidden = true;
+
+        const val = nextSlotAvailability?.get(p.id);
+        if (val === 1) {
+          hasIfNeeded = true;
+          row.classList.add('bg-[#FFE8B8]', 'rounded');
+          if (marker) marker.hidden = false;
+        } else if (nextSlotAvailability && val !== 2) {
+          row.classList.add(...UNAVAILABLE_CLASSES);
+        }
+      }
+
+      if (legendRef.current) legendRef.current.hidden = !hasIfNeeded;
+    },
+  }), [participants]);
+
   function toggle(id: string) {
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
@@ -58,6 +95,10 @@ export default function ParticipantFilter({
           return (
             <div
               key={p.id}
+              ref={(el) => {
+                if (el) rowRefs.current.set(p.id, el);
+                else rowRefs.current.delete(p.id);
+              }}
               onClick={() => toggle(p.id)}
               onMouseEnter={() => onHover?.(p.id)}
               onMouseLeave={() => onHoverEnd?.()}
@@ -73,9 +114,14 @@ export default function ParticipantFilter({
               </div>
               <span className="p-name text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">
                 {p.name}
-                {hasSlotHover && slotAvailability!.get(p.id) === 1 && (
-                  <span className="text-gray-500">*</span>
-                )}
+                <span
+                  ref={(el) => {
+                    if (el) ifNeededRefs.current.set(p.id, el);
+                    else ifNeededRefs.current.delete(p.id);
+                  }}
+                  className="text-gray-500"
+                  hidden={!hasSlotHover || slotAvailability!.get(p.id) !== 1}
+                >*</span>
               </span>
               {onDelete && (
                 <button
@@ -94,9 +140,9 @@ export default function ParticipantFilter({
       </div>
 
       {/* if needed legend */}
-      {hasIfNeeded && (
-        <p className="text-xs text-gray-400 mt-2 px-2">* if needed</p>
-      )}
+      <p ref={legendRef} className="text-xs text-gray-400 mt-2 px-2" hidden={!hasIfNeeded}>* if needed</p>
     </div>
   );
-}
+});
+
+export default ParticipantFilter;

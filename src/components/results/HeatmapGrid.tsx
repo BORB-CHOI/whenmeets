@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { EventMode, Participant } from '@/lib/types';
+import { generateSlots } from '@/lib/constants';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
@@ -36,6 +37,11 @@ function computeCellColor(count: number, total: number): string | undefined {
   return BASE_COLOR + hexAlpha(alpha);
 }
 
+function getEventCell(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('[data-date][data-slot]') as HTMLElement | null;
+}
+
 export default function HeatmapGrid({
   dates,
   timeStart,
@@ -50,36 +56,134 @@ export default function HeatmapGrid({
   eventMode = 'available',
 }: HeatmapGridProps) {
   const touchPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStart = useRef<{ x: number; y: number; pid: number } | null>(null);
+  const touchStart = useRef<{ x: number; y: number; pid: number; date: string; slot: number } | null>(null);
   const touchMoved = useRef(false);
-  const filtered = participants.filter((p) => selectedIds.has(p.id));
+  const lastHoveredKey = useRef<string | null>(null);
+  const filtered = useMemo(
+    () => participants.filter((p) => selectedIds.has(p.id)),
+    [participants, selectedIds],
+  );
   const total = filtered.length;
 
   const hasBestSlots = bestSlots && bestSlots.size > 0;
+  const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
 
-  function getCount(date: string, slot: number): number {
-    let count = 0;
+  const cellStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    const hovered = new Set<string>();
+
     for (const p of filtered) {
-      const val = p.availability?.[date]?.[String(slot)];
-      if (eventMode === 'unavailable') {
-        // 안 되는 시간 모드: val=0(불가)으로 표시되지 않은 참가자는 가능으로 간주
-        if (val !== 0) count++;
-      } else {
-        if (val === 2) count++;
-        else if (val === 1 && includeIfNeeded) count++;
+      for (const date of dates) {
+        const slotsForDate = p.availability?.[date];
+        for (const slot of slots) {
+          const val = slotsForDate?.[String(slot)];
+          const isAvailable = eventMode === 'unavailable'
+            ? val !== 0
+            : val === 2 || (val === 1 && includeIfNeeded);
+          if (!isAvailable) continue;
+
+          const key = `${date}-${slot}`;
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+          if (p.id === hoveredParticipantId) hovered.add(key);
+        }
       }
     }
-    return count;
+
+    return { counts, hovered };
+  }, [dates, eventMode, filtered, hoveredParticipantId, includeIfNeeded, slots]);
+
+  function clearTouchPreviewTimer() {
+    if (touchPreviewTimer.current) {
+      clearTimeout(touchPreviewTimer.current);
+      touchPreviewTimer.current = null;
+    }
   }
+
+  function emitHover(cell: HTMLElement, e: React.MouseEvent<HTMLDivElement> | React.PointerEvent<HTMLDivElement>, yOffset = 0) {
+    const key = `${cell.dataset.date}-${cell.dataset.slot}`;
+    if (lastHoveredKey.current === key) return;
+    lastHoveredKey.current = key;
+    onCellHover?.(cell.dataset.date!, Number(cell.dataset.slot), {
+      x: e.clientX,
+      y: e.clientY + yOffset,
+      width: 0,
+      height: 0,
+    });
+  }
+
+  const gridPointerProps = onCellHover || onCellSelect
+    ? {
+        onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
+          if (!onCellHover) return;
+          const cell = getEventCell(e.target);
+          if (cell) emitHover(cell, e);
+        },
+        onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
+          if (e.pointerType === 'mouse') {
+            return;
+          }
+
+          const ts = touchStart.current;
+          if (!ts || ts.pid !== e.pointerId || touchMoved.current) return;
+          const dx = e.clientX - ts.x;
+          const dy = e.clientY - ts.y;
+          if (dx * dx + dy * dy > TAP_MOVEMENT_THRESHOLD * TAP_MOVEMENT_THRESHOLD) {
+            touchMoved.current = true;
+            clearTouchPreviewTimer();
+          }
+        },
+        onPointerLeave: () => {
+          clearTouchPreviewTimer();
+          lastHoveredKey.current = null;
+          onCellHover?.(null);
+        },
+        onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+          const cell = getEventCell(e.target);
+          if (!cell) return;
+
+          const date = cell.dataset.date!;
+          const slot = Number(cell.dataset.slot);
+          if (e.pointerType === 'mouse') {
+            onCellSelect?.(date, slot);
+            return;
+          }
+
+          touchStart.current = { x: e.clientX, y: e.clientY, pid: e.pointerId, date, slot };
+          touchMoved.current = false;
+          clearTouchPreviewTimer();
+        },
+        onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => {
+          if (e.pointerType === 'mouse') return;
+          const ts = touchStart.current;
+          touchStart.current = null;
+          clearTouchPreviewTimer();
+          lastHoveredKey.current = null;
+          onCellHover?.(null);
+          if (ts && ts.pid === e.pointerId && !touchMoved.current) {
+            onCellSelect?.(ts.date, ts.slot);
+          }
+          touchMoved.current = false;
+        },
+        onPointerCancel: (e: React.PointerEvent<HTMLDivElement>) => {
+          if (e.pointerType === 'mouse') return;
+          touchStart.current = null;
+          touchMoved.current = false;
+          clearTouchPreviewTimer();
+          lastHoveredKey.current = null;
+          onCellHover?.(null);
+        },
+      }
+    : undefined;
 
   return (
     <AvailabilityGrid
       dates={dates}
       timeStart={timeStart}
       timeEnd={timeEnd}
+      columnsProps={gridPointerProps}
       renderCell={(date, slot) => {
-        const count = getCount(date, slot);
         const slotKey = `${date}-${slot}`;
+        const count = cellStats.counts.get(slotKey) ?? 0;
         const isBest = bestSlots?.has(slotKey);
 
         // Best slots filter: when active, only best cells get color
@@ -90,89 +194,14 @@ export default function HeatmapGrid({
           bgColor = computeCellColor(count, total);
         }
 
-        // Hovered participant highlight
-        const isHoveredAvailable =
-          hoveredParticipantId &&
-          filtered.some((p) => {
-            if (p.id !== hoveredParticipantId) return false;
-            const val = p.availability?.[date]?.[String(slot)];
-            if (eventMode === 'unavailable') return val !== 0;
-            return val === 2 || (val === 1 && includeIfNeeded);
-          });
-
-        const emitHoverAtPointer = (e: React.PointerEvent<HTMLDivElement>, yOffset = 0) => {
-          onCellHover?.(date, slot, {
-            x: e.clientX,
-            y: e.clientY + yOffset,
-            width: 0,
-            height: 0,
-          });
-        };
-
-        const clearTouchPreviewTimer = () => {
-          if (touchPreviewTimer.current) {
-            clearTimeout(touchPreviewTimer.current);
-            touchPreviewTimer.current = null;
-          }
-        };
+        const isHoveredAvailable = hoveredParticipantId && cellStats.hovered.has(slotKey);
 
         return (
           <div
-            className="w-full h-full relative cursor-pointer hover:brightness-125 hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1 hover:z-10"
+            data-date={date}
+            data-slot={slot}
+            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1"
             style={{ backgroundColor: bgColor }}
-            onPointerEnter={(e) => {
-              if (e.pointerType === 'mouse') emitHoverAtPointer(e);
-            }}
-            onPointerLeave={() => {
-              clearTouchPreviewTimer();
-              onCellHover?.(null);
-            }}
-            onPointerDown={(e) => {
-              if (e.pointerType === 'mouse') {
-                onCellSelect?.(date, slot);
-                return;
-              }
-              // Touch: defer onCellSelect until pointerUp so we can distinguish
-              // tap from scroll (a scroll should NOT open the bottom sheet).
-              touchStart.current = { x: e.clientX, y: e.clientY, pid: e.pointerId };
-              touchMoved.current = false;
-              clearTouchPreviewTimer();
-            }}
-            onPointerMove={(e) => {
-              if (e.pointerType === 'mouse') {
-                emitHoverAtPointer(e);
-                return;
-              }
-              // Touch move: detect scroll intent
-              const ts = touchStart.current;
-              if (!ts || ts.pid !== e.pointerId) return;
-              if (touchMoved.current) return;
-              const dx = e.clientX - ts.x;
-              const dy = e.clientY - ts.y;
-              if (dx * dx + dy * dy > TAP_MOVEMENT_THRESHOLD * TAP_MOVEMENT_THRESHOLD) {
-                touchMoved.current = true;
-                clearTouchPreviewTimer();
-              }
-            }}
-            onPointerUp={(e) => {
-              if (e.pointerType === 'mouse') return;
-              const ts = touchStart.current;
-              touchStart.current = null;
-              clearTouchPreviewTimer();
-              onCellHover?.(null);
-              // Only treat as tap if pointer didn't move (i.e. not a scroll).
-              if (ts && ts.pid === e.pointerId && !touchMoved.current) {
-                onCellSelect?.(date, slot);
-              }
-              touchMoved.current = false;
-            }}
-            onPointerCancel={(e) => {
-              if (e.pointerType === 'mouse') return;
-              touchStart.current = null;
-              touchMoved.current = false;
-              clearTouchPreviewTimer();
-              onCellHover?.(null);
-            }}
           >
             {count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none leading-none"

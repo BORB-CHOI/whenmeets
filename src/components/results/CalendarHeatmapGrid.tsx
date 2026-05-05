@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { EventMode, Participant } from '@/lib/types';
 
 interface CalendarHeatmapGridProps {
@@ -20,6 +20,11 @@ function parseDate(s: string) {
   return new Date(s + 'T00:00:00');
 }
 
+function getDateCell(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof HTMLElement)) return null;
+  return target.closest('[data-cal-date]') as HTMLElement | null;
+}
+
 export default function CalendarHeatmapGrid({
   dates,
   participants,
@@ -29,8 +34,12 @@ export default function CalendarHeatmapGrid({
   bestSlots,
   eventMode = 'available',
 }: CalendarHeatmapGridProps) {
+  const lastHoveredDate = useRef<string | null>(null);
   const dateSet = useMemo(() => new Set(dates), [dates]);
-  const filtered = participants.filter((p) => selectedIds.has(p.id));
+  const filtered = useMemo(
+    () => participants.filter((p) => selectedIds.has(p.id)),
+    [participants, selectedIds],
+  );
   const total = filtered.length;
   const hasBestSlots = bestSlots && bestSlots.size > 0;
 
@@ -63,18 +72,24 @@ export default function CalendarHeatmapGrid({
     return result;
   }, [firstDate, lastDate]);
 
-  function getCount(date: string): number {
-    let count = 0;
+  const countMap = useMemo(() => {
+    const counts = new Map<string, number>();
     for (const p of filtered) {
-      const val = p.availability?.[date]?.['all_day'];
-      if (eventMode === 'unavailable') {
-        if (val !== 0) count++;
-      } else {
-        if (val === 2) count++;
-        else if (val === 1 && includeIfNeeded) count++;
+      for (const date of dates) {
+        const val = p.availability?.[date]?.['all_day'];
+        const isAvailable = eventMode === 'unavailable'
+          ? val !== 0
+          : val === 2 || (val === 1 && includeIfNeeded);
+        if (isAvailable) {
+          counts.set(date, (counts.get(date) ?? 0) + 1);
+        }
       }
     }
-    return count;
+    return counts;
+  }, [dates, eventMode, filtered, includeIfNeeded]);
+
+  function getCount(date: string): number {
+    return countMap.get(date) ?? 0;
   }
 
   function getCellBg(date: string): string | undefined {
@@ -93,7 +108,22 @@ export default function CalendarHeatmapGrid({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div
+      className="overflow-x-auto"
+      onMouseOver={(e) => {
+        if (!onCellHover) return;
+        const cell = getDateCell(e.target);
+        if (!cell) return;
+        const date = cell.dataset.calDate!;
+        if (lastHoveredDate.current === date) return;
+        lastHoveredDate.current = date;
+        onCellHover(date);
+      }}
+      onMouseLeave={() => {
+        lastHoveredDate.current = null;
+        onCellHover?.(null);
+      }}
+    >
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
           <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-3">{month.label}</h3>
@@ -119,11 +149,10 @@ export default function CalendarHeatmapGrid({
               return (
                 <div
                   key={dateStr}
-                  className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer transition-colors
-                    ${isEventDate ? 'hover:brightness-95' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
+                  data-cal-date={isEventDate ? dateStr : undefined}
+                  className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer
+                    ${isEventDate ? 'hover:outline hover:outline-2 hover:outline-emerald-500 hover:-outline-offset-2' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
                   style={{ backgroundColor: isEventDate ? (bg || undefined) : undefined }}
-                  onMouseEnter={() => isEventDate && onCellHover?.(dateStr)}
-                  onMouseLeave={() => onCellHover?.(null)}
                 >
                   <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700 dark:text-gray-300' : ''}`}>
                     {day}
