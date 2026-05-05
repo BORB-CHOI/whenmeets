@@ -2,6 +2,7 @@
 
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { AvailabilityLevel } from '@/lib/types';
+import { toggleParticipant } from './participantToggle';
 
 interface ParticipantFilterProps {
   participants: { id: string; name: string; availability?: Record<string, Record<string, AvailabilityLevel>> }[];
@@ -61,10 +62,8 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   }), [participants]);
 
   function toggle(id: string) {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onSelectedChange(next);
+    const allIds = participants.map((p) => p.id);
+    onSelectedChange(toggleParticipant(selectedIds, id, allIds));
   }
 
   const hasSlotHover = slotAvailability && slotAvailability.size > 0;
