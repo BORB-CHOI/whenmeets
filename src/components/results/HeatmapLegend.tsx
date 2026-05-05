@@ -9,12 +9,14 @@ interface HeatmapLegendProps {
   mode: EventMode;
 }
 
-const STEPS: HeatmapStep[] = [1, 2, 3, 4, 5];
+// 0 단계(빈 칸 = unavailable)도 범례에 명시
+const STEPS: HeatmapStep[] = [0, 1, 2, 3, 4, 5];
 
 export default function HeatmapLegend({ total, mode }: HeatmapLegendProps) {
   if (total === 0) return null;
 
-  const labels = getStepLabels(total);
+  // labels는 step 1~5 에 대응. step 0 라벨은 "0" 으로 prepend.
+  const labels = ['0', ...getStepLabels(total)];
   const caption = mode === 'unavailable' ? '안 되는 사람' : '되는 사람';
 
   return (
@@ -25,8 +27,8 @@ export default function HeatmapLegend({ total, mode }: HeatmapLegendProps) {
             <div
               key={s}
               data-step={s}
-              className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: getStepColor(s) }}
+              className={`w-3 h-3 rounded-sm ${s === 0 ? 'border border-gray-200 dark:border-gray-700' : ''}`}
+              style={{ backgroundColor: s === 0 ? undefined : getStepColor(s) }}
             />
           ))}
         </div>
