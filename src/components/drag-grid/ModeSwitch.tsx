@@ -35,7 +35,7 @@ export default function ModeSwitch({ activeMode, onModeChange, eventMode = 'avai
             onClick={() => onModeChange(mode.value)}
             className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer border
               ${active
-                ? 'bg-white border-gray-300 shadow-sm text-gray-900 font-semibold'
+                ? `${mode.color} border-gray-300 shadow-sm text-gray-900 font-semibold`
                 : 'bg-transparent border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
               }`}
           >
