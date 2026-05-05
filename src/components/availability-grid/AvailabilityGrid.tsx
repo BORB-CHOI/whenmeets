@@ -182,16 +182,16 @@ export default function AvailabilityGrid({
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                let border = 'border-r border-r-gray-200/60 dark:border-r-gray-700/60 ';
-                if (isLast) border = 'border-r border-r-gray-300 dark:border-r-gray-600 ';
-                if (isFirst) border += 'border-l border-l-gray-300 dark:border-l-gray-600 ';
-                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 dark:border-l-gray-600 ';
+                let border = 'border-r border-r-gray-300 ';
+                if (isLast) border = 'border-r border-r-gray-300 ';
+                if (isFirst) border += 'border-l border-l-gray-300 ';
+                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 ';
 
-                if (isFirstRow) border += 'border-t border-t-gray-300 dark:border-t-gray-600 ';
-                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300/80 dark:border-t-gray-600/80 ';
-                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-t-gray-200/40 dark:border-t-gray-700/40 ';
+                if (isFirstRow) border += 'border-t border-t-gray-300 ';
+                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300 ';
+                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-dashed border-t-gray-300 ';
 
-                if (isLastRow) border += 'border-b border-b-gray-300 dark:border-b-gray-600 ';
+                if (isLastRow) border += 'border-b border-b-gray-300 ';
 
                 const elements = [];
                 if (hasGapBefore) {
