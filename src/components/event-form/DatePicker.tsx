@@ -36,6 +36,7 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
   const dragAdding = useRef(true);
   const touchedDates = useRef(new Set<string>());
   const draftSelected = useRef(new Set<string>());
+  const lastTouchStartAt = useRef(0);
   const [previewSet, setPreviewSet] = useState<Set<string>>(new Set());
 
   const days = getDaysInMonth(viewYear, viewMonth);
@@ -195,8 +196,16 @@ export default function DatePicker({ selectedDates, onDatesChange }: DatePickerP
                   key={dateStr}
                   disabled={isPast}
                   data-date={dateStr}
-                  onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-                  onTouchStart={() => { handlePointerDown(dateStr); }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    if (Date.now() - lastTouchStartAt.current < 700) return;
+                    handlePointerDown(dateStr);
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    lastTouchStartAt.current = Date.now();
+                    handlePointerDown(dateStr);
+                  }}
                   className={`h-9 rounded-lg text-sm tabular-nums transition-colors
                     ${isPast ? 'text-gray-200 dark:text-gray-600 cursor-not-allowed' : 'cursor-pointer'}
                     ${isSelected ? 'bg-emerald-600 text-white font-semibold' : ''}
