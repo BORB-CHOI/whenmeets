@@ -39,7 +39,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all routes except static files and API routes that don't need session
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Keep Supabase session refresh off public pages; auth-gated surfaces
+    // still get fresh cookies before they read the user server-side.
+    '/dashboard/:path*',
+    '/mypage/:path*',
+    '/auth/:path*',
   ],
 };

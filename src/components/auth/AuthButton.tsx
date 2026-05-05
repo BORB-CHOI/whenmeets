@@ -3,31 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
-import type { User } from '@supabase/supabase-js';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export default function AuthButton() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const supabaseRef = useRef(createAuthBrowserClient());
-  const supabase = supabaseRef.current;
+  const { user, loading, supabase } = useAuthUser();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-    });
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-      setLoading(false);
-      // SIGNED_IN/SIGNED_OUT 시 서버 컴포넌트(Header 등) 재렌더로 user 상태 동기화
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         router.refresh();
       }
