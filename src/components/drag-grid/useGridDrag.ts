@@ -59,6 +59,8 @@ export default function useGridDrag({
   const cellByCoordRef = useRef<Map<string, CellEntry>>(new Map());
   const paintedKeys = useRef<Set<string>>(new Set());
   const lastEndKey = useRef('');
+  // 모바일에서 touchend 후 브라우저가 합성하는 mousedown/mouseup 이벤트 무시 용
+  const lastTouchEndAt = useRef(0);
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
   const onDragEndRef = useRef(onDragEnd);
@@ -191,6 +193,8 @@ export default function useGridDrag({
 
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
+      // 이미 드래그 중인 동일 포인터 시작 무시 (이중 호출 방지)
+      if (isDragging.current) return;
       const cell = getCellFromPoint(x, y, containerRef.current);
       if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;
 
