@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { EventMode, Participant } from '@/lib/types';
+import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { resolveCellColor, getStepColor } from '@/lib/heatmap';
+import { getCellCssColor } from '@/components/drag-grid/GridCell';
 
 interface CalendarHeatmapGridProps {
   dates: string[];
@@ -101,17 +102,30 @@ export default function CalendarHeatmapGrid({
     return countMap.get(date) ?? 0;
   }
 
+  // 1명 단독 / 호버 / 응답자 1명 이벤트 → 그 사람의 cell value를 GridCell 색으로
+  const singleParticipant = filtered.length === 1 ? filtered[0] : null;
+
   function getCellBg(date: string): string | undefined {
     if (!dateSet.has(date)) return undefined;
     const count = getCount(date);
     const slotKey = `${date}-all_day`;
     const isBest = hasBestSlots ? bestSlots!.has(slotKey) : false;
 
+    if (hasBestSlots) {
+      return isBest ? getStepColor(5) : undefined;
+    }
+
+    if (singleParticipant) {
+      const rawVal = singleParticipant.availability?.[date]?.['all_day'];
+      const val: AvailabilityLevel | -1 = rawVal === 0 || rawVal === 1 || rawVal === 2 ? rawVal : -1;
+      return getCellCssColor(val, eventMode) || undefined;
+    }
+
     return resolveCellColor({
       count,
       total,
       isBest,
-      hasBestSlots: !!hasBestSlots,
+      hasBestSlots: false,
     });
   }
 

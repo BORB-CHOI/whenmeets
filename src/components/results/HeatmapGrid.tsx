@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { EventMode, Participant } from '@/lib/types';
+import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { generateSlots } from '@/lib/constants';
 import { resolveCellColor } from '@/lib/heatmap';
+import { getCellCssColor } from '@/components/drag-grid/GridCell';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
@@ -85,6 +86,11 @@ export default function HeatmapGrid({
 
     return { counts };
   }, [dates, eventMode, filtered, effectiveIncludeIfNeeded, slots]);
+
+  // 1명만 보고 있는 상태 (단독 선택 또는 호버 미리보기 또는 응답자 1명만 등록).
+  // 이 경우 단계 lookup 대신 그 사람의 cell value를 GridCell 색으로 그대로 표시 →
+  // available/if needed/unavailable 모두 편집 화면과 동일한 색.
+  const singleParticipant = filtered.length === 1 ? filtered[0] : null;
 
   function clearTouchPreviewTimer() {
     if (touchPreviewTimer.current) {
@@ -180,12 +186,20 @@ export default function HeatmapGrid({
         const count = cellStats.counts.get(slotKey) ?? 0;
         const isBest = bestSlots?.has(slotKey) ?? false;
 
-        const bgColor = resolveCellColor({
-          count,
-          total,
-          isBest,
-          hasBestSlots: !!hasBestSlots,
-        });
+        let bgColor: string | undefined;
+        if (hasBestSlots) {
+          // best 토글 우선 — best 외 흰색
+          bgColor = isBest ? resolveCellColor({ count: 1, total: 1, isBest: true, hasBestSlots: true }) : undefined;
+        } else if (singleParticipant) {
+          // 1명 단독 (또는 1명만 응답한 이벤트, 호버 미리보기) — 그 사람의 cell value를 GridCell 색으로
+          const rawVal = singleParticipant.availability?.[date]?.[String(slot)];
+          const val: AvailabilityLevel | -1 = rawVal === 0 || rawVal === 1 || rawVal === 2 ? rawVal : -1;
+          // -1 은 미선택. 1명 단독이면 자동 반대색이 깔리는 게 사용자 의도이므로 GridCell 색을 그대로 사용
+          bgColor = getCellCssColor(val, eventMode) || undefined;
+        } else {
+          // 다중 수합 — 단계 lookup
+          bgColor = resolveCellColor({ count, total, isBest, hasBestSlots: false });
+        }
 
         return (
           <div
