@@ -78,6 +78,16 @@ export default function EventPageClient({
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
   const [supabase] = useState(() => createAuthBrowserClient());
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
+  const hoverRafRef = useRef<number>(0);
+
+  const scheduleHoverUpdate = useCallback((fn: () => void) => {
+    cancelAnimationFrame(hoverRafRef.current);
+    hoverRafRef.current = requestAnimationFrame(fn);
+  }, []);
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(hoverRafRef.current);
+  }, []);
 
   // Check if user is logged in via Google
   useEffect(() => {
@@ -601,8 +611,10 @@ export default function EventPageClient({
                 includeIfNeeded={effectiveIncludeIfNeeded}
                 hoveredParticipantId={hoveredParticipantId}
                 onCellHover={(date) => {
-                  participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
-                  setHoveredSlot(date ? { date, slot: 0 } : null);
+                  scheduleHoverUpdate(() => {
+                    participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
+                    setHoveredSlot(date ? { date, slot: 0 } : null);
+                  });
                 }}
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
@@ -620,9 +632,11 @@ export default function EventPageClient({
               includeIfNeeded={effectiveIncludeIfNeeded}
               hoveredParticipantId={hoveredParticipantId}
               onCellHover={(date, slot, rect) => {
-                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
-                setHoveredSlot(date ? { date, slot: slot! } : null);
-                setHoverRect(rect ?? null);
+                scheduleHoverUpdate(() => {
+                  participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
+                  setHoveredSlot(date ? { date, slot: slot! } : null);
+                  setHoverRect(rect ?? null);
+                });
               }}
               onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
               bestSlots={showBestTimes ? bestSlots : undefined}
