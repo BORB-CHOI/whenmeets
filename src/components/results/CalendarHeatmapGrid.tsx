@@ -9,6 +9,7 @@ interface CalendarHeatmapGridProps {
   participants: Pick<Participant, 'id' | 'name' | 'availability'>[];
   selectedIds: Set<string>;
   includeIfNeeded: boolean;
+  hoveredParticipantId?: string | null;
   onCellHover?: (date: string | null) => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
@@ -31,18 +32,25 @@ export default function CalendarHeatmapGrid({
   participants,
   selectedIds,
   includeIfNeeded,
+  hoveredParticipantId,
   onCellHover,
   bestSlots,
   eventMode = 'available',
 }: CalendarHeatmapGridProps) {
   const lastHoveredDate = useRef<string | null>(null);
   const dateSet = useMemo(() => new Set(dates), [dates]);
-  const filtered = useMemo(
-    () => participants.filter((p) => selectedIds.has(p.id)),
-    [participants, selectedIds],
-  );
+  const filtered = useMemo(() => {
+    if (hoveredParticipantId) {
+      const hovered = participants.find((p) => p.id === hoveredParticipantId);
+      return hovered ? [hovered] : [];
+    }
+    return participants.filter((p) => selectedIds.has(p.id));
+  }, [participants, selectedIds, hoveredParticipantId]);
   const total = filtered.length;
   const hasBestSlots = bestSlots && bestSlots.size > 0;
+  const effectiveIncludeIfNeeded = hoveredParticipantId || filtered.length === 1
+    ? true
+    : includeIfNeeded;
 
   const sortedDates = useMemo(() => [...dates].sort(), [dates]);
   const firstDate = parseDate(sortedDates[0]);
@@ -80,14 +88,14 @@ export default function CalendarHeatmapGrid({
         const val = p.availability?.[date]?.['all_day'];
         const isAvailable = eventMode === 'unavailable'
           ? val !== 0
-          : val === 2 || (val === 1 && includeIfNeeded);
+          : val === 2 || (val === 1 && effectiveIncludeIfNeeded);
         if (isAvailable) {
           counts.set(date, (counts.get(date) ?? 0) + 1);
         }
       }
     }
     return counts;
-  }, [dates, eventMode, filtered, includeIfNeeded]);
+  }, [dates, eventMode, filtered, effectiveIncludeIfNeeded]);
 
   function getCount(date: string): number {
     return countMap.get(date) ?? 0;
