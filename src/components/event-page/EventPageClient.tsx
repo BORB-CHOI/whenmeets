@@ -608,6 +608,8 @@ export default function EventPageClient({
               hoveredParticipantId={null}
               onCellHover={(date, slot, rect) => {
                 participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
+                setHoveredSlot(date ? { date, slot: slot! } : null);
+                setHoverRect(rect ?? null);
               }}
               onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
               bestSlots={showBestTimes ? bestSlots : undefined}
