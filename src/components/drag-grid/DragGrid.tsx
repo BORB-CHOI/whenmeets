@@ -71,6 +71,22 @@ export default function DragGrid({
     return map;
   }, [otherParticipants]);
 
+  // Event delegation for hover — no per-cell callback allocation
+  const handleGridMouseOver = useMemo(() => {
+    if (!onCellHover) return undefined;
+    return (e: React.MouseEvent) => {
+      const cell = (e.target as HTMLElement).closest('[data-date][data-slot]') as HTMLElement | null;
+      if (cell) {
+        onCellHover(cell.dataset.date!, cell.dataset.slot!);
+      }
+    };
+  }, [onCellHover]);
+
+  const handleGridMouseLeave = useMemo(() => {
+    if (!onCellHover) return undefined;
+    return () => onCellHover(null);
+  }, [onCellHover]);
+
   function getOverlayCount(date: string, slot: string): number {
     return overlayCountMap[date]?.[slot] ?? 0;
   }
@@ -99,22 +115,6 @@ export default function DragGrid({
     );
   }
 
-  // Event delegation for hover — no per-cell callback allocation
-  const handleGridMouseOver = useMemo(() => {
-    if (!onCellHover) return undefined;
-    return (e: React.MouseEvent) => {
-      const cell = (e.target as HTMLElement).closest('[data-date][data-slot]') as HTMLElement | null;
-      if (cell) {
-        onCellHover(cell.dataset.date!, cell.dataset.slot!);
-      }
-    };
-  }, [onCellHover]);
-
-  const handleGridMouseLeave = useMemo(() => {
-    if (!onCellHover) return undefined;
-    return () => onCellHover(null);
-  }, [onCellHover]);
-
   return (
     <div
       onMouseOver={handleGridMouseOver}
@@ -126,6 +126,7 @@ export default function DragGrid({
         timeStart={timeStart}
         timeEnd={timeEnd}
         columnsProps={gridProps}
+        disableTouchScroll
         renderCell={(date, slot, indices) => {
           const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
           return (

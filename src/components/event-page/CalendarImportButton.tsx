@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { fetchCalendarEvents, calendarEventsToAvailability } from '@/lib/calendar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -25,22 +25,22 @@ export default function CalendarImportButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
-  const supabaseRef = useRef(createAuthBrowserClient());
-  const supabase = supabaseRef.current;
+  const [supabase] = useState(() => createAuthBrowserClient());
+  const auth = supabase.auth;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAuthenticated(!!user);
+    auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session?.user);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session?.user);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [auth]);
 
   if (!isAuthenticated) return null;
 
@@ -50,7 +50,7 @@ export default function CalendarImportButton({
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await auth.getSession();
 
       if (!session?.provider_token) {
         setError('캘린더 권한이 없습니다. Google 로그인 시 캘린더 접근을 허용해주세요.');
@@ -75,13 +75,13 @@ export default function CalendarImportButton({
   const isCompact = variant === 'compact';
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${isCompact ? 'w-full' : ''}`}>
       <button
         onClick={() => setShowImportConfirm(true)}
         disabled={loading}
         className={
           isCompact
-            ? 'flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-50'
+            ? 'flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:opacity-70'
             : 'flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50'
         }
       >

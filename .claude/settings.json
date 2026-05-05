@@ -1,5 +1,27 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/scripts/hooks/pre-bash-block-destructive-git.js\""
+          }
+        ],
+        "description": "Block destructive git commands (reset --hard, restore, checkout HEAD --, clean -f, push --force)"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/scripts/hooks/pre-edit-block-large-delete.js\""
+          }
+        ],
+        "description": "Block Edit/Write that delete >100 lines in a single call"
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",

@@ -13,7 +13,7 @@ import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
 import EventFormModal from '@/components/event-form/EventFormModal';
-import ParticipantFilter from '@/components/results/ParticipantFilter';
+import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -75,16 +75,17 @@ export default function EventPageClient({
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [googleUserName, setGoogleUserName] = useState<string | null>(null);
-  const supabaseRef = useRef(createAuthBrowserClient());
+  const [supabase] = useState(() => createAuthBrowserClient());
+  const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
 
   // Check if user is logged in via Google
   useEffect(() => {
-    supabaseRef.current.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata?.full_name) {
-        setGoogleUserName(user.user_metadata.full_name);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user.user_metadata?.full_name) {
+        setGoogleUserName(session.user.user_metadata.full_name);
       }
     });
-  }, []);
+  }, [supabase]);
 
   // Debounce name matching for existing participant check
   useEffect(() => {
@@ -114,6 +115,7 @@ export default function EventPageClient({
   const [showBestTimes, setShowBestTimes] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetPid, setDeleteTargetPid] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Session (localStorage)
   const [session, setSession] = useState(() => {
@@ -154,7 +156,7 @@ export default function EventPageClient({
       });
   }, [eventId]);
 
-  useRealtimeSync(eventId, true, handleRealtimeUpdate);
+  useRealtimeSync(eventId, viewMode === 'view', handleRealtimeUpdate);
 
   // Best times: timeful style — find max count, only show slots matching max
   const bestSlots = useMemo(() => {
@@ -210,6 +212,15 @@ export default function EventPageClient({
     return map;
   }, [mobileSlotSheet, event.participants]);
 
+  function getSlotAvailability(date: string, slot: number) {
+    const map = new Map<string, 0 | 1 | 2>();
+    for (const p of event.participants) {
+      const val = p.availability?.[date]?.[String(slot)];
+      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+    }
+    return map;
+  }
+
   // Password state
   if (initialState.type === 'password' && !session) {
     return (
@@ -261,6 +272,9 @@ export default function EventPageClient({
 
   // Handle "Edit availability" click
   async function handleEditClick() {
+    setHoveredSlot(null);
+    setHoverRect(null);
+    setMobileSlotSheet(null);
     if (session) {
       setViewMode('edit');
     } else if (googleUserName) {
@@ -341,6 +355,12 @@ export default function EventPageClient({
     // No auto-save here — saving happens only on 편집 완료
   }
 
+  function handleCancelEditing() {
+    const savedAvailability = event.participants.find((p) => p.id === participantId)?.availability ?? {};
+    setAvailability(savedAvailability);
+    setViewMode('view');
+  }
+
   async function handleFinishEditing() {
     await saveNow(availability);
     // Refresh event data to show updated heatmap and participant list
@@ -354,8 +374,6 @@ export default function EventPageClient({
     } catch { /* ignore */ }
     setViewMode('view');
   }
-
-  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDeleteParticipant(pid: string) {
     if (isDeleting) return;
@@ -436,9 +454,15 @@ export default function EventPageClient({
               aria-label={copied ? '링크 복사됨' : '링크 복사'}
               className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 sm:hidden"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-              </svg>
+              {copied ? (
+                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                </svg>
+              )}
             </button>
           </p>
         </div>
@@ -459,16 +483,25 @@ export default function EventPageClient({
               onClick={handleEditClick}
               className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
             >
-              내 시간 입력
+              편집
             </button>
           ) : (
-            <button
-              onClick={handleFinishEditing}
-              disabled={saving}
-              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
-            >
-              {saving ? '저장 중...' : '편집 완료'}
-            </button>
+            <>
+              <button
+                onClick={handleCancelEditing}
+                disabled={saving}
+                className="hidden lg:inline-flex h-[38px] px-4 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleFinishEditing}
+                disabled={saving}
+                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
+              >
+                {saving ? '저장 중...' : '편집 완료'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -548,7 +581,6 @@ export default function EventPageClient({
                 eventMode={event.mode}
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
-                onCellHover={(date, slot) => setHoveredSlot(date ? { date, slot: Number(slot ?? 0) } : null)}
                 disabled={saving}
               />
             </>
@@ -558,7 +590,10 @@ export default function EventPageClient({
               participants={event.participants}
               selectedIds={selectedIds}
               includeIfNeeded={includeIfNeeded}
-              onCellHover={(date) => setHoveredSlot(date ? { date, slot: 0 } : null)}
+              onCellHover={(date) => {
+                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
+                setHoveredSlot(date ? { date, slot: 0 } : null);
+              }}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
             />
@@ -572,6 +607,7 @@ export default function EventPageClient({
               includeIfNeeded={includeIfNeeded}
               hoveredParticipantId={null}
               onCellHover={(date, slot, rect) => {
+                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
                 setHoveredSlot(date ? { date, slot: slot! } : null);
                 setHoverRect(rect ?? null);
               }}
@@ -662,7 +698,6 @@ export default function EventPageClient({
                       participants={event.participants}
                       selectedIds={new Set(event.participants.map(p => p.id))}
                       onSelectedChange={() => {}}
-                      slotAvailability={slotAvailability}
                     />
                   </div>
                 </div>
@@ -690,17 +725,15 @@ export default function EventPageClient({
             <>
               {/* View mode sidebar — responses + options */}
               <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
-                응답자 {hoveredSlot && slotAvailability
-                  ? `(${Array.from(slotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/${event.participants.length})`
-                  : `(${event.participants.length})`}
+                응답자 ({event.participants.length})
               </h2>
 
               <div className="max-h-48 overflow-y-auto custom-scrollbar">
                 <ParticipantFilter
+                  ref={participantFilterRef}
                   participants={event.participants}
                   selectedIds={selectedIds}
                   onSelectedChange={setSelectedIds}
-                  slotAvailability={slotAvailability}
                   onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                 />
               </div>
@@ -714,9 +747,7 @@ export default function EventPageClient({
                     className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
                   >
                     <span>최적 시간만 보기</span>
-                    <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${showBestTimes ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
-                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${showBestTimes ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                    </div>
+                    <ToggleSwitch checked={showBestTimes} />
                   </button>
                   {event.mode !== 'unavailable' && (
                     <button
@@ -724,9 +755,7 @@ export default function EventPageClient({
                       className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
                     >
                       <span>&quot;If Needed&quot; 숨기기</span>
-                      <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${!includeIfNeeded ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
-                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${!includeIfNeeded ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                      </div>
+                      <ToggleSwitch checked={!includeIfNeeded} />
                     </button>
                   )}
                 </div>
@@ -910,6 +939,7 @@ export default function EventPageClient({
       <MobileBottomBar
         isEditMode={viewMode === 'edit'}
         onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
+        onCancelEdit={handleCancelEditing}
         saving={saving}
         dates={event.dates}
         timeStart={event.time_start}
@@ -1052,6 +1082,22 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function ToggleSwitch({ checked }: { checked: boolean }) {
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+  }, []);
+
+  const transition = mountedRef.current ? 'transition-colors duration-200' : '';
+  const knobTransition = mountedRef.current ? 'transition-transform duration-200' : '';
+
+  return (
+    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
+      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm ${knobTransition} ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
     </div>
   );
 }

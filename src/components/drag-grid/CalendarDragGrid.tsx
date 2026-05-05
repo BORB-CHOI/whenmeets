@@ -89,7 +89,7 @@ export default function CalendarDragGrid({
   function applyToDate(date: string) {
     if (!dateSet.has(date)) return;
     const draft = draftRef.current;
-    if (activeMode === 0 || erasing.current) {
+    if (erasing.current) {
       if (draft[date]) {
         const dateCopy = { ...draft[date] };
         delete dateCopy['all_day'];
@@ -214,8 +214,8 @@ export default function CalendarDragGrid({
                   data-cal-date={dateStr}
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-                  className={`aspect-square flex items-center justify-center text-sm relative transition-colors
-                    ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:brightness-95` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
+                  className={`aspect-square flex items-center justify-center text-sm relative
+                    ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:outline hover:outline-2 hover:outline-emerald-500 hover:-outline-offset-2` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
                     ${isEventDate && value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : ''}
                     ${isEventDate && value === -1 ? 'text-gray-500 dark:text-gray-400' : ''}`}
                 >

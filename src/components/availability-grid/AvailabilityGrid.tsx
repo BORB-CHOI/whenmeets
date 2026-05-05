@@ -9,6 +9,7 @@ interface AvailabilityGridProps {
   timeEnd: number;
   renderCell: (date: string, slot: number, indices?: { dateIdx: number; slotIdx: number }) => ReactNode;
   columnsProps?: React.HTMLAttributes<HTMLDivElement> & { ref?: (el: HTMLElement | null) => void };
+  disableTouchScroll?: boolean;
   header?: ReactNode;
   footer?: ReactNode;
   maxColumns?: number;
@@ -40,15 +41,22 @@ export default function AvailabilityGrid({
   timeEnd,
   renderCell,
   columnsProps,
+  disableTouchScroll = false,
   header,
   footer,
   maxColumns = 7,
 }: AvailabilityGridProps) {
-  const slots = generateSlots(timeStart, timeEnd);
+  const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
   const [page, setPage] = useState(0);
   const [containerWidth, setContainerWidth] = useState(GRID_WIDTH);
   const [timeColWidth, setTimeColWidth] = useState(timeColWidth_DESKTOP);
   const containerRef = useRef<HTMLDivElement>(null);
+  const columnsRestProps = useMemo(() => {
+    if (!columnsProps) return undefined;
+    const rest = { ...columnsProps };
+    delete rest.ref;
+    return rest;
+  }, [columnsProps]);
 
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
@@ -63,9 +71,21 @@ export default function AvailabilityGrid({
         setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0) - 16));
       }
     }
+
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+
+    const observedParent = containerRef.current?.parentElement ?? null;
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && observedParent) {
+      observer = new ResizeObserver(updateWidth);
+      observer.observe(observedParent);
+    }
+
+    window.addEventListener('resize', updateWidth, { passive: true });
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', updateWidth);
+    };
   }, [needsPagination]);
 
   const visibleDates = useMemo(() => {
@@ -106,7 +126,7 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto" ref={containerRef}>
-        <div className="flex items-start mx-auto" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
+        <div className="flex items-start mx-auto pr-3 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
             {slots.map((slot) => (
@@ -131,9 +151,9 @@ export default function AvailabilityGrid({
           <div
             data-grid-container=""
             ref={columnsProps?.ref}
-            className={`grid${columnsProps ? ' touch-none' : ''}`}
+            className={`grid${disableTouchScroll ? ' touch-none' : ''}`}
             style={{ flex: 1, minWidth: 0, gridTemplateColumns: gridTemplateCols }}
-            {...(columnsProps ? (() => { const { ref: _ref, ...rest } = columnsProps; return rest; })() : {})}
+            {...columnsRestProps}
           >
             {/* Date headers */}
             {visibleDates.map((date, colIdx) => {

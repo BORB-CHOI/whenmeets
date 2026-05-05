@@ -2,12 +2,26 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+function getRedirectOrigin(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const hostname = requestUrl.hostname;
+  const isLocalhost =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1';
+
+  if (isLocalhost) {
+    return requestUrl.origin;
+  }
+
+  return process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next');
-  // Use env var for redirect base to prevent Host header injection
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+  const siteUrl = getRedirectOrigin(request);
 
   if (code) {
     const cookieStore = await cookies();
