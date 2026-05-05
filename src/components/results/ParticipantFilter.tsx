@@ -70,23 +70,19 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   const hasIfNeeded = hasSlotHover && Array.from(slotAvailability!.values()).some((v) => v === 1);
 
   return (
-    <div>
+    <div onMouseLeave={() => onHoverEnd?.()}>
       <div className="flex flex-col gap-0.5">
         {participants.map((p) => {
           const selected = selectedIds.has(p.id);
 
-          // Determine hover state based on slot availability
           let stateClass = '';
           if (hasSlotHover) {
             const val = slotAvailability!.get(p.id);
             if (val === 2) {
-              // available — normal
               stateClass = '';
             } else if (val === 1) {
-              // if needed — yellow background
               stateClass = 'bg-[#FFE8B8] rounded';
             } else {
-              // unavailable — strikethrough + gray
               stateClass = '[&_.p-name]:line-through [&_.p-name]:text-gray-400 [&_.p-icon]:opacity-40';
             }
           }
@@ -100,7 +96,6 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
               }}
               onClick={() => toggle(p.id)}
               onMouseEnter={() => onHover?.(p.id)}
-              onMouseLeave={() => onHoverEnd?.()}
               className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-all
                 ${!selected ? 'opacity-40' : ''}
                 ${stateClass}
