@@ -50,7 +50,7 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx
         data-slot={slot}
         data-date-idx={dateIdx}
         data-slot-idx={slotIdx}
-        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 dark:border-gray-700 ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer flex items-center justify-between`}
+        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 dark:border-gray-700 ${CELL_COLORS[value]} select-none cursor-pointer flex items-center justify-between`}
       >
         {hasOverlay && (
           <div
@@ -74,7 +74,7 @@ function GridCell({ date, slot, value, wide, overlayCount, overlayTotal, dateIdx
       data-slot={slot}
       data-date-idx={dateIdx}
       data-slot-idx={slotIdx}
-      className={`relative w-full h-full ${CELL_COLORS[value]} transition-colors duration-75 select-none cursor-pointer`}
+      className={`relative w-full h-full ${CELL_COLORS[value]} select-none cursor-pointer`}
       onMouseEnter={() => onCellHover?.(date, slot)}
       onMouseLeave={() => onCellLeave?.()}
     >
