@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 interface SegmentedControlProps<T extends string> {
   options: { value: T; label: string; variant?: 'default' | 'danger' }[];
@@ -23,30 +23,26 @@ export default function SegmentedControl<T extends string>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [animate, setAnimate] = useState(false);
   const activeIndex = options.findIndex((o) => o.value === value);
+  const safeActiveIndex = Math.max(0, activeIndex);
   const activeVariant = options[activeIndex]?.variant || 'default';
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const buttons = containerRef.current.querySelectorAll('button');
-    const activeBtn = buttons[activeIndex];
-    if (activeBtn) {
-      setIndicatorStyle({
-        left: activeBtn.offsetLeft,
-        width: activeBtn.offsetWidth,
-      });
-    }
-  }, [activeIndex]);
+  const segmentCount = Math.max(1, options.length);
 
   return (
-    <div ref={containerRef} className="relative flex p-1 bg-gray-100 rounded-lg border border-gray-200 w-full">
+    <div
+      className="relative grid p-1 bg-gray-100 rounded-lg border border-gray-200 w-full"
+      style={{ gridTemplateColumns: `repeat(${segmentCount}, minmax(0, 1fr))` }}
+    >
       <div
-        className="absolute top-1 bottom-1 bg-white rounded-md transition-all duration-200 ease-out"
+        className={`absolute top-1 bottom-1 bg-white rounded-md ${
+          animate ? 'transition-transform duration-200 ease-out' : ''
+        }`}
         style={{
-          left: indicatorStyle.left,
-          width: indicatorStyle.width,
+          left: 4,
+          width: `calc((100% - 8px) / ${segmentCount})`,
+          transform: `translateX(${safeActiveIndex * 100}%)`,
           boxShadow: GLOW[activeVariant],
         }}
       />
@@ -57,7 +53,10 @@ export default function SegmentedControl<T extends string>({
           <button
             key={option.value}
             type="button"
-            onClick={() => onChange(option.value)}
+            onClick={() => {
+              setAnimate(true);
+              onChange(option.value);
+            }}
             className={`relative z-10 flex-1 text-center px-4 py-2 text-sm whitespace-nowrap rounded-md transition-colors duration-150 cursor-pointer
               ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
           >
