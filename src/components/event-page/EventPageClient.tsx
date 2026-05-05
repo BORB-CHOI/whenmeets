@@ -14,6 +14,7 @@ import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
+import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -585,20 +586,25 @@ export default function EventPageClient({
               />
             </>
           ) : event.date_only ? (
-            <CalendarHeatmapGrid
-              dates={event.dates}
-              participants={event.participants}
-              selectedIds={selectedIds}
-              includeIfNeeded={includeIfNeeded}
-              onCellHover={(date) => {
-                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
-                setHoveredSlot(date ? { date, slot: 0 } : null);
-              }}
-              bestSlots={showBestTimes ? bestSlots : undefined}
-              eventMode={event.mode}
-            />
+            <>
+              <HeatmapLegend total={selectedIds.size} mode={event.mode} />
+              <CalendarHeatmapGrid
+                dates={event.dates}
+                participants={event.participants}
+                selectedIds={selectedIds}
+                includeIfNeeded={includeIfNeeded}
+                onCellHover={(date) => {
+                  participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
+                  setHoveredSlot(date ? { date, slot: 0 } : null);
+                }}
+                bestSlots={showBestTimes ? bestSlots : undefined}
+                eventMode={event.mode}
+              />
+            </>
           ) : (
-            <HeatmapGrid
+            <>
+              <HeatmapLegend total={selectedIds.size} mode={event.mode} />
+              <HeatmapGrid
               dates={event.dates}
               timeStart={event.time_start}
               timeEnd={event.time_end}
@@ -614,7 +620,8 @@ export default function EventPageClient({
               onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
-            />
+              />
+            </>
           )}
         </div>
 
