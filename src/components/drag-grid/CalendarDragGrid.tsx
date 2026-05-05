@@ -2,6 +2,7 @@
 
 import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
+import { getCellColorClass } from './GridCell';
 
 interface CalendarDragGridProps {
   dates: string[];
@@ -14,12 +15,12 @@ interface CalendarDragGridProps {
   disabled?: boolean;
 }
 
-const CELL_COLORS: Record<AvailabilityLevel | -1, string> = {
-  [-1]: 'bg-gray-100',
-  0: 'bg-red-400/45',
-  1: 'bg-amber-300/55',
-  2: 'bg-teal-600/[.47]',
-};
+const COLOR_CLASSES_TO_REMOVE = [
+  'bg-gray-100',
+  'bg-red-400/45',
+  'bg-amber-300/55',
+  'bg-teal-600/[.47]',
+];
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -32,6 +33,7 @@ export default function CalendarDragGrid({
   availability,
   onAvailabilityChange,
   activeMode,
+  eventMode,
   overlayCountMap,
   overlayTotal,
   disabled,
@@ -81,9 +83,9 @@ export default function CalendarDragGrid({
   function paintCell(date: string, value: AvailabilityLevel | -1) {
     const el = document.querySelector(`[data-cal-date="${date}"]`) as HTMLElement | null;
     if (!el) return;
-    // Remove old color classes
-    el.classList.remove('bg-gray-100', 'bg-red-400/45', 'bg-amber-300/55', 'bg-teal-600/[.47]');
-    el.classList.add(CELL_COLORS[value]);
+    el.classList.remove(...COLOR_CLASSES_TO_REMOVE);
+    const cls = getCellColorClass(value, eventMode);
+    if (cls) el.classList.add(...cls.split(' '));
   }
 
   function applyToDate(date: string) {
@@ -215,7 +217,7 @@ export default function CalendarDragGrid({
                   onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
                   className={`aspect-square flex items-center justify-center text-sm relative
-                    ${isEventDate ? `${CELL_COLORS[value]} cursor-pointer hover:outline hover:outline-2 hover:outline-teal-500 hover:-outline-offset-2` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
+                    ${isEventDate ? `${getCellColorClass(value, eventMode)} cursor-pointer hover:outline hover:outline-2 hover:outline-teal-500 hover:-outline-offset-2` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
                     ${isEventDate && value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : ''}
                     ${isEventDate && value === -1 ? 'text-gray-500 dark:text-gray-400' : ''}`}
                 >
