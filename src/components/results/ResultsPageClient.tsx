@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { EventMode, Participant } from '@/lib/types';
 import { generateSlots, slotToTime, formatDateCompact } from '@/lib/constants';
 import ParticipantFilter from './ParticipantFilter';
+import HeatmapLegend from './HeatmapLegend';
 import AdBanner from '@/components/ads/AdBanner';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
@@ -161,6 +162,7 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left: Heatmap Grid */}
           <div className="flex-1 min-w-0">
+            <HeatmapLegend total={selectedIds.size} mode={data.event.mode || 'available'} />
             <HeatmapGrid
               dates={data.event.dates}
               timeStart={data.event.time_start}
@@ -171,22 +173,6 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
               hoveredParticipantId={hoveredId}
               eventMode={data.event.mode}
             />
-
-            {/* Legend */}
-            <div className="mt-4 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
-                <span>0명</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-teal-200" />
-                <span>일부</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-teal-500" />
-                <span>전원</span>
-              </div>
-            </div>
           </div>
 
           {/* Right: Responses + Options (timeful style sidebar) */}
