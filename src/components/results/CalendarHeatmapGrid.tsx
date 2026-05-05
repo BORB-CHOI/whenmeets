@@ -172,7 +172,7 @@ export default function CalendarHeatmapGrid({
                   key={dateStr}
                   data-cal-date={isEventDate ? dateStr : undefined}
                   className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer
-                    ${isEventDate ? 'hover:outline hover:outline-2 hover:outline-teal-500 hover:-outline-offset-2' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
+                    ${isEventDate ? 'hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}
                   style={{ backgroundColor: isEventDate ? (bg || undefined) : undefined }}
                 >
                   <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700 dark:text-gray-300' : ''}`}>

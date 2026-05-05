@@ -197,7 +197,7 @@ export default function HeatmapGrid({
           <div
             data-date={date}
             data-slot={slot}
-            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-teal-400 hover:-outline-offset-1"
+            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-1"
             style={{ backgroundColor: bgColor }}
           >
             {!singleParticipant && count > 0 && (
