@@ -200,7 +200,7 @@ export default function HeatmapGrid({
             className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-teal-400 hover:-outline-offset-1"
             style={{ backgroundColor: bgColor }}
           >
-            {count > 0 && (
+            {!singleParticipant && count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none leading-none"
                 style={{ color: (hasBestSlots && isBest) || count === total ? 'rgba(255,255,255,0.92)' : 'rgba(0,137,123,0.7)' }}
               >

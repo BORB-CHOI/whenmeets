@@ -178,7 +178,7 @@ export default function CalendarHeatmapGrid({
                   <span className={`${isFullColor ? 'text-white font-semibold' : isEventDate ? 'text-gray-700 dark:text-gray-300' : ''}`}>
                     {day}
                   </span>
-                  {count > 0 && isEventDate && (
+                  {!singleParticipant && count > 0 && isEventDate && (
                     <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-teal-500'}`}>
                       {count}
                     </span>
