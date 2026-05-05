@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from 'react';
 import { EventMode, Participant } from '@/lib/types';
+import { resolveCellColor, getStepColor } from '@/lib/heatmap';
 
 interface CalendarHeatmapGridProps {
   dates: string[];
@@ -14,7 +15,7 @@ interface CalendarHeatmapGridProps {
 }
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const BASE_COLOR = '#00897B';
+const FULL_COLOR = getStepColor(5); // #00695C — used for "isFullColor" check (count===total or best)
 
 function parseDate(s: string) {
   return new Date(s + 'T00:00:00');
@@ -96,15 +97,14 @@ export default function CalendarHeatmapGrid({
     if (!dateSet.has(date)) return undefined;
     const count = getCount(date);
     const slotKey = `${date}-all_day`;
+    const isBest = hasBestSlots ? bestSlots!.has(slotKey) : false;
 
-    if (hasBestSlots) {
-      return bestSlots!.has(slotKey) ? BASE_COLOR : undefined;
-    }
-
-    if (total === 0 || count === 0) return undefined;
-    if (count === total) return BASE_COLOR;
-    const alpha = Math.floor((count / total) * (185 - 35) + 35);
-    return BASE_COLOR + alpha.toString(16).padStart(2, '0').toUpperCase();
+    return resolveCellColor({
+      count,
+      total,
+      isBest,
+      hasBestSlots: !!hasBestSlots,
+    });
   }
 
   return (
@@ -144,7 +144,7 @@ export default function CalendarHeatmapGrid({
               const bg = getCellBg(dateStr);
               const day = parseInt(dateStr.split('-')[2]);
               const count = isEventDate ? getCount(dateStr) : 0;
-              const isFullColor = bg === BASE_COLOR;
+              const isFullColor = bg === FULL_COLOR;
 
               return (
                 <div
