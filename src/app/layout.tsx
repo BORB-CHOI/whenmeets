@@ -49,7 +49,6 @@ export default function RootLayout({
         className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors"
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
-        {/* 다크 모드 일시 비활성 — forcedTheme="light" 로 시스템/사용자 선호 무관하게 항상 라이트 */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
           <Header />
           <main className="min-h-[calc(100dvh-200px)]">{children}</main>

@@ -116,7 +116,6 @@ export default function EventPageClient({
   const [hoveredParticipantId, setHoveredParticipantId] = useState<string | null>(null);
   const [showBestTimes, setShowBestTimes] = useState(false);
 
-  // 1명 단독 또는 호버 미리보기 시 If Needed 강제 ON
   const isSingleSelection = selectedIds.size === 1;
   const effectiveIncludeIfNeeded = hoveredParticipantId !== null || isSingleSelection
     ? true

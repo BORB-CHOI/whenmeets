@@ -22,7 +22,6 @@ const TEXT: Record<SegmentedVariant, string> = {
   warning: 'text-amber-700',
 };
 
-// active indicator 배경 — variant별 옅은 톤
 const INDICATOR_BG: Record<SegmentedVariant, string> = {
   default: 'bg-white',
   danger: 'bg-red-50',

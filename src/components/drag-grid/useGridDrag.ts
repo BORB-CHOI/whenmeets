@@ -59,7 +59,6 @@ export default function useGridDrag({
   const cellByCoordRef = useRef<Map<string, CellEntry>>(new Map());
   const paintedKeys = useRef<Set<string>>(new Set());
   const lastEndKey = useRef('');
-  // 모바일에서 touchend 후 브라우저가 합성하는 mousedown/mouseup 이벤트 무시 용
   const lastTouchEndAt = useRef(0);
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
@@ -99,15 +98,10 @@ export default function useGridDrag({
     const cellEl = cell.el;
     if (mode === 'reset') {
       const baseVal = baselineRef.current[cell.date]?.[cell.slot];
-      // Reset paints back to whatever the cell's true color should be (Tailwind class).
-      // Clearing inline style lets the className-defined color show.
       cellEl.style.backgroundColor = '';
       delete cellEl.dataset.erased;
-      // baseVal unused here — style cleared so Tailwind class governs
       void baseVal;
     } else if (mode === 'erase') {
-      // Erasing reverts the cell to its "no value" state.
-      // -1 in available 모드 = 빨강 자동, unavailable 모드 = teal 자동
       cellEl.style.backgroundColor = getCellCssColor(-1, eventMode);
       cellEl.dataset.erased = '1';
     } else {
@@ -193,7 +187,6 @@ export default function useGridDrag({
 
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
-      // 이미 드래그 중인 동일 포인터 시작 무시 (이중 호출 방지)
       if (isDragging.current) return;
       const cell = getCellFromPoint(x, y, containerRef.current);
       if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;

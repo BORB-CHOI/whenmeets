@@ -17,7 +17,7 @@ interface CalendarHeatmapGridProps {
 }
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const FULL_COLOR = getStepColor(5); // #00695C — used for "isFullColor" check (count===total or best)
+const FULL_COLOR = getStepColor(5);
 
 function parseDate(s: string) {
   return new Date(s + 'T00:00:00');
@@ -102,7 +102,6 @@ export default function CalendarHeatmapGrid({
     return countMap.get(date) ?? 0;
   }
 
-  // 1명 단독 / 호버 / 응답자 1명 이벤트 → 그 사람의 cell value를 GridCell 색으로
   const singleParticipant = filtered.length === 1 ? filtered[0] : null;
 
   function getCellBg(date: string): string | undefined {

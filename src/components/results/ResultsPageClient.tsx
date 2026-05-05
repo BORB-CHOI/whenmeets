@@ -50,7 +50,6 @@ export default function ResultsPageClient({ eventId, initialData }: ResultsPageC
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // 1명 단독 또는 호버 미리보기 시 If Needed 강제 ON
   const isSingleSelection = selectedIds.size === 1;
   const effectiveIncludeIfNeeded = hoveredId !== null || isSingleSelection
     ? true
