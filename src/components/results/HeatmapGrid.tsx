@@ -3,6 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { EventMode, Participant } from '@/lib/types';
 import { generateSlots } from '@/lib/constants';
+import { resolveCellColor } from '@/lib/heatmap';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
@@ -22,19 +23,6 @@ interface HeatmapGridProps {
   onCellSelect?: (date: string, slot: number) => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
-}
-
-const BASE_COLOR = '#00897B'; // Emerald 600
-
-function hexAlpha(alpha: number): string {
-  return alpha.toString(16).padStart(2, '0').toUpperCase();
-}
-
-function computeCellColor(count: number, total: number): string | undefined {
-  if (total === 0 || count === 0) return undefined;
-  if (count === total) return BASE_COLOR;
-  const alpha = Math.floor((count / total) * (185 - 35) + 35);
-  return BASE_COLOR + hexAlpha(alpha);
 }
 
 function getEventCell(target: EventTarget | null): HTMLElement | null {
@@ -184,15 +172,14 @@ export default function HeatmapGrid({
       renderCell={(date, slot) => {
         const slotKey = `${date}-${slot}`;
         const count = cellStats.counts.get(slotKey) ?? 0;
-        const isBest = bestSlots?.has(slotKey);
+        const isBest = bestSlots?.has(slotKey) ?? false;
 
-        // Best slots filter: when active, only best cells get color
-        let bgColor: string | undefined;
-        if (hasBestSlots) {
-          bgColor = isBest ? BASE_COLOR : undefined;
-        } else {
-          bgColor = computeCellColor(count, total);
-        }
+        const bgColor = resolveCellColor({
+          count,
+          total,
+          isBest,
+          hasBestSlots: !!hasBestSlots,
+        });
 
         const isHoveredAvailable = hoveredParticipantId && cellStats.hovered.has(slotKey);
 
