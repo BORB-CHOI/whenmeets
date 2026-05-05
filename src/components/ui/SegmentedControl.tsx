@@ -24,8 +24,8 @@ const TEXT: Record<SegmentedVariant, string> = {
 
 const INDICATOR_BG: Record<SegmentedVariant, string> = {
   default: 'bg-white',
-  danger: 'bg-red-50',
-  warning: 'bg-amber-50',
+  danger: 'bg-white',
+  warning: 'bg-white',
 };
 
 export default function SegmentedControl<T extends string>({
