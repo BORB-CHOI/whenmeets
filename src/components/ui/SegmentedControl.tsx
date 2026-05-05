@@ -2,20 +2,31 @@
 
 import { useState } from 'react';
 
+type SegmentedVariant = 'default' | 'danger' | 'warning';
+
 interface SegmentedControlProps<T extends string> {
-  options: { value: T; label: string; variant?: 'default' | 'danger' }[];
+  options: { value: T; label: string; variant?: SegmentedVariant }[];
   value: T;
   onChange: (value: T) => void;
 }
 
-const GLOW = {
+const GLOW: Record<SegmentedVariant, string> = {
   default: '0 0 0 1.5px rgba(0, 137, 123, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0, 137, 123, 0.1)',
   danger: '0 0 0 1.5px rgba(220, 38, 38, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(220, 38, 38, 0.1)',
+  warning: '0 0 0 1.5px rgba(217, 119, 6, 0.35), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(252, 211, 77, 0.25)',
 };
 
-const TEXT = {
+const TEXT: Record<SegmentedVariant, string> = {
   default: 'text-teal-700',
   danger: 'text-red-700',
+  warning: 'text-amber-800',
+};
+
+// active indicator(슬라이더)의 배경 — variant별로 다른 색
+const INDICATOR_BG: Record<SegmentedVariant, string> = {
+  default: 'bg-white',
+  danger: 'bg-white',
+  warning: 'bg-amber-200',
 };
 
 export default function SegmentedControl<T extends string>({
@@ -36,7 +47,7 @@ export default function SegmentedControl<T extends string>({
       style={{ gridTemplateColumns: `repeat(${segmentCount}, minmax(0, 1fr))` }}
     >
       <div
-        className={`absolute top-1 bottom-1 bg-white rounded-md ${
+        className={`absolute top-1 bottom-1 ${INDICATOR_BG[activeVariant]} rounded-md ${
           animate ? 'transition-transform duration-200 ease-out' : ''
         }`}
         style={{

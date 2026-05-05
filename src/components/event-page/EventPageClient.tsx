@@ -648,7 +648,7 @@ export default function EventPageClient({
                     <SegmentedControl
                       options={[
                         { value: 'available', label: 'Available' },
-                        { value: 'if_needed', label: 'If Needed' },
+                        { value: 'if_needed', label: 'If Needed', variant: 'warning' },
                       ]}
                       value={activeMode === 2 ? 'available' : 'if_needed'}
                       onChange={(v) => setActiveMode(v === 'available' ? 2 : 1)}
