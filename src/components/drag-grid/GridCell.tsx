@@ -4,38 +4,32 @@ import { memo } from 'react';
 import { AvailabilityLevel, EventMode } from '@/lib/types';
 import { formatDateCompact } from '@/lib/constants';
 
-/**
- * Tailwind class for cell background.
- * - available 모드: -1 (미선택) 과 0 (명시 unavailable) 모두 옅은 빨강 → 사용자 워크플로우상 명시 0 발생 X
- * - unavailable 모드: -1 (미선택) 자동 teal, 0 (명시 unavailable) 빨강 → 정반대 의미라 시각 자연 구분
- */
 export function getCellColorClass(
   value: AvailabilityLevel | -1,
   eventMode: EventMode,
 ): string {
   if (eventMode === 'unavailable') {
     if (value === -1) return 'bg-teal-600/[.47]';
-    if (value === 0) return 'bg-red-400/45';
+    if (value === 0) return 'bg-[#FAD3D3]';
     return '';
   }
-  if (value === -1 || value === 0) return 'bg-red-400/45';
-  if (value === 1) return 'bg-amber-300/55';
+  if (value === -1 || value === 0) return 'bg-[#FAD3D3]';
+  if (value === 1) return 'bg-[#FFE8B8]';
   if (value === 2) return 'bg-teal-600/[.47]';
   return '';
 }
 
-/** Raw CSS color for direct DOM paint during drag (avoids React re-renders). */
 export function getCellCssColor(
   value: AvailabilityLevel | -1,
   eventMode: EventMode,
 ): string {
   if (eventMode === 'unavailable') {
     if (value === -1) return 'rgba(0,137,123,0.47)';
-    if (value === 0) return 'rgba(248,113,113,0.45)';
+    if (value === 0) return '#FAD3D3';
     return '';
   }
-  if (value === -1 || value === 0) return 'rgba(248,113,113,0.45)';
-  if (value === 1) return 'rgba(252,211,77,0.55)';
+  if (value === -1 || value === 0) return '#FAD3D3';
+  if (value === 1) return '#FFE8B8';
   if (value === 2) return 'rgba(0,137,123,0.47)';
   return '';
 }

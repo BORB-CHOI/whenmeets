@@ -20,6 +20,8 @@ const COLOR_CLASSES_TO_REMOVE = [
   'bg-red-400/45',
   'bg-amber-300/55',
   'bg-teal-600/[.47]',
+  'bg-[#FAD3D3]',
+  'bg-[#FFE8B8]',
 ];
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
