@@ -2,6 +2,7 @@ import Link from 'next/link';
 import AuthButton from '@/components/auth/AuthButton';
 import CreateEventButton from './CreateEventButton';
 import HeaderDashboardLink from './HeaderDashboardLink';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   return (
@@ -22,8 +23,9 @@ export default function Header() {
           <HeaderDashboardLink />
         </div>
 
-        {/* Right: Create + Auth */}
+        {/* Right: Theme + Create + Auth */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
           <CreateEventButton />
           <AuthButton />
         </div>
