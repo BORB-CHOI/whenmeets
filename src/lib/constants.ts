@@ -1,21 +1,3 @@
-export const AVAILABILITY = {
-  UNAVAILABLE: 0,
-  IF_NEEDED: 1,
-  AVAILABLE: 2,
-} as const;
-
-export const AVAILABILITY_COLORS = {
-  0: 'bg-gray-100',           // Unavailable / empty
-  1: 'bg-amber-300',          // If needed
-  2: 'bg-teal-600/[.47]',     // Available
-} as const;
-
-export const MODE_LABELS = {
-  2: '가능',
-  1: '되면 가능',
-  0: '불가능',
-} as const;
-
 /** Cell height in pixels for time-slot grids (heatmap + edit) */
 export const CELL_HEIGHT = 15;
 

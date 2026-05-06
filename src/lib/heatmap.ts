@@ -25,8 +25,10 @@ export function getStepColor(step: HeatmapStep): string {
   return STEP_COLORS[step];
 }
 
-export function getCellColor(count: number, total: number): string {
-  return getStepColor(getStep(count, total));
+function formatRange(lo: number, hi: number): string {
+  if (lo > hi) return '';
+  if (lo === hi) return `${lo}`;
+  return `${lo}+`;
 }
 
 export function getStepLabels(total: number): string[] {
@@ -35,10 +37,10 @@ export function getStepLabels(total: number): string[] {
   const q2 = Math.ceil(total / 2);
   const q3 = Math.ceil((3 * total) / 4);
   return [
-    '1+',
-    `${q1 + 1}+`,
-    `${q2 + 1}+`,
-    `${q3 + 1}+`,
+    formatRange(1, q1),
+    formatRange(q1 + 1, q2),
+    formatRange(q2 + 1, q3),
+    formatRange(q3 + 1, total - 1),
     `${total}`,
   ];
 }

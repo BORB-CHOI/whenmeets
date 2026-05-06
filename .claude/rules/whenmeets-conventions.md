@@ -57,13 +57,15 @@ NEVER hardcode values that are defined in `src/lib/constants.ts`.
 
 ### Shared Constants (`src/lib/constants.ts`)
 Before creating any new magic number or string, check if it already exists:
-- `AVAILABILITY` — availability level enum (0, 1, 2)
-- `AVAILABILITY_COLORS` — Tailwind classes for each level
-- `MODE_LABELS` — Korean labels for each mode
+- `CELL_HEIGHT` — grid cell height in pixels
 - `SLOTS_PER_HOUR` — time slot granularity
 - `slotToTime()` — slot index to "HH:MM"
 - `formatDateCompact()` — date to "M/D day-of-week"
 - `generateSlots()` — slot range generator
+- `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey()` — day-of-week mode helpers
+
+Availability level type is `AvailabilityLevel = 0 | 1 | 2` in `src/lib/types.ts`.
+Cell color logic lives in `src/components/drag-grid/GridCell.tsx` (`getCellColorClass`, `getCellCssColor`).
 
 If a value appears in 2+ files, extract it to `constants.ts`.
 

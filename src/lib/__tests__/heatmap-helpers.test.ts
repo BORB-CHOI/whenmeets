@@ -121,8 +121,8 @@ describe('getStepLabels', () => {
     expect(getStepLabels(12)).toEqual(['1+', '4+', '7+', '10+', '12']);
   });
 
-  it('N=4 → [1+, 2+, 3+, 4+, 4]', () => {
-    expect(getStepLabels(4)).toEqual(['1+', '2+', '3+', '4+', '4']);
+  it('N=4 → 단일 카운트 step은 "+" 없이, 도달 불가능한 step 4는 빈 문자열', () => {
+    expect(getStepLabels(4)).toEqual(['1', '2', '3', '', '4']);
   });
 
   it('N=0 → 빈 배열', () => {

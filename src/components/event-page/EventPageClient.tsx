@@ -12,8 +12,11 @@ import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
+import { useQueryClient } from '@tanstack/react-query';
+import { eventQueryKey } from '@/hooks/useEvent';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
+import SidebarCount, { type SidebarCountHandle } from '@/components/event-page/SidebarCount';
 import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
@@ -61,7 +64,22 @@ export default function EventPageClient({
   initialEvent,
   initialState,
 }: EventPageClientProps) {
-  const [event, setEvent] = useState<EventData>(initialEvent);
+  const queryClient = useQueryClient();
+  const [event, setEventState] = useState<EventData>(initialEvent);
+  // Seed the query cache with SSR initial data so cross-page navigation reuses it.
+  useEffect(() => {
+    queryClient.setQueryData(eventQueryKey(eventId), initialEvent);
+    // initialEvent is the SSR payload — only seed once per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, queryClient]);
+  // Mirror local state into the query cache so other consumers get fresh data.
+  const setEvent = useCallback((next: EventData | ((prev: EventData) => EventData)) => {
+    setEventState((prev) => {
+      const value = typeof next === 'function' ? (next as (p: EventData) => EventData)(prev) : next;
+      queryClient.setQueryData(eventQueryKey(eventId), value);
+      return value;
+    });
+  }, [queryClient, eventId]);
   const [viewMode, setViewMode] = useState<ViewMode>('view');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -76,6 +94,7 @@ export default function EventPageClient({
   const [authUserName, setAuthUserName] = useState<string | null>(null);
   const [supabase] = useState(() => createAuthBrowserClient());
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
+  const sidebarCountRef = useRef<SidebarCountHandle | null>(null);
   const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
   const hoverRafRef = useRef<number>(0);
 
@@ -281,6 +300,8 @@ export default function EventPageClient({
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
+      } else {
+        setAvailability({});
       }
       return true;
     } finally {
@@ -292,13 +313,15 @@ export default function EventPageClient({
   async function handleEditClick() {
     hoverPopoverRef.current?.update(null);
     setMobileSlotSheet(null);
-    if (session) {
-      setViewMode('edit');
-    } else if (authUserName) {
-      // Logged-in user: auto-join with their profile display name
+    if (authUserName) {
+      // Logged-in user: ALWAYS auto-join via API which resolves to own (user_id) slot
+      // or creates a new numbered slot if name collides with another participant.
+      // This prevents editing an anonymous slot with the same display name.
       const ok = await autoJoinWithName(authUserName);
       if (ok) setViewMode('edit');
-      else setShowNameModal(true); // fallback to manual
+      else setShowNameModal(true);
+    } else if (session) {
+      setViewMode('edit');
     } else {
       setShowNameModal(true);
     }
@@ -398,6 +421,8 @@ export default function EventPageClient({
     try {
       const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: participantPassword || undefined }),
       });
       if (!res.ok) {
         setDeleteTargetPid(null);
@@ -603,7 +628,6 @@ export default function EventPageClient({
             </>
           ) : event.date_only ? (
             <>
-              <HeatmapLegend total={selectedIds.size} mode={event.mode} />
               <CalendarHeatmapGrid
                 dates={event.dates}
                 participants={event.participants}
@@ -612,16 +636,26 @@ export default function EventPageClient({
                 hoveredParticipantId={hoveredParticipantId}
                 onCellHover={(date) => {
                   scheduleHoverUpdate(() => {
-                    participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
+                    const slotAvail = date ? getSlotAvailability(date, 0) : null;
+                    participantFilterRef.current?.previewSlot(slotAvail);
+                    sidebarCountRef.current?.updateForSlot(
+                      slotAvail
+                        ? Array.from(slotAvail.values()).filter(
+                            (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                          ).length
+                        : null,
+                    );
                   });
                 }}
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
+              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+                <HeatmapLegend total={selectedIds.size} />
+              </div>
             </>
           ) : (
             <>
-              <HeatmapLegend total={selectedIds.size} mode={event.mode} />
               <HeatmapGrid
               dates={event.dates}
               timeStart={event.time_start}
@@ -632,7 +666,15 @@ export default function EventPageClient({
               hoveredParticipantId={hoveredParticipantId}
               onCellHover={(date, slot, rect) => {
                 scheduleHoverUpdate(() => {
-                  participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
+                  const slotAvail = date ? getSlotAvailability(date, slot!) : null;
+                  participantFilterRef.current?.previewSlot(slotAvail);
+                  sidebarCountRef.current?.updateForSlot(
+                    slotAvail
+                      ? Array.from(slotAvail.values()).filter(
+                          (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                        ).length
+                      : null,
+                  );
                   hoverPopoverRef.current?.update(
                     date && rect ? { date, slot: slot!, position: rect } : null,
                   );
@@ -642,12 +684,15 @@ export default function EventPageClient({
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
+              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+                <HeatmapLegend total={selectedIds.size} />
+              </div>
             </>
           )}
         </div>
 
         {/* Right: Sidebar */}
-        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700">
+        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar">
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight */}
@@ -719,7 +764,7 @@ export default function EventPageClient({
               {event.participants.length > 0 && (
                 <div className="mb-5">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    응답자 ({event.participants.length})
+                    응답자 ({selectedIds.size}/{event.participants.length})
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
                     <ParticipantFilter
@@ -753,7 +798,11 @@ export default function EventPageClient({
             <>
               {/* View mode sidebar — responses + options */}
               <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
-                응답자 ({event.participants.length})
+                <SidebarCount
+                  ref={sidebarCountRef}
+                  selectedCount={selectedIds.size}
+                  totalCount={event.participants.length}
+                />
               </h2>
 
               <div className="max-h-48 overflow-y-auto custom-scrollbar">

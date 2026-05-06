@@ -8,7 +8,26 @@ import { getEventHistory, removeEventFromHistory, EventHistoryItem } from '@/lib
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [history, setHistory] = useState<EventHistoryItem[]>([]);
-  useEffect(() => { setHistory(getEventHistory()); }, []);
+  useEffect(() => {
+    const local = getEventHistory();
+    if (local.length === 0) {
+      setHistory([]);
+      return;
+    }
+    setHistory(local);
+    fetch('/api/events/active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: local.map((h) => h.id) }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.activeIds) return;
+        const active = new Set<string>(data.activeIds);
+        setHistory((prev) => prev.filter((h) => active.has(h.id)));
+      })
+      .catch(() => { /* keep local list on network error */ });
+  }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">

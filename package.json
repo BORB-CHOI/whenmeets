@@ -14,6 +14,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
+    "@tanstack/react-query": "^5.100.9",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",

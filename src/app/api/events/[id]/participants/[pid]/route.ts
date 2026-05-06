@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
+import { verifyEventToken } from '@/lib/auth';
 
 export async function PATCH(
   request: NextRequest,
@@ -12,13 +13,27 @@ export async function PATCH(
 
   const supabase = createServerClient();
 
-  const { data: participant } = await supabase
-    .from('participants')
-    .select('id, password_hash, user_id')
-    .eq('id', pid)
-    .eq('event_id', id)
-    .single();
+  // Fetch event (deleted-aware) and participant in parallel — if event is
+  // soft-deleted, bail before any auth/bcrypt work.
+  const [eventCheck, participantQuery] = await Promise.all([
+    supabase
+      .from('events')
+      .select('id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle(),
+    supabase
+      .from('participants')
+      .select('id, password_hash, user_id')
+      .eq('id', pid)
+      .eq('event_id', id)
+      .single(),
+  ]);
 
+  if (!eventCheck.data) {
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+  }
+  const participant = participantQuery.data;
   if (!participant) {
     return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
   }
@@ -90,58 +105,74 @@ export async function DELETE(
   const { id, pid } = await params;
   const supabase = createServerClient();
 
-  // Check event ownership — only the event creator can delete participants
   const { data: event } = await supabase
     .from('events')
     .select('id, created_by, password_hash')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
-
   if (!event) {
     return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
-  let authorized = false;
-
-  // 1. Check if authenticated user is the event creator
-  if (event.created_by) {
-    try {
-      const { createAuthServerClient } = await import('@/lib/supabase/auth-server');
-      const authClient = await createAuthServerClient();
-      const { data: { user } } = await authClient.auth.getUser();
-      if (user?.id === event.created_by) authorized = true;
-    } catch { /* no auth */ }
+  const { data: participant } = await supabase
+    .from('participants')
+    .select('id, user_id, password_hash')
+    .eq('id', pid)
+    .eq('event_id', id)
+    .single();
+  if (!participant) {
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
   }
 
-  // 2. For anonymous creators, verify event password via cookie
+  let currentUserId: string | null = null;
+  try {
+    const authClient = await createAuthServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    currentUserId = user?.id ?? null;
+  } catch { /* ignore */ }
+
+  let bodyPassword: string | undefined;
+  async function readBodyPassword(): Promise<string | undefined> {
+    if (bodyPassword !== undefined) return bodyPassword;
+    try {
+      const body = await request.json();
+      bodyPassword = typeof body?.password === 'string' ? body.password : '';
+    } catch {
+      bodyPassword = '';
+    }
+    return bodyPassword;
+  }
+
+  let authorized = false;
+
+  if (participant.user_id) {
+    if (currentUserId === participant.user_id) authorized = true;
+  } else if (participant.password_hash) {
+    const pw = await readBodyPassword();
+    if (pw && (await bcrypt.compare(pw, participant.password_hash))) {
+      authorized = true;
+    }
+  } else {
+    authorized = true;
+  }
+
+  if (!authorized && event.created_by && currentUserId === event.created_by) {
+    authorized = true;
+  }
+
   if (!authorized && event.password_hash) {
-    const { verifyEventToken } = await import('@/lib/auth');
     const cookie = request.cookies.get(`whenmeets_auth_${id}`);
     if (cookie && verifyEventToken(id, cookie.value)) {
       authorized = true;
     }
   }
 
-  // 3. If event has no password and no creator, check request body for event password
-  if (!authorized && !event.created_by && !event.password_hash) {
-    // Open event with no owner — anyone can delete (use with caution)
-    // For now, disallow to prevent abuse
-    return NextResponse.json({ error: 'Only the event creator can delete participants' }, { status: 403 });
-  }
-
   if (!authorized) {
+    if (!participant.user_id && participant.password_hash) {
+      return NextResponse.json({ error: 'Password required', requires_password: true }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
-  const { data: participant } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('id', pid)
-    .eq('event_id', id)
-    .single();
-
-  if (!participant) {
-    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
   }
 
   const { error } = await supabase

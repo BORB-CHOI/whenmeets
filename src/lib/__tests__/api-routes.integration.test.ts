@@ -14,12 +14,21 @@ vi.mock('@/lib/supabase/server', () => {
     let pendingInsert: Row | null = null;
     let pendingUpdate: Partial<Row> | null = null;
     let selectColumns: string | null = null;
-    const filters: Array<{ column: string; value: unknown }> = [];
+    const filters: Array<{ column: string; value: unknown; op?: 'is' | 'in' }> = [];
     let likeFilter: { column: string; pattern: string; ci?: boolean } | null = null;
 
     function applyFilters() {
       rows = [...mockTables[tableName]];
       for (const f of filters) {
+        if (f.op === 'in') {
+          const set = f.value as Set<unknown>;
+          rows = rows.filter((r) => set.has(r[f.column]));
+          continue;
+        }
+        if (f.op === 'is' && f.value === null) {
+          rows = rows.filter((r) => r[f.column] == null);
+          continue;
+        }
         rows = rows.filter((r) => r[f.column] === f.value);
       }
       if (likeFilter) {
@@ -49,6 +58,11 @@ vi.mock('@/lib/supabase/server', () => {
     const builder: Record<string, Function> = {
       select(columns?: string) { selectColumns = columns ?? null; return builder; },
       eq(column: string, value: unknown) { filters.push({ column, value }); return builder; },
+      is(column: string, value: unknown) { filters.push({ column, value, op: 'is' }); return builder; },
+      in(column: string, values: unknown[]) {
+        filters.push({ column, value: new Set(values), op: 'in' });
+        return builder;
+      },
       like(column: string, pattern: string) { likeFilter = { column, pattern }; return builder; },
       ilike(column: string, pattern: string) { likeFilter = { column, pattern, ci: true }; return builder; },
       maybeSingle() {
@@ -435,7 +449,21 @@ describe('POST /api/events/[id]/participants', () => {
 // PATCH /api/events/[id]/participants/[pid] — Update availability
 // ==========================================
 describe('PATCH /api/events/[id]/participants/[pid]', () => {
-  beforeEach(resetTables);
+  beforeEach(() => {
+    resetTables();
+    // PATCH now does a parallel event existence check (deleted_at IS NULL).
+    // Seed a default event so the participant-availability tests focus on the
+    // PATCH logic, not the new bail-on-deleted-event short-circuit.
+    mockTables.events.push({
+      id: 'evt-1',
+      title: 'Test Event',
+      dates: ['2026-04-10'],
+      time_start: 18,
+      time_end: 30,
+      password_hash: null,
+      deleted_at: null,
+    });
+  });
 
   it('updates availability for participant without password', async () => {
     mockTables.participants.push({

@@ -34,20 +34,19 @@ A change to one MUST be reflected in the others.
 
 **Shared concerns:**
 - Cell height/width must be consistent between input and results grids
-- Color scheme → `AVAILABILITY_COLORS` in `src/lib/constants.ts`
+- Color logic → `getCellColorClass`/`getCellCssColor` in `src/components/drag-grid/GridCell.tsx`
 - Slot format → `slotToTime()` in `src/lib/constants.ts`
 - Date format → `formatDateCompact()` in `src/lib/constants.ts`
 - Time labels (left-side time display) must share the same style
 
-### Event Page ↔ Results Page
+### Event Page (unified view)
 
-These pages display the SAME event data differently. Layout, header, participant info must be consistent.
+The event page (`/e/[id]`) hosts both the heatmap results and the editing surface in a single client component. The standalone `/e/[id]/results` route now redirects to `/e/[id]` for back-compat.
 
 | Component | Role | File |
 |-----------|------|------|
-| `EventPageClient` | Event participation page | `src/components/event-page/EventPageClient.tsx` |
-| `ResultsPageClient` | Results viewing page | `src/components/results/ResultsPageClient.tsx` |
-| `ParticipantFilter` | Participant filter (results) | `src/components/results/ParticipantFilter.tsx` |
+| `EventPageClient` | Event participation + results viewing | `src/components/event-page/EventPageClient.tsx` |
+| `ParticipantFilter` | Participant filter (used inside EventPageClient) | `src/components/results/ParticipantFilter.tsx` |
 
 **Shared concerns:**
 - Event title/description display style

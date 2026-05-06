@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from 'next-themes';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import QueryProvider from '@/components/providers/QueryProvider';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
@@ -50,9 +51,11 @@ export default function RootLayout({
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
-          <Header />
-          <main className="min-h-[calc(100dvh-200px)]">{children}</main>
-          <Footer />
+          <QueryProvider>
+            <Header />
+            <main className="min-h-[calc(100dvh-200px)]">{children}</main>
+            <Footer />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

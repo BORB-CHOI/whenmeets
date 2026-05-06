@@ -65,19 +65,6 @@ export function getActiveSession(eventId: string): ParticipantSession | null {
   return store.sessions.find((s) => s.pid === store.activeId) ?? null;
 }
 
-/** Get a session by participant ID. */
-export function getSessionByPid(eventId: string, pid: string): ParticipantSession | null {
-  const store = readSessionStore(eventId);
-  return store.sessions.find((s) => s.pid === pid) ?? null;
-}
-
-/** Get a session by participant name. */
-export function getSessionByName(eventId: string, name: string): ParticipantSession | null {
-  const store = readSessionStore(eventId);
-  const lower = name.toLowerCase();
-  return store.sessions.find((s) => s.name.toLowerCase() === lower) ?? null;
-}
-
 /** Add or update a session and set it as active. */
 export function upsertSession(eventId: string, session: ParticipantSession): void {
   const store = readSessionStore(eventId);
@@ -89,18 +76,4 @@ export function upsertSession(eventId: string, session: ParticipantSession): voi
   }
   store.activeId = session.pid;
   localStorage.setItem(storageKey(eventId), JSON.stringify(store));
-}
-
-/** Set the active session by participant ID. */
-export function setActiveSession(eventId: string, pid: string): void {
-  const store = readSessionStore(eventId);
-  if (store.sessions.some((s) => s.pid === pid)) {
-    store.activeId = pid;
-    localStorage.setItem(storageKey(eventId), JSON.stringify(store));
-  }
-}
-
-/** Get all sessions for an event. */
-export function getAllSessions(eventId: string): ParticipantSession[] {
-  return readSessionStore(eventId).sessions;
 }

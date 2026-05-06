@@ -14,6 +14,7 @@ export async function GET(
     .from('events')
     .select('id, title, dates, time_start, time_end, mode, password_hash')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!event) {
@@ -31,9 +32,11 @@ export async function GET(
   // Only fetch participants after auth passes
   const { data: participants } = await supabase
     .from('participants')
-    .select('id, name, availability')
+    .select('id, name, availability, user_id')
     .eq('event_id', id)
     .order('created_at', { ascending: true });
+
+  const enriched = await attachAvatars(supabase, participants ?? []);
 
   return NextResponse.json({
     event: {
@@ -44,6 +47,36 @@ export async function GET(
       time_end: event.time_end,
       mode: event.mode,
     },
-    participants: participants ?? [],
+    participants: enriched,
   });
+}
+
+interface ParticipantRow {
+  id: string;
+  name: string;
+  availability: unknown;
+  user_id: string | null;
+}
+
+async function attachAvatars(
+  supabase: ReturnType<typeof createServerClient>,
+  rows: ParticipantRow[],
+): Promise<Array<ParticipantRow & { avatar_url: string | null }>> {
+  const userIds = Array.from(
+    new Set(rows.map((r) => r.user_id).filter((v): v is string => !!v)),
+  );
+  if (userIds.length === 0) {
+    return rows.map((r) => ({ ...r, avatar_url: null }));
+  }
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, avatar_url')
+    .in('id', userIds);
+  const avatarMap = new Map<string, string | null>(
+    (profiles ?? []).map((p: { id: string; avatar_url: string | null }) => [p.id, p.avatar_url]),
+  );
+  return rows.map((r) => ({
+    ...r,
+    avatar_url: r.user_id ? avatarMap.get(r.user_id) ?? null : null,
+  }));
 }

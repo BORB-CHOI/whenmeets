@@ -26,11 +26,13 @@ export interface Participant {
   token: string;
   availability: Availability;
   created_at: string;
+  /** OAuth profile avatar (populated by API server-side join with profiles table) */
+  avatar_url?: string | null;
 }
 
 /** Event data with participants, as returned by the API */
 export interface EventData extends Event {
-  participants: Pick<Participant, 'id' | 'name' | 'availability' | 'created_at'>[];
+  participants: Pick<Participant, 'id' | 'name' | 'availability' | 'created_at' | 'avatar_url'>[];
   requires_auth?: boolean;
   is_owner?: boolean;
 }
