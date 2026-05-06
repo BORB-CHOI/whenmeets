@@ -13,18 +13,31 @@ export default async function EventPage({ params }: Props) {
   const { id } = await params;
   const supabase = createServerClient();
 
+  // Kick off auth.getUser in parallel with everything else — its result is only
+  // needed for isOwner (after participants resolve), so it's almost free here.
+  const authPromise = (async () => {
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      return user;
+    } catch {
+      return null;
+    }
+  })();
+
   // Fetch event in one query (includes password_hash for auth check)
   const { data: event } = await supabase
     .from('events')
     .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description, created_by')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!event) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <p className="text-gray-500">이벤트를 찾을 수 없습니다</p>
-        <Link href="/" className="mt-4 text-emerald-600 hover:underline">홈으로</Link>
+        <Link href="/" className="mt-4 text-teal-600 hover:underline">홈으로</Link>
       </div>
     );
   }
@@ -40,7 +53,7 @@ export default async function EventPage({ params }: Props) {
     }
   }
 
-  // If auth required, pass minimal data (don't load participants yet)
+  // If auth required, skip participants/profiles fetch entirely.
   if (requiresAuth) {
     return (
       <EventPageClient
@@ -65,23 +78,38 @@ export default async function EventPage({ params }: Props) {
     );
   }
 
-  // Fetch participants
+  // Fetch participants (with user_id for avatar enrichment)
   const { data: participants } = await supabase
     .from('participants')
-    .select('id, name, availability, created_at')
+    .select('id, name, availability, created_at, user_id')
     .eq('event_id', id)
     .order('created_at', { ascending: true });
 
-  let isOwner = false;
-  if (event.created_by) {
-    try {
-      const authClient = await createAuthServerClient();
-      const { data: { user } } = await authClient.auth.getUser();
-      isOwner = user?.id === event.created_by;
-    } catch {
-      isOwner = false;
-    }
+  const userIds = Array.from(
+    new Set((participants ?? []).map((r) => r.user_id).filter((v: string | null): v is string => !!v)),
+  );
+
+  // Profiles + auth resolve in parallel (auth was kicked off at top of fn).
+  const [profilesResult, user] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from('profiles').select('id, avatar_url').in('id', userIds)
+      : Promise.resolve({ data: [] as { id: string; avatar_url: string | null }[] }),
+    authPromise,
+  ]);
+
+  const avatarMap = new Map<string, string | null>();
+  for (const p of (profilesResult.data ?? []) as { id: string; avatar_url: string | null }[]) {
+    avatarMap.set(p.id, p.avatar_url);
   }
+  const enrichedParticipants = (participants ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    availability: p.availability,
+    created_at: p.created_at,
+    avatar_url: p.user_id ? avatarMap.get(p.user_id) ?? null : null,
+  }));
+
+  const isOwner = !!(event.created_by && user?.id === event.created_by);
 
   return (
     <EventPageClient
@@ -97,7 +125,7 @@ export default async function EventPage({ params }: Props) {
         mode: event.mode ?? 'available',
         date_only: event.date_only ?? false,
         description: event.description ?? undefined,
-        participants: participants ?? [],
+        participants: enrichedParticipants,
         is_owner: isOwner,
       }}
       initialState={{ type: 'ready' }}

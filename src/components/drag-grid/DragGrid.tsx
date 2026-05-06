@@ -43,6 +43,7 @@ export default function DragGrid({
     activeMode,
     availability,
     onAvailabilityChange,
+    eventMode,
     disabled,
   });
 
@@ -137,6 +138,7 @@ export default function DragGrid({
               dateIdx={indices?.dateIdx}
               slotIdx={indices?.slotIdx}
               value={getCellValue(date, slot)}
+              eventMode={eventMode}
               overlayCount={overlayTotal > 0 ? overlayCount : undefined}
               overlayTotal={overlayTotal > 0 ? overlayTotal : undefined}
             />

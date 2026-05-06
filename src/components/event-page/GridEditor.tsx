@@ -49,7 +49,7 @@ export default function GridEditor({
         </div>
         <Link
           href={`/e/${eventId}/results`}
-          className="px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-teal-600 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors"
         >
           결과 보기
         </Link>

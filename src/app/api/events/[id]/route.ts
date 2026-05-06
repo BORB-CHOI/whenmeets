@@ -10,11 +10,23 @@ export async function GET(
   const { id } = await params;
   const supabase = createServerClient();
 
+  // Kick off auth.getUser in parallel with event fetch — only used for isOwner.
+  const authPromise = (async () => {
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      return user;
+    } catch {
+      return null;
+    }
+  })();
+
   // Single query: fetch event with password_hash included (strip from response)
   const { data: event, error } = await supabase
     .from('events')
     .select('id, title, dates, time_start, time_end, created_at, password_hash, mode, date_only, description, created_by')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (error || !event) {
@@ -36,19 +48,35 @@ export async function GET(
 
   const { data: participants } = await supabase
     .from('participants')
-    .select('id, name, availability, created_at')
+    .select('id, name, availability, created_at, user_id')
     .eq('event_id', id)
     .order('created_at', { ascending: true });
 
-  // Determine if the current user is the event owner
-  let isOwner = false;
-  if (event.created_by) {
-    try {
-      const authClient = await createAuthServerClient();
-      const { data: { user } } = await authClient.auth.getUser();
-      if (user?.id === event.created_by) isOwner = true;
-    } catch { /* no auth */ }
+  const userIds = Array.from(
+    new Set((participants ?? []).map((r) => r.user_id).filter((v: string | null): v is string => !!v)),
+  );
+
+  // Profiles fetch + auth resolution run in parallel.
+  const [profilesResult, user] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from('profiles').select('id, avatar_url').in('id', userIds)
+      : Promise.resolve({ data: [] as { id: string; avatar_url: string | null }[] }),
+    authPromise,
+  ]);
+
+  const avatarMap = new Map<string, string | null>();
+  for (const p of (profilesResult.data ?? []) as { id: string; avatar_url: string | null }[]) {
+    avatarMap.set(p.id, p.avatar_url);
   }
+  const enrichedParticipants = (participants ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    availability: p.availability,
+    created_at: p.created_at,
+    avatar_url: p.user_id ? avatarMap.get(p.user_id) ?? null : null,
+  }));
+
+  const isOwner = !!(event.created_by && user?.id === event.created_by);
 
   return NextResponse.json({
     id: event.id,
@@ -61,7 +89,7 @@ export async function GET(
     mode: event.mode,
     date_only: event.date_only,
     description: event.description ?? undefined,
-    participants: participants ?? [],
+    participants: enrichedParticipants,
     is_owner: isOwner,
   });
 }
@@ -79,6 +107,7 @@ export async function PATCH(
     .from('events')
     .select('created_by, password_hash')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!event) {
@@ -132,11 +161,12 @@ export async function DELETE(
 
   const supabase = createServerClient();
 
-  // Verify the user owns this event
+  // Verify the user owns this event (also rejects already-deleted events early)
   const { data: event } = await supabase
     .from('events')
     .select('created_by')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!event || event.created_by !== user.id) {

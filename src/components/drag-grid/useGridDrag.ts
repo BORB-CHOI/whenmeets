@@ -1,14 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Availability, AvailabilityLevel } from '@/lib/types';
-import { CELL_CSS_COLORS } from './GridCell';
+import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
+import { getCellCssColor } from './GridCell';
 
 interface UseGridDragOptions {
   activeMode: AvailabilityLevel;
   availability: Availability;
   onAvailabilityChange: (availability: Availability) => void;
   onDragEnd?: (availability: Availability) => void;
+  eventMode: EventMode;
   disabled?: boolean;
 }
 
@@ -43,6 +44,7 @@ export default function useGridDrag({
   availability,
   onAvailabilityChange,
   onDragEnd,
+  eventMode,
   disabled = false,
 }: UseGridDragOptions) {
   const isDragging = useRef(false);
@@ -57,6 +59,7 @@ export default function useGridDrag({
   const cellByCoordRef = useRef<Map<string, CellEntry>>(new Map());
   const paintedKeys = useRef<Set<string>>(new Set());
   const lastEndKey = useRef('');
+  const lastTouchEndAt = useRef(0);
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
   const onDragEndRef = useRef(onDragEnd);
@@ -95,18 +98,14 @@ export default function useGridDrag({
     const cellEl = cell.el;
     if (mode === 'reset') {
       const baseVal = baselineRef.current[cell.date]?.[cell.slot];
-      if (baseVal === undefined) {
-        cellEl.style.backgroundColor = '';
-        delete cellEl.dataset.erased;
-      } else {
-        cellEl.style.backgroundColor = CELL_CSS_COLORS[baseVal];
-        delete cellEl.dataset.erased;
-      }
+      cellEl.style.backgroundColor = '';
+      delete cellEl.dataset.erased;
+      void baseVal;
     } else if (mode === 'erase') {
-      cellEl.style.backgroundColor = 'white';
+      cellEl.style.backgroundColor = getCellCssColor(-1, eventMode);
       cellEl.dataset.erased = '1';
     } else {
-      cellEl.style.backgroundColor = CELL_CSS_COLORS[activeMode];
+      cellEl.style.backgroundColor = getCellCssColor(activeMode, eventMode);
       delete cellEl.dataset.erased;
     }
   }
@@ -188,6 +187,7 @@ export default function useGridDrag({
 
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
+      if (isDragging.current) return;
       const cell = getCellFromPoint(x, y, containerRef.current);
       if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;
 

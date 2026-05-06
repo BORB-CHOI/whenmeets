@@ -69,7 +69,7 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
           onChange={(e) => setName(e.target.value)}
           placeholder="이름 입력"
           disabled={loading}
-          className="px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-emerald-600 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-100"
+          className="px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-teal-600 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-100"
           maxLength={50}
         />
         <AnimatePresence>
@@ -89,7 +89,7 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="h-[38px] py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50"
+          className="h-[38px] py-3 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50"
         >
           {loading ? '참여 중...' : existingMatch ? '수정하기' : '참여하기'}
         </button>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { EventMode, Participant } from '@/lib/types';
+import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { generateSlots } from '@/lib/constants';
+import { resolveCellColor } from '@/lib/heatmap';
+import { getCellCssColor } from '@/components/drag-grid/GridCell';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
@@ -22,19 +24,6 @@ interface HeatmapGridProps {
   onCellSelect?: (date: string, slot: number) => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
-}
-
-const BASE_COLOR = '#059669'; // Emerald 600
-
-function hexAlpha(alpha: number): string {
-  return alpha.toString(16).padStart(2, '0').toUpperCase();
-}
-
-function computeCellColor(count: number, total: number): string | undefined {
-  if (total === 0 || count === 0) return undefined;
-  if (count === total) return BASE_COLOR;
-  const alpha = Math.floor((count / total) * (185 - 35) + 35);
-  return BASE_COLOR + hexAlpha(alpha);
 }
 
 function getEventCell(target: EventTarget | null): HTMLElement | null {
@@ -59,18 +48,24 @@ export default function HeatmapGrid({
   const touchStart = useRef<{ x: number; y: number; pid: number; date: string; slot: number } | null>(null);
   const touchMoved = useRef(false);
   const lastHoveredKey = useRef<string | null>(null);
-  const filtered = useMemo(
-    () => participants.filter((p) => selectedIds.has(p.id)),
-    [participants, selectedIds],
-  );
+  const filtered = useMemo(() => {
+    if (hoveredParticipantId) {
+      const hovered = participants.find((p) => p.id === hoveredParticipantId);
+      return hovered ? [hovered] : [];
+    }
+    return participants.filter((p) => selectedIds.has(p.id));
+  }, [participants, selectedIds, hoveredParticipantId]);
   const total = filtered.length;
 
   const hasBestSlots = bestSlots && bestSlots.size > 0;
   const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
 
+  const effectiveIncludeIfNeeded = hoveredParticipantId || filtered.length === 1
+    ? true
+    : includeIfNeeded;
+
   const cellStats = useMemo(() => {
     const counts = new Map<string, number>();
-    const hovered = new Set<string>();
 
     for (const p of filtered) {
       for (const date of dates) {
@@ -79,18 +74,19 @@ export default function HeatmapGrid({
           const val = slotsForDate?.[String(slot)];
           const isAvailable = eventMode === 'unavailable'
             ? val !== 0
-            : val === 2 || (val === 1 && includeIfNeeded);
+            : val === 2 || (val === 1 && effectiveIncludeIfNeeded);
           if (!isAvailable) continue;
 
           const key = `${date}-${slot}`;
           counts.set(key, (counts.get(key) ?? 0) + 1);
-          if (p.id === hoveredParticipantId) hovered.add(key);
         }
       }
     }
 
-    return { counts, hovered };
-  }, [dates, eventMode, filtered, hoveredParticipantId, includeIfNeeded, slots]);
+    return { counts };
+  }, [dates, eventMode, filtered, effectiveIncludeIfNeeded, slots]);
+
+  const singleParticipant = filtered.length === 1 ? filtered[0] : null;
 
   function clearTouchPreviewTimer() {
     if (touchPreviewTimer.current) {
@@ -184,34 +180,32 @@ export default function HeatmapGrid({
       renderCell={(date, slot) => {
         const slotKey = `${date}-${slot}`;
         const count = cellStats.counts.get(slotKey) ?? 0;
-        const isBest = bestSlots?.has(slotKey);
+        const isBest = bestSlots?.has(slotKey) ?? false;
 
-        // Best slots filter: when active, only best cells get color
         let bgColor: string | undefined;
         if (hasBestSlots) {
-          bgColor = isBest ? BASE_COLOR : undefined;
+          bgColor = isBest ? resolveCellColor({ count: 1, total: 1, isBest: true, hasBestSlots: true }) : undefined;
+        } else if (singleParticipant) {
+          const rawVal = singleParticipant.availability?.[date]?.[String(slot)];
+          const val: AvailabilityLevel | -1 = rawVal === 0 || rawVal === 1 || rawVal === 2 ? rawVal : -1;
+          bgColor = getCellCssColor(val, eventMode) || undefined;
         } else {
-          bgColor = computeCellColor(count, total);
+          bgColor = resolveCellColor({ count, total, isBest, hasBestSlots: false });
         }
-
-        const isHoveredAvailable = hoveredParticipantId && cellStats.hovered.has(slotKey);
 
         return (
           <div
             data-date={date}
             data-slot={slot}
-            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-emerald-400 hover:-outline-offset-1"
+            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-1"
             style={{ backgroundColor: bgColor }}
           >
-            {count > 0 && (
+            {!singleParticipant && count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none leading-none"
-                style={{ color: (hasBestSlots && isBest) || count === total ? 'rgba(255,255,255,0.92)' : 'rgba(5,150,105,0.7)' }}
+                style={{ color: (hasBestSlots && isBest) || count === total ? 'rgba(255,255,255,0.92)' : 'rgba(0,137,123,0.7)' }}
               >
                 {count}
               </span>
-            )}
-            {isHoveredAvailable && (
-              <div className="absolute inset-0 bg-emerald-500/20 ring-2 ring-inset ring-emerald-400" />
             )}
           </div>
         );

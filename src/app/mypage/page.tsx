@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
+import { getProfileByUserId, pickAvatarUrl, pickDisplayName } from '@/lib/profile';
 import MyPageClient from '@/components/mypage/MyPageClient';
 
 export const metadata = {
@@ -16,6 +17,10 @@ export default async function MyPage() {
     redirect('/');
   }
 
+  const profile = await getProfileByUserId(user.id);
+  const initialName = pickDisplayName(profile, user);
+  const avatarUrl = pickAvatarUrl(profile, user);
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
       <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
@@ -27,8 +32,8 @@ export default async function MyPage() {
       <div className="mt-8">
         <MyPageClient
           email={user.email ?? ''}
-          initialName={user.user_metadata?.full_name ?? ''}
-          avatarUrl={user.user_metadata?.avatar_url ?? null}
+          initialName={initialName}
+          avatarUrl={avatarUrl}
         />
       </div>
     </div>

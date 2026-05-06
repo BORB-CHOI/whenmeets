@@ -38,7 +38,7 @@ function MobileActionButton({
       disabled={disabled}
       className={
         variant === 'primary'
-          ? `${mobileActionBase} bg-emerald-600 text-white shadow-[var(--shadow-primary)] hover:bg-emerald-700`
+          ? `${mobileActionBase} bg-teal-600 text-white shadow-[var(--shadow-primary)] hover:bg-teal-700`
           : `${mobileActionBase} border border-red-200 bg-red-50 text-red-600 hover:bg-red-100`
       }
     >

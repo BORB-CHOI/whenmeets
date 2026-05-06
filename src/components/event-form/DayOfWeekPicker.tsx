@@ -125,7 +125,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
               onTouchStart={(e) => { e.preventDefault(); handlePointerDown(key); }}
               className={`h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer
                 ${selected
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-teal-600 text-white shadow-sm'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
             >
@@ -140,14 +140,14 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
           <button
             type="button"
             onClick={selectWeekdays}
-            className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer"
+            className="text-xs text-teal-600 hover:text-teal-700 cursor-pointer"
           >
             평일 전체
           </button>
           <button
             type="button"
             onClick={selectAll}
-            className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer"
+            className="text-xs text-teal-600 hover:text-teal-700 cursor-pointer"
           >
             전체 선택
           </button>
@@ -157,7 +157,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
             type="checkbox"
             checked={startOnMonday}
             onChange={(e) => setStartOnMonday(e.target.checked)}
-            className="rounded border-gray-300 text-emerald-600 cursor-pointer"
+            className="rounded border-gray-300 text-teal-600 cursor-pointer"
           />
           월요일 시작
         </label>

@@ -53,6 +53,7 @@ export async function POST(
     .from('events')
     .select('id, password_hash')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!event) {

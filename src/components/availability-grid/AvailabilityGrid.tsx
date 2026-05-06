@@ -125,7 +125,7 @@ export default function AvailabilityGrid({
     <div className="flex flex-col gap-3">
       {header}
 
-      <div className="overflow-x-auto" ref={containerRef}>
+      <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
         <div className="flex items-start mx-auto pr-3 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
@@ -137,7 +137,7 @@ export default function AvailabilityGrid({
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
-                    className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums leading-none"
+                    className="text-[11px] font-bold text-gray-600 dark:text-gray-300 tabular-nums leading-none"
                     style={{ marginTop: -4 }}
                   >
                     {Math.floor(slot / SLOTS_PER_HOUR)}
@@ -155,15 +155,25 @@ export default function AvailabilityGrid({
             style={{ flex: 1, minWidth: 0, gridTemplateColumns: gridTemplateCols }}
             {...columnsRestProps}
           >
-            {/* Date headers */}
+            {/* Date headers — sticky to viewport top on desktop while scrolling time grid */}
             {visibleDates.map((date, colIdx) => {
               const { num, day } = formatDateHeader(date);
               const elements = [];
               if (dateGapIndices.has(colIdx)) {
-                elements.push(<div key={`gap-hdr-${colIdx}`} />);
+                elements.push(
+                  <div
+                    key={`gap-hdr-${colIdx}`}
+                    className="lg:sticky lg:top-16 lg:z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md"
+                    style={{ height: HEADER_HEIGHT }}
+                  />
+                );
               }
               elements.push(
-                <div key={`hdr-${date}`} className="flex items-center justify-center px-1" style={{ height: HEADER_HEIGHT }}>
+                <div
+                  key={`hdr-${date}`}
+                  className="flex items-center justify-center px-1 lg:sticky lg:top-16 lg:z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md"
+                  style={{ height: HEADER_HEIGHT }}
+                >
                   <span className="flex flex-col items-center justify-center gap-0.5 text-center text-gray-600 dark:text-gray-300 tabular-nums leading-tight">
                     {num && <span className="text-[11px] font-medium">{num}</span>}
                     <span className="text-[12px] font-bold">{day}</span>
@@ -182,24 +192,27 @@ export default function AvailabilityGrid({
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                let border = 'border-r border-r-gray-200/60 dark:border-r-gray-700/60 ';
-                if (isLast) border = 'border-r border-r-gray-300 dark:border-r-gray-600 ';
-                if (isFirst) border += 'border-l border-l-gray-300 dark:border-l-gray-600 ';
-                if (hasGapBefore) border += 'border-l-2 border-l-gray-300 dark:border-l-gray-600 ';
+                const lineColor = '#d1d5db';
+                const shadows: string[] = [`inset -1px 0 0 0 ${lineColor}`];
+                if (isFirst) shadows.push(`inset 1px 0 0 0 ${lineColor}`);
+                if (hasGapBefore) shadows.push(`inset 2px 0 0 0 ${lineColor}`);
+                if (isLast) shadows.push(`inset -1px 0 0 0 ${lineColor}`);
+                const isHourLine = isFirstRow || slot % SLOTS_PER_HOUR === 0;
+                const isHalfHourLine = !isFirstRow && slot % SLOTS_PER_HOUR === 2;
+                if (isHourLine) shadows.push(`inset 0 1px 0 0 ${lineColor}`);
+                if (isLastRow) shadows.push(`inset 0 -1px 0 0 ${lineColor}`);
 
-                if (isFirstRow) border += 'border-t border-t-gray-300 dark:border-t-gray-600 ';
-                else if (slot % SLOTS_PER_HOUR === 0) border += 'border-t border-t-gray-300/80 dark:border-t-gray-600/80 ';
-                else if (slot % SLOTS_PER_HOUR === 2) border += 'border-t border-t-gray-200/40 dark:border-t-gray-700/40 ';
-
-                if (isLastRow) border += 'border-b border-b-gray-300 dark:border-b-gray-600 ';
+                const overlayStyle: React.CSSProperties = { boxShadow: shadows.join(', ') };
+                if (isHalfHourLine) overlayStyle.borderTop = `1px dashed ${lineColor}`;
 
                 const elements = [];
                 if (hasGapBefore) {
                   elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: CELL_HEIGHT }} />);
                 }
                 elements.push(
-                  <div key={`${date}-${slot}`} className={border} style={{ height: CELL_HEIGHT }}>
+                  <div key={`${date}-${slot}`} style={{ height: CELL_HEIGHT, position: 'relative' }}>
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
+                    <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
                   </div>
                 );
                 return elements;

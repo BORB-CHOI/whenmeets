@@ -12,12 +12,16 @@ import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
+import { useQueryClient } from '@tanstack/react-query';
+import { eventQueryKey } from '@/hooks/useEvent';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
+import SidebarCount, { type SidebarCountHandle } from '@/components/event-page/SidebarCount';
+import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import HoverInfoPopover, { type HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
+import HoverPopoverPortal, { type HoverPopoverHandle } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
@@ -60,7 +64,22 @@ export default function EventPageClient({
   initialEvent,
   initialState,
 }: EventPageClientProps) {
-  const [event, setEvent] = useState<EventData>(initialEvent);
+  const queryClient = useQueryClient();
+  const [event, setEventState] = useState<EventData>(initialEvent);
+  // Seed the query cache with SSR initial data so cross-page navigation reuses it.
+  useEffect(() => {
+    queryClient.setQueryData(eventQueryKey(eventId), initialEvent);
+    // initialEvent is the SSR payload — only seed once per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, queryClient]);
+  // Mirror local state into the query cache so other consumers get fresh data.
+  const setEvent = useCallback((next: EventData | ((prev: EventData) => EventData)) => {
+    setEventState((prev) => {
+      const value = typeof next === 'function' ? (next as (p: EventData) => EventData)(prev) : next;
+      queryClient.setQueryData(eventQueryKey(eventId), value);
+      return value;
+    });
+  }, [queryClient, eventId]);
   const [viewMode, setViewMode] = useState<ViewMode>('view');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -69,22 +88,45 @@ export default function EventPageClient({
   const [nameError, setNameError] = useState('');
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [hoveredSlot, setHoveredSlot] = useState<{ date: string; slot: number } | null>(null);
   const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number } | null>(null);
-  const [hoverRect, setHoverRect] = useState<HoverInfoPosition | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
-  const [googleUserName, setGoogleUserName] = useState<string | null>(null);
+  const [authUserName, setAuthUserName] = useState<string | null>(null);
   const [supabase] = useState(() => createAuthBrowserClient());
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
+  const sidebarCountRef = useRef<SidebarCountHandle | null>(null);
+  const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
+  const hoverRafRef = useRef<number>(0);
 
-  // Check if user is logged in via Google
+  const scheduleHoverUpdate = useCallback((fn: () => void) => {
+    cancelAnimationFrame(hoverRafRef.current);
+    hoverRafRef.current = requestAnimationFrame(fn);
+  }, []);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user.user_metadata?.full_name) {
-        setGoogleUserName(session.user.user_metadata.full_name);
-      }
-    });
+    return () => cancelAnimationFrame(hoverRafRef.current);
+  }, []);
+
+  // Resolve current user's display name (profiles.display_name preferred, IdP claim as fallback)
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const name =
+        profile?.display_name?.trim() ||
+        (session.user.user_metadata?.full_name as string | undefined)?.trim() ||
+        null;
+      setAuthUserName(name);
+    }
+    load();
+    return () => { cancelled = true; };
   }, [supabase]);
 
   // Debounce name matching for existing participant check
@@ -111,8 +153,14 @@ export default function EventPageClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(initialEvent.participants.map((p) => p.id)),
   );
-  const [includeIfNeeded, setIncludeIfNeeded] = useState(true);
+  const [userIncludeIfNeeded, setUserIncludeIfNeeded] = useState(true);
+  const [hoveredParticipantId, setHoveredParticipantId] = useState<string | null>(null);
   const [showBestTimes, setShowBestTimes] = useState(false);
+
+  const isSingleSelection = selectedIds.size === 1;
+  const effectiveIncludeIfNeeded = hoveredParticipantId !== null || isSingleSelection
+    ? true
+    : userIncludeIfNeeded;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetPid, setDeleteTargetPid] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -177,7 +225,7 @@ export default function EventPageClient({
             if (val !== 0) count++;
           } else {
             if (val === 2) count++;
-            else if (val === 1 && includeIfNeeded) count++;
+            else if (val === 1 && effectiveIncludeIfNeeded) count++;
           }
         }
         if (count > 0) {
@@ -189,18 +237,7 @@ export default function EventPageClient({
 
     // Only slots with the maximum count are "best"
     return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
-  }, [event, selectedIds, includeIfNeeded]);
-
-  // Hover: per-participant availability level at hovered slot (for sidebar styling)
-  const slotAvailability = useMemo(() => {
-    if (!hoveredSlot) return undefined;
-    const map = new Map<string, 0 | 1 | 2>();
-    for (const p of event.participants) {
-      const val = p.availability?.[hoveredSlot.date]?.[String(hoveredSlot.slot)];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
-    }
-    return map;
-  }, [hoveredSlot, event.participants]);
+  }, [event, selectedIds, effectiveIncludeIfNeeded]);
 
   const mobileSlotAvailability = useMemo(() => {
     if (!mobileSlotSheet) return undefined;
@@ -263,6 +300,8 @@ export default function EventPageClient({
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
+      } else {
+        setAvailability({});
       }
       return true;
     } finally {
@@ -272,16 +311,17 @@ export default function EventPageClient({
 
   // Handle "Edit availability" click
   async function handleEditClick() {
-    setHoveredSlot(null);
-    setHoverRect(null);
+    hoverPopoverRef.current?.update(null);
     setMobileSlotSheet(null);
-    if (session) {
-      setViewMode('edit');
-    } else if (googleUserName) {
-      // Google user: auto-join with their Google name
-      const ok = await autoJoinWithName(googleUserName);
+    if (authUserName) {
+      // Logged-in user: ALWAYS auto-join via API which resolves to own (user_id) slot
+      // or creates a new numbered slot if name collides with another participant.
+      // This prevents editing an anonymous slot with the same display name.
+      const ok = await autoJoinWithName(authUserName);
       if (ok) setViewMode('edit');
-      else setShowNameModal(true); // fallback to manual
+      else setShowNameModal(true);
+    } else if (session) {
+      setViewMode('edit');
     } else {
       setShowNameModal(true);
     }
@@ -381,6 +421,8 @@ export default function EventPageClient({
     try {
       const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: participantPassword || undefined }),
       });
       if (!res.ok) {
         setDeleteTargetPid(null);
@@ -445,7 +487,7 @@ export default function EventPageClient({
             {event.is_owner && (
               <span
                 onClick={() => setShowEditModal(true)}
-                className="text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                className="text-teal-600 hover:text-teal-800 cursor-pointer"
               >이벤트 수정</span>
             )}
             <button
@@ -455,7 +497,7 @@ export default function EventPageClient({
               className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 sm:hidden"
             >
               {copied ? (
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               ) : (
@@ -481,7 +523,7 @@ export default function EventPageClient({
           {viewMode === 'view' ? (
             <button
               onClick={handleEditClick}
-              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
+              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
             >
               편집
             </button>
@@ -497,7 +539,7 @@ export default function EventPageClient({
               <button
                 onClick={handleFinishEditing}
                 disabled={saving}
-                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
+                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
               >
                 {saving ? '저장 중...' : '편집 완료'}
               </button>
@@ -514,14 +556,14 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-emerald-600 resize-none dark:bg-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-teal-600 resize-none dark:bg-gray-800 dark:text-gray-100"
               rows={3}
               autoFocus
             />
             <div className="flex gap-2 mt-2">
               <button
                 onClick={saveDescription}
-                className="text-sm text-emerald-600 font-medium hover:text-emerald-800 cursor-pointer"
+                className="text-sm text-teal-600 font-medium hover:text-teal-800 cursor-pointer"
               >
                 저장
               </button>
@@ -563,7 +605,7 @@ export default function EventPageClient({
               <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
                 event.mode === 'unavailable'
                   ? 'bg-red-50 text-red-700 border border-red-200'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-teal-50 text-teal-700 border border-teal-200'
               }`}>
                 {event.mode === 'unavailable'
                   ? (event.date_only ? '⛔ 안 되는 날짜를 선택해주세요' : '⛔ 안 되는 시간을 선택해주세요')
@@ -585,41 +627,72 @@ export default function EventPageClient({
               />
             </>
           ) : event.date_only ? (
-            <CalendarHeatmapGrid
-              dates={event.dates}
-              participants={event.participants}
-              selectedIds={selectedIds}
-              includeIfNeeded={includeIfNeeded}
-              onCellHover={(date) => {
-                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, 0) : null);
-                setHoveredSlot(date ? { date, slot: 0 } : null);
-              }}
-              bestSlots={showBestTimes ? bestSlots : undefined}
-              eventMode={event.mode}
-            />
+            <>
+              <CalendarHeatmapGrid
+                dates={event.dates}
+                participants={event.participants}
+                selectedIds={selectedIds}
+                includeIfNeeded={effectiveIncludeIfNeeded}
+                hoveredParticipantId={hoveredParticipantId}
+                onCellHover={(date) => {
+                  scheduleHoverUpdate(() => {
+                    const slotAvail = date ? getSlotAvailability(date, 0) : null;
+                    participantFilterRef.current?.previewSlot(slotAvail);
+                    sidebarCountRef.current?.updateForSlot(
+                      slotAvail
+                        ? Array.from(slotAvail.values()).filter(
+                            (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                          ).length
+                        : null,
+                    );
+                  });
+                }}
+                bestSlots={showBestTimes ? bestSlots : undefined}
+                eventMode={event.mode}
+              />
+              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+                <HeatmapLegend total={selectedIds.size} />
+              </div>
+            </>
           ) : (
-            <HeatmapGrid
+            <>
+              <HeatmapGrid
               dates={event.dates}
               timeStart={event.time_start}
               timeEnd={event.time_end}
               participants={event.participants}
               selectedIds={selectedIds}
-              includeIfNeeded={includeIfNeeded}
-              hoveredParticipantId={null}
+              includeIfNeeded={effectiveIncludeIfNeeded}
+              hoveredParticipantId={hoveredParticipantId}
               onCellHover={(date, slot, rect) => {
-                participantFilterRef.current?.previewSlot(date ? getSlotAvailability(date, slot!) : null);
-                setHoveredSlot(date ? { date, slot: slot! } : null);
-                setHoverRect(rect ?? null);
+                scheduleHoverUpdate(() => {
+                  const slotAvail = date ? getSlotAvailability(date, slot!) : null;
+                  participantFilterRef.current?.previewSlot(slotAvail);
+                  sidebarCountRef.current?.updateForSlot(
+                    slotAvail
+                      ? Array.from(slotAvail.values()).filter(
+                          (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                        ).length
+                      : null,
+                  );
+                  hoverPopoverRef.current?.update(
+                    date && rect ? { date, slot: slot!, position: rect } : null,
+                  );
+                });
               }}
               onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
-            />
+              />
+              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+                <HeatmapLegend total={selectedIds.size} />
+              </div>
+            </>
           )}
         </div>
 
         {/* Right: Sidebar */}
-        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700">
+        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar">
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight */}
@@ -633,14 +706,14 @@ export default function EventPageClient({
                     <SegmentedControl
                       options={[
                         { value: 'available', label: 'Available' },
-                        { value: 'if_needed', label: 'If Needed' },
+                        { value: 'if_needed', label: 'If Needed', variant: 'warning' },
                       ]}
                       value={activeMode === 2 ? 'available' : 'if_needed'}
                       onChange={(v) => setActiveMode(v === 'available' ? 2 : 1)}
                     />
                   </div>
                   <div className={`p-3 rounded-lg text-sm mb-5 ${
-                    activeMode === 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                    activeMode === 2 ? 'bg-teal-50 text-teal-700' : 'bg-amber-50 text-amber-700'
                   }`}>
                     <div className="font-medium">
                       {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ If Needed 시간을 드래그하세요'}
@@ -659,7 +732,7 @@ export default function EventPageClient({
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex items-start gap-2">
-                    <div className="w-4 h-4 rounded-sm bg-emerald-400/60 mt-0.5 shrink-0" />
+                    <div className="w-4 h-4 rounded-sm bg-teal-400/60 mt-0.5 shrink-0" />
                     <div className="flex flex-col">
                       <span>Available</span>
                       <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
@@ -691,7 +764,7 @@ export default function EventPageClient({
               {event.participants.length > 0 && (
                 <div className="mb-5">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    응답자 ({event.participants.length})
+                    응답자 ({selectedIds.size}/{event.participants.length})
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
                     <ParticipantFilter
@@ -725,7 +798,11 @@ export default function EventPageClient({
             <>
               {/* View mode sidebar — responses + options */}
               <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
-                응답자 ({event.participants.length})
+                <SidebarCount
+                  ref={sidebarCountRef}
+                  selectedCount={selectedIds.size}
+                  totalCount={event.participants.length}
+                />
               </h2>
 
               <div className="max-h-48 overflow-y-auto custom-scrollbar">
@@ -734,6 +811,8 @@ export default function EventPageClient({
                   participants={event.participants}
                   selectedIds={selectedIds}
                   onSelectedChange={setSelectedIds}
+                  onHover={setHoveredParticipantId}
+                  onHoverEnd={() => setHoveredParticipantId(null)}
                   onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                 />
               </div>
@@ -751,11 +830,19 @@ export default function EventPageClient({
                   </button>
                   {event.mode !== 'unavailable' && (
                     <button
-                      onClick={() => setIncludeIfNeeded(!includeIfNeeded)}
-                      className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
+                      onClick={() => !isSingleSelection && setUserIncludeIfNeeded(!userIncludeIfNeeded)}
+                      disabled={isSingleSelection}
+                      className={`flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 min-h-11 ${
+                        isSingleSelection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
-                      <span>&quot;If Needed&quot; 숨기기</span>
-                      <ToggleSwitch checked={!includeIfNeeded} />
+                      <span>
+                        &quot;If Needed&quot; 숨기기
+                        {isSingleSelection && (
+                          <span className="ml-1 text-[10px] text-gray-400">(1명 단독 시 자동 표시)</span>
+                        )}
+                      </span>
+                      <ToggleSwitch checked={!effectiveIncludeIfNeeded} />
                     </button>
                   )}
                 </div>
@@ -831,7 +918,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     autoFocus
                     maxLength={50}
                   />
@@ -854,7 +941,7 @@ export default function EventPageClient({
                       value={namePassword}
                       onChange={(e) => setNamePassword(e.target.value)}
                       placeholder="비밀번호 (선택사항)"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-emerald-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
                     />
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
                   </div>
@@ -901,7 +988,7 @@ export default function EventPageClient({
                 <button
                   onClick={handleNameSubmit}
                   disabled={nameLoading || !nameInput.trim()}
-                  className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-sm font-semibold bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {nameLoading ? '참여 중...' : nameExistingMatch ? '수정하기' : '참여하기'}
                 </button>
@@ -969,7 +1056,7 @@ export default function EventPageClient({
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && includeIfNeeded)).length}/{event.participants.length})
+                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded)).length}/{event.participants.length})
                   </h3>
                   <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
                     {formatDateCompact(mobileSlotSheet.date)} · {slotToTime(mobileSlotSheet.slot)} – {slotToTime(mobileSlotSheet.slot + 1)}
@@ -1014,13 +1101,11 @@ export default function EventPageClient({
       </AnimatePresence>
 
       {/* Hover info popover (view mode only — edit mode shows sidebar instead) */}
-      {viewMode === 'view' && hoveredSlot && hoverRect && !event.date_only && (
-        <HoverInfoPopover position={hoverRect}>
-          <SlotHoverInfo
-            date={hoveredSlot.date}
-            slot={hoveredSlot.slot}
-          />
-        </HoverInfoPopover>
+      {viewMode === 'view' && !event.date_only && (
+        <HoverPopoverPortal
+          ref={hoverPopoverRef}
+          renderContent={(date, slot) => <SlotHoverInfo date={date} slot={slot} />}
+        />
       )}
     </div>
   );
@@ -1061,7 +1146,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
       {mode === 'unavailable' ? (
         <>
           {(available.length + noResponse.length) > 0 && (
-            <Row dotClass="bg-emerald-400" label={`가능 ${available.length + noResponse.length}명`} names={[...available, ...noResponse]} />
+            <Row dotClass="bg-teal-400" label={`가능 ${available.length + noResponse.length}명`} names={[...available, ...noResponse]} />
           )}
           {unavailable.length > 0 && (
             <Row dotClass="bg-red-400" label={`불가능 ${unavailable.length}명`} names={unavailable} />
@@ -1070,7 +1155,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
       ) : (
         <>
           {available.length > 0 && (
-            <Row dotClass="bg-emerald-400" label={`가능 ${available.length}명`} names={available} />
+            <Row dotClass="bg-teal-400" label={`가능 ${available.length}명`} names={available} />
           )}
           {includeIfNeeded && ifNeeded.length > 0 && (
             <Row dotClass="bg-amber-300" label={`If Needed ${ifNeeded.length}명`} names={ifNeeded} />
@@ -1096,7 +1181,7 @@ function ToggleSwitch({ checked }: { checked: boolean }) {
   const knobTransition = mountedRef.current ? 'transition-transform duration-200' : '';
 
   return (
-    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
+    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-teal-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm ${knobTransition} ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
     </div>
   );

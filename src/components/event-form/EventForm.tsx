@@ -82,7 +82,7 @@ export default function EventForm() {
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-emerald-600 dark:bg-gray-800 dark:text-gray-100 ${
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100 ${
             titleError
               ? 'border-red-500 ring ring-red-500/10'
               : 'border-gray-200 dark:border-gray-600'
@@ -143,7 +143,7 @@ export default function EventForm() {
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
             showPassword
               ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50'
-              : 'text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50'
+              : 'text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-900/50 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -157,7 +157,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-emerald-600 dark:bg-gray-800 dark:text-gray-100"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100"
           />
         )}
       </div>
@@ -167,7 +167,7 @@ export default function EventForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-emerald-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
+        className="w-full py-3 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
       >
         {submitting ? '생성 중...' : '이벤트 만들기'}
       </button>
