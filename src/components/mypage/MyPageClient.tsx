@@ -1,9 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 
 interface MyPageClientProps {
   email: string;
@@ -13,7 +12,6 @@ interface MyPageClientProps {
 
 export default function MyPageClient({ email, initialName, avatarUrl }: MyPageClientProps) {
   const router = useRouter();
-  const supabaseRef = useRef(createAuthBrowserClient());
   const [name, setName] = useState(initialName);
   const [savedName, setSavedName] = useState(initialName);
   const [saving, setSaving] = useState(false);
@@ -34,43 +32,33 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
     setSaving(true);
     setError('');
     setSyncInfo(null);
-    const { error: updateError } = await supabaseRef.current.auth.updateUser({
-      data: { full_name: trimmed },
-    });
-    if (updateError) {
-      setSaving(false);
-      setError(updateError.message || '이름 변경에 실패했습니다');
-      return;
-    }
 
-    // Propagate the new display name to all events the user already participates in
-    let sync: { updated: number; skipped: number } | null = null;
     try {
-      const res = await fetch('/api/user/sync-name', {
-        method: 'POST',
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({ display_name: trimmed }),
       });
-      if (res.ok) {
-        sync = await res.json();
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || '이름 변경에 실패했습니다');
+        return;
       }
-    } catch {
-      // Non-fatal: profile updated, but participant rows may not be in sync.
+      const data = await res.json();
+      setSavedName(data.profile?.display_name ?? trimmed);
+      setSyncInfo(data.participants ?? null);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      router.refresh();
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    setSavedName(trimmed);
-    setSyncInfo(sync);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
-    router.refresh();
   }
 
   const initial = (savedName?.[0] || email?.[0] || 'U').toUpperCase();
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-      {/* Avatar + email */}
       <div className="flex items-center gap-4 pb-5 border-b border-gray-100 dark:border-gray-700">
         <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
           {avatarUrl ? (
@@ -88,7 +76,6 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
         </div>
       </div>
 
-      {/* Name form */}
       <form onSubmit={handleSave} className="pt-5 flex flex-col gap-3">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           이름

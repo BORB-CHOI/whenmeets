@@ -73,7 +73,7 @@ export default function EventPageClient({
   const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number } | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
-  const [googleUserName, setGoogleUserName] = useState<string | null>(null);
+  const [authUserName, setAuthUserName] = useState<string | null>(null);
   const [supabase] = useState(() => createAuthBrowserClient());
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
   const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
@@ -88,13 +88,26 @@ export default function EventPageClient({
     return () => cancelAnimationFrame(hoverRafRef.current);
   }, []);
 
-  // Check if user is logged in via Google
+  // Resolve current user's display name (profiles.display_name preferred, IdP claim as fallback)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user.user_metadata?.full_name) {
-        setGoogleUserName(session.user.user_metadata.full_name);
-      }
-    });
+    let cancelled = false;
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const name =
+        profile?.display_name?.trim() ||
+        (session.user.user_metadata?.full_name as string | undefined)?.trim() ||
+        null;
+      setAuthUserName(name);
+    }
+    load();
+    return () => { cancelled = true; };
   }, [supabase]);
 
   // Debounce name matching for existing participant check
@@ -281,9 +294,9 @@ export default function EventPageClient({
     setMobileSlotSheet(null);
     if (session) {
       setViewMode('edit');
-    } else if (googleUserName) {
-      // Google user: auto-join with their Google name
-      const ok = await autoJoinWithName(googleUserName);
+    } else if (authUserName) {
+      // Logged-in user: auto-join with their profile display name
+      const ok = await autoJoinWithName(authUserName);
       if (ok) setViewMode('edit');
       else setShowNameModal(true); // fallback to manual
     } else {

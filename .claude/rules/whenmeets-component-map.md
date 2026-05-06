@@ -108,11 +108,14 @@ These pages display the SAME event data differently. Layout, header, participant
 |-----------|------|------|
 | `MyPageClient` | 프로필(이름) 편집 클라이언트 | `src/components/mypage/MyPageClient.tsx` |
 | `/mypage` route | 마이페이지 SSR + auth gate | `src/app/mypage/page.tsx` |
+| `useProfile` | profiles.display_name 클라이언트 fetch hook | `src/hooks/useProfile.ts` |
+| `getProfileByUserId` / `pickDisplayName` | 서버 컴포넌트용 프로필 헬퍼 | `src/lib/profile.ts` |
 
 **Shared concerns:**
 - `AuthButton` 드롭다운에서 `/mypage`로 이동 — 메뉴 항목 변경 시 두 곳 모두 확인
-- 이름 변경은 Supabase Auth `user_metadata.full_name` 업데이트
-- 변경 후 `router.refresh()`로 Header/AuthButton 동기화
+- 이름은 `public.profiles.display_name`에 저장 (PATCH `/api/user/profile`).
+  `auth.users.user_metadata.full_name`은 OAuth 재로그인마다 IdP 원본으로 덮어써지므로 user-managed 데이터 저장 금지.
+- 변경 후 `router.refresh()`로 Header/AuthButton 동기화 + `participants.name`도 같은 트랜잭션에서 sync
 
 ## Modification Rules
 
@@ -133,6 +136,7 @@ These pages display the SAME event data differently. Layout, header, participant
 | `PATCH /api/events/[id]/participants/[pid]` | GridEditor → useAvailabilitySave |
 | `GET /api/events/[id]/results` | ResultsPageClient |
 | `POST /api/events/[id]/verify` | PasswordForm → EventPageClient |
+| `GET/PATCH /api/user/profile` | MyPageClient (PATCH), useProfile (GET via Supabase RLS) |
 
 When modifying an API response shape, check ALL consuming components.
 
