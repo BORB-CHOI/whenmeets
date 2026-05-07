@@ -6,6 +6,42 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-07
+
+### Added
+
+- 개인정보처리방침(`/privacy`), 이용약관(`/terms`) 페이지 — AdSense 승인 필수 조건 충족
+- Google AdSense 환경변수 스캐폴딩 (`AdSenseScript`, `AdSlot`, `FloatingAds` 컴포넌트) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 광고 컴포넌트 + ads.txt 모두 자동 비활성. PC 2xl(1536px+) 좌·우 하단 + 모바일(<lg) 하단 배너, 이벤트 페이지 모바일에서는 `MobileBottomBar` 충돌 회피 위해 비표시. 모바일 광고 활성 시 `body { padding-bottom }` 자동 주입으로 콘텐츠 가림 방지
+- `/ads.txt` 라우트 핸들러 — IAB 표준 ads.txt를 환경변수 기반으로 자동 생성 (publisher ID 없으면 404)
+- 마이그레이션 010: `events.dates` 컬럼 `DATE[]` → `TEXT[]` (서브쿼리 없는 USING 캐스트)
+- Footer에 GitHub Issues 연락처 링크
+- 대시보드 이벤트 삭제 시 `ConfirmModal` (응답자 삭제와 동일 패턴)
+
+### Changed
+
+- 이벤트/대시보드/마이페이지 페이지 outer 컨테이너 통일: `max-w-4xl mx-auto px-4 py-8 sm:py-12` — 페이지 이동 시 좌·우 여백 일정
+- 이벤트 페이지 사이드바: `lg:w-80` (320px) → `lg:w-60` (240px), `pl-6` → `pl-5` — 그리드 가로 폭 +84px 확보
+- AvailabilityGrid 시간 컬럼: 44/24px → 20/18px — 그리드 가로 폭 추가 확보
+- AvailabilityGrid `containerWidth` 계산식의 `-16` 차감 제거 — 그리드가 부모 폭 가득 채움 + 새로고침 시 0.5초 후 미세 축소 깜빡임 제거
+- 랜딩 페이지: `min-h-[calc(100dvh-200px)]` 제거, `py-20 sm:py-28`. 그라디언트를 `from-teal-50 to-gray-50` 수직으로 변경(footer bg와 매칭). Footer `mt-16` 제거 — 콘텐츠와 footer 사이 흰 공백 제거
+- `EventFormModal`: 열 때마다 모든 폼 state 초기화 — 재오픈 시 "수정 중..." 멈춤 해소
+- `DayOfWeekPicker`: 드래그 시 매 셀마다 `onDaysChange` 호출 → `previewSet` 로컬 state로 미리보기 후 pointer-up에 commit — 드래그 렉 제거
+- `PasswordForm` 입장 버튼: `h-[38px] py-3` 충돌 제거 → `py-3`만 사용. 텍스트 수직 비대칭 해소
+- `.env.example`: 주석 정리, OS별 hex 생성 명령을 PowerShell 한 줄로 통일
+
+### Fixed
+
+- 비밀번호 보호 이벤트 첫 방문 시 비밀번호 통과 후에도 PasswordForm이 사라지지 않던 버그 (`!session` gate가 첫 방문 stored=null인 사용자에게 영구히 true) — `passwordVerified` 플래그 추가
+- 모바일 그리드 터치 시 iOS ghost click(touchend ~300ms 후 합성 mousedown)이 `handlePointerStart`를 재호출해 방금 칠한 셀을 토글-삭제하던 버그 — `lastTouchEndAt` 게이트 (500ms)
+- 1명 참가자 결과 히트맵 범례에 동일 카운트 "1"이 두 색으로 두 번 표시 (`getStepLabels`의 step 1과 step 5 중복) — 각 step 상한을 `total - 1`로 cap
+- "이벤트 수정" 모달 PATCH 성공 후 재오픈 시 "수정 중..."에서 멈춰 더 이상 수정 불가 — 성공 경로에 `setSubmitting(false)` 추가
+- `Multiple GoTrueClient instances detected` 콘솔 경고 — `createBrowserClient()`에 모듈 레벨 싱글톤 캐시
+- `MobileBottomBar`의 `backdrop-blur-md` containing block 때문에 모바일 캘린더 가져오기 모달이 바텀바 안에 갇히던 버그 — `ConfirmModal`을 `createPortal`로 `document.body`에 렌더
+
+### Migration
+
+- `npx supabase db push`로 010 마이그레이션 적용 필요. 008은 USING 절 서브쿼리로 실패해 `migration repair --status applied`로 마킹만 됐던 상태였으므로, 010이 실제 ALTER TABLE을 수행함
+
 ## [0.4.0] - 2026-05-06
 
 ### Added

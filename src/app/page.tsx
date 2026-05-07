@@ -30,9 +30,13 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[calc(100dvh-57px)] sm:min-h-[calc(100dvh-65px)] px-4 overflow-hidden">
-      {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-teal-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+    <div className="relative flex flex-col items-center px-4 py-20 sm:py-28 overflow-hidden">
+      {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible.
+          Vertical gradient ending at footer bg so the page floor flows into
+          the footer with no visible seam. The previous diagonal `to-br` with
+          via-white dumped the white midpoint at the bottom on wide-and-short
+          viewports, looking like a gap before the footer. */}
+      <div className="absolute inset-0 -z-10 bg-linear-to-b from-teal-50 to-gray-50 dark:from-gray-900 dark:to-gray-800">
         {/* Soft radial accents — static, no animation, no blur filter */}
         <div
           className="absolute rounded-full"

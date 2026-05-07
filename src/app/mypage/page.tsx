@@ -22,7 +22,7 @@ export default async function MyPage() {
   const avatarUrl = pickAvatarUrl(profile, user);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
       <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
         마이페이지
       </h1>

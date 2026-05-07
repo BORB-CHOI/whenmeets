@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import EventCard from './EventCard';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface EventItem {
   id: string;
@@ -38,14 +39,26 @@ export default function DashboardClient({
   const [activeTab, setActiveTab] = useState<TabKey>('created');
   const [createdEvents, setCreatedEvents] = useState(initialCreated);
   const [animateTab, setAnimateTab] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const activeIndex = tabs.findIndex(t => t.key === activeTab);
 
   const events = activeTab === 'created' ? createdEvents : participatedEvents;
+  const deleteTarget = deleteTargetId
+    ? createdEvents.find((e) => e.id === deleteTargetId) ?? null
+    : null;
 
-  async function handleDelete(id: string) {
-    const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setCreatedEvents((prev) => prev.filter((e) => e.id !== id));
+  async function handleConfirmDelete() {
+    if (!deleteTargetId || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/events/${deleteTargetId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCreatedEvents((prev) => prev.filter((e) => e.id !== deleteTargetId));
+      }
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
     }
   }
 
@@ -110,12 +123,22 @@ export default function DashboardClient({
                 participantCount={event.participant_count}
                 createdAt={event.created_at}
                 canDelete={activeTab === 'created'}
-                onDelete={handleDelete}
+                onRequestDelete={(id) => setDeleteTargetId(id)}
               />
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!deleteTargetId}
+        title="이벤트 삭제"
+        message={`${deleteTarget?.title ?? ''}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+        confirmLabel={isDeleting ? '삭제 중...' : '삭제'}
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => { if (!isDeleting) setDeleteTargetId(null); }}
+      />
     </div>
   );
 }

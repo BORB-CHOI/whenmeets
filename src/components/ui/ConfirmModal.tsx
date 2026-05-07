@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ConfirmModalProps {
@@ -20,7 +21,10 @@ export default function ConfirmModal({
   variant = 'default',
   onConfirm, onCancel,
 }: ConfirmModalProps) {
-  return (
+  // Portal target: document.body. Without this, ancestors that establish a
+  // containing block for fixed elements (e.g. MobileBottomBar's backdrop-filter)
+  // confine the modal to a sub-region of the viewport.
+  const content = (
     <AnimatePresence>
       {open && (
         <motion.div
@@ -28,7 +32,7 @@ export default function ConfirmModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm"
           onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.bd = '1'; }}
           onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') onCancel(); (e.currentTarget as HTMLElement).dataset.bd = ''; }}
         >
@@ -65,4 +69,7 @@ export default function ConfirmModal({
       )}
     </AnimatePresence>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(content, document.body);
 }

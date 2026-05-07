@@ -101,6 +101,19 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `Footer` | Footer | `src/components/layout/Footer.tsx` |
 | `CreateEventButton` | Event creation button | `src/components/layout/CreateEventButton.tsx` |
 
+### Ads (global, env-gated)
+
+| Component | Role | File |
+|-----------|------|------|
+| `AdSenseScript` | AdSense loader (`<head>`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 렌더 안 함 | `src/components/ads/AdSenseScript.tsx` |
+| `AdSlot` | 단일 `<ins class="adsbygoogle">` — 마운트 시 `adsbygoogle.push()` | `src/components/ads/AdSlot.tsx` |
+| `FloatingAds` | 2xl 좌·우 하단 + 모바일(<lg) 하단 배너 (이벤트 페이지에서는 모바일 배너 숨김) | `src/components/ads/FloatingAds.tsx` |
+
+**Shared concerns:**
+- 환경변수 ID(`NEXT_PUBLIC_ADSENSE_*`) 미설정 시 모든 광고 컴포넌트는 렌더 안 됨 → 키 없는 환경에서도 안전
+- 모바일 하단 배너 활성 시 `body { padding-bottom }`로 콘텐츠 가림 방지 — 이벤트 페이지(`/e/[id]`)는 `MobileBottomBar`(z-40)와 충돌 회피 위해 모바일 광고 비표시
+- z-index: 광고 z-30 < `MobileBottomBar` z-40 < `Header` z-50 < 모달 z-100
+
 ### MyPage (profile)
 
 | Component | Role | File |

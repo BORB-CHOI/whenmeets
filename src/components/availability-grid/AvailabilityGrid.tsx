@@ -16,8 +16,12 @@ interface AvailabilityGridProps {
 }
 
 const GRID_WIDTH = 770; // 7 columns * 110px
-const timeColWidth_DESKTOP = 44;
-const timeColWidth_MOBILE = 24;
+// Time-label column hugs the widest hour ("23" ≈ 14px at 11px tabular-nums)
+// plus the right gap to the grid. Sized so two-digit hours sit with no empty
+// strip on the left; single-digit hours unavoidably have a few px on the left
+// because labels are right-aligned (next to the grid).
+const timeColWidth_DESKTOP = 20;
+const timeColWidth_MOBILE = 18;
 const MOBILE_BREAKPOINT = 640;
 const HEADER_HEIGHT = 48;
 
@@ -68,7 +72,13 @@ export default function AvailabilityGrid({
       setTimeColWidth(tcw);
       if (containerRef.current) {
         const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
-        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0) - 16));
+        // No extra buffer: the inner flex (mx-auto + maxWidth) already centers,
+        // and any safety margin came from page-level px. Subtracting 16 here
+        // shrank the grid below the parent's width and produced (a) a
+        // post-mount shrink flicker (initial state used GRID_WIDTH, then effect
+        // computed available - tcw - 16) and (b) leftover empty space the
+        // table couldn't fill.
+        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0)));
       }
     }
 
@@ -132,7 +142,7 @@ export default function AvailabilityGrid({
             {slots.map((slot) => (
               <div
                 key={slot}
-                className="flex items-start justify-end pr-1.5 sm:pr-3"
+                className="flex items-start justify-end pr-1"
                 style={{ height: CELL_HEIGHT }}
               >
                 {slot % SLOTS_PER_HOUR === 0 && (

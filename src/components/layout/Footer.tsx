@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-16">
+    <footer className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
       <div className="max-w-6xl mx-auto px-4 py-10 sm:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {/* Brand */}
@@ -33,9 +33,14 @@ export default function Footer() {
               >
                 GitHub
               </a>
-              <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-                피드백
-              </Link>
+              <a
+                href="https://github.com/BORB-CHOI/whenmeets/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                피드백 / 문의
+              </a>
             </div>
           </div>
 
@@ -43,10 +48,10 @@ export default function Footer() {
           <div>
             <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Legal</h3>
             <div className="flex flex-col gap-2">
-              <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+              <Link href="/privacy" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                 개인정보처리방침
               </Link>
-              <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+              <Link href="/terms" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                 이용약관
               </Link>
             </div>

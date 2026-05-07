@@ -3,6 +3,8 @@ import { ThemeProvider } from 'next-themes';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import QueryProvider from '@/components/providers/QueryProvider';
+import AdSenseScript from '@/components/ads/AdSenseScript';
+import FloatingAds from '@/components/ads/FloatingAds';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
@@ -53,10 +55,12 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
           <QueryProvider>
             <Header />
-            <main className="min-h-[calc(100dvh-200px)]">{children}</main>
+            <main>{children}</main>
             <Footer />
+            <FloatingAds />
           </QueryProvider>
         </ThemeProvider>
+        <AdSenseScript />
       </body>
     </html>
   );

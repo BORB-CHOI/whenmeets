@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { EventMode } from '@/lib/types';
@@ -56,6 +56,29 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
 
   const dateOnly = !showTimeRange;
 
+  // Reset all state when the modal (re)opens. Without this, after a successful
+  // PATCH the previous `submitting=true` state persists across opens, leaving
+  // the submit button locked at "수정 중...". Also re-syncs form fields with
+  // the latest editEvent (otherwise useState's initial value pins the values
+  // captured at first mount).
+  useEffect(() => {
+    if (!open) return;
+    setTitle(editEvent?.title ?? `새 이벤트 ${new Date().getMonth() + 1}/${new Date().getDate()}`);
+    setDates(editEvent?.dates ?? []);
+    setTimeStart(editEvent?.time_start ?? 36);
+    setTimeEnd(editEvent?.time_end ?? 84);
+    setPassword('');
+    setShowPassword(false);
+    setSubmitting(false);
+    setError('');
+    setShowTimeRange(editEvent ? !editEvent.date_only : true);
+    setMode(editEvent?.mode ?? 'available');
+    setTitleError(false);
+    setDateSelectionMode(editEvent ? detectDateSelectionMode(editEvent.dates) : 'calendar');
+    // editEvent identity changes per render in the parent; key off id only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editEvent?.id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTitleError(false);
@@ -92,6 +115,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
         setSubmitting(false);
         return;
       }
+      setSubmitting(false);
       onClose();
       onEventUpdated?.();
       return;
@@ -127,6 +151,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
       participantCount: 0,
       lastVisited: new Date().toISOString(),
     });
+    setSubmitting(false);
     onClose();
     window.scrollTo(0, 0);
     router.push(`/e/${id}`);

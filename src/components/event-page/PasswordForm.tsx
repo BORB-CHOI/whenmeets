@@ -53,7 +53,7 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
         <button
           type="submit"
           disabled={loading}
-          className="h-[38px] py-3 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50"
+          className="py-3 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
         >
           {loading ? '확인 중...' : '입장'}
         </button>
