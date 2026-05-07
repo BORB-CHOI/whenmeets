@@ -4,14 +4,26 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import QueryProvider from '@/components/providers/QueryProvider';
 import AdSenseScript from '@/components/ads/AdSenseScript';
+import AdSenseMeta from '@/components/ads/AdSenseMeta';
 import FloatingAds from '@/components/ads/FloatingAds';
+import JsonLd from '@/components/seo/JsonLd';
+import ClarityScript from '@/components/analytics/ClarityScript';
+import GoogleAnalyticsScript from '@/components/analytics/GoogleAnalyticsScript';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
 
 export const metadata: Metadata = {
-  title: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
-  description: '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. when2meet의 현대적 대안.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
+    template: '%s · WhenMeets',
+  },
+  description: '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. 회원가입 없이 링크 공유하고 시간만 고르면 끝나는 when2meet의 한국어·모바일 친화 대안.',
+  keywords: ['일정 조율', '모임 시간', '그룹 일정', 'when2meet', '미팅 잡기', '약속 시간', '캘린더 공유'],
+  alternates: {
+    canonical: SITE_URL,
+  },
   openGraph: {
     title: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
     description: '회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.',
@@ -21,9 +33,19 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
     description: '회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -47,6 +69,8 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
+        <AdSenseMeta />
+        <JsonLd />
       </head>
       <body
         className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors"
@@ -61,6 +85,8 @@ export default function RootLayout({
           </QueryProvider>
         </ThemeProvider>
         <AdSenseScript />
+        <ClarityScript />
+        <GoogleAnalyticsScript />
       </body>
     </html>
   );

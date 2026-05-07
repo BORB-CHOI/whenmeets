@@ -105,9 +105,26 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 | Component | Role | File |
 |-----------|------|------|
-| `AdSenseScript` | AdSense loader (`<head>`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 렌더 안 함 | `src/components/ads/AdSenseScript.tsx` |
+| `AdSenseScript` | AdSense loader (`<head>`, `beforeInteractive`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 렌더 안 함 | `src/components/ads/AdSenseScript.tsx` |
+| `AdSenseMeta` | `<meta name="google-adsense-account">` 사이트 소유권 확인용 | `src/components/ads/AdSenseMeta.tsx` |
 | `AdSlot` | 단일 `<ins class="adsbygoogle">` — 마운트 시 `adsbygoogle.push()` | `src/components/ads/AdSlot.tsx` |
 | `FloatingAds` | 2xl 좌·우 하단 + 모바일(<lg) 하단 배너 (이벤트 페이지에서는 모바일 배너 숨김) | `src/components/ads/FloatingAds.tsx` |
+
+### SEO / AEO (global)
+
+| Component | Role | File |
+|-----------|------|------|
+| `JsonLd` | schema.org JSON-LD: WebApplication + Organization + WebSite + FAQPage | `src/components/seo/JsonLd.tsx` |
+| `app/robots.ts` | `/robots.txt` 자동 생성 (Next.js 관습 파일) | `src/app/robots.ts` |
+| `app/sitemap.ts` | `/sitemap.xml` 자동 생성 (Next.js 관습 파일) | `src/app/sitemap.ts` |
+| `app/llms.txt/route.ts` | AI 답변 엔진(ChatGPT/Perplexity/Claude)용 `/llms.txt` | `src/app/llms.txt/route.ts` |
+
+### Analytics (global, env-gated)
+
+| Component | Role | File |
+|-----------|------|------|
+| `ClarityScript` | Microsoft Clarity (heatmap + session recording) — `NEXT_PUBLIC_CLARITY_PROJECT_ID` | `src/components/analytics/ClarityScript.tsx` |
+| `GoogleAnalyticsScript` | GA4 gtag.js — `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-...` 형식) | `src/components/analytics/GoogleAnalyticsScript.tsx` |
 
 **Shared concerns:**
 - 환경변수 ID(`NEXT_PUBLIC_ADSENSE_*`) 미설정 시 모든 광고 컴포넌트는 렌더 안 됨 → 키 없는 환경에서도 안전
