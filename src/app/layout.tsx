@@ -70,6 +70,7 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
         <AdSenseMeta />
+        <AdSenseScript />
         <JsonLd />
       </head>
       <body
@@ -84,7 +85,6 @@ export default function RootLayout({
             <FloatingAds />
           </QueryProvider>
         </ThemeProvider>
-        <AdSenseScript />
         <ClarityScript />
         <GoogleAnalyticsScript />
       </body>
