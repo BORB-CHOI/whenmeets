@@ -71,6 +71,8 @@ export default function RootLayout({
         />
         <AdSenseMeta />
         <AdSenseScript />
+        <GoogleAnalyticsScript />
+        <ClarityScript />
         <JsonLd />
       </head>
       <body
@@ -85,8 +87,6 @@ export default function RootLayout({
             <FloatingAds />
           </QueryProvider>
         </ThemeProvider>
-        <ClarityScript />
-        <GoogleAnalyticsScript />
       </body>
     </html>
   );
