@@ -1,14 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Browser-side Supabase client for anonymous reads and realtime channels only.
  * Auth uses a dedicated storageKey so this client's GoTrueClient does NOT clash
  * with createAuthBrowserClient (which manages the actual user session via
- * @supabase/ssr cookies). This avoids the
- * "Multiple GoTrueClient instances detected ... under the same storage key" warning.
+ * @supabase/ssr cookies).
+ *
+ * Cached as a module-level singleton so repeated calls (e.g. from useRealtimeSync)
+ * do not spawn multiple GoTrueClient instances under the same storage key, which
+ * triggers the "Multiple GoTrueClient instances detected" warning.
  */
-export function createBrowserClient() {
-  return createClient(
+let cached: SupabaseClient | null = null;
+
+export function createBrowserClient(): SupabaseClient {
+  if (cached) return cached;
+  cached = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
@@ -20,4 +26,5 @@ export function createBrowserClient() {
       },
     },
   );
+  return cached;
 }

@@ -24,11 +24,14 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
   const [startOnMonday, setStartOnMonday] = useState(true);
   const days = startOnMonday ? DAYS_MON_START : DAYS_SUN_START;
 
-  // Drag state
+  // Drag state. Mirrors DatePicker: preview locally during drag, commit once on
+  // pointer up. Calling onDaysChange on every pointer enter cascades a parent
+  // re-render through the entire EventFormModal — visible lag on hover.
   const isDragging = useRef(false);
   const draftRef = useRef<Set<string>>(new Set(selectedDays));
   const erasing = useRef(false);
   const visited = useRef<Set<string>>(new Set());
+  const [previewSet, setPreviewSet] = useState<Set<string>>(new Set());
 
   // Keep draft in sync with external selectedDays when not dragging
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
     } else {
       draftRef.current.add(key);
     }
-    onDaysChange(Array.from(draftRef.current));
+    setPreviewSet(new Set(draftRef.current));
   }
 
   function handlePointerDown(key: string) {
@@ -61,11 +64,18 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
     applyToKey(key);
   }
 
+  function handlePointerEnd() {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    visited.current = new Set();
+    onDaysChange(Array.from(draftRef.current));
+    setPreviewSet(new Set());
+  }
+
   // End drag on window pointer up to handle releases outside the buttons
   useEffect(() => {
     function onEnd() {
-      isDragging.current = false;
-      visited.current = new Set();
+      handlePointerEnd();
     }
     window.addEventListener('mouseup', onEnd);
     window.addEventListener('touchend', onEnd);
@@ -75,6 +85,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
       window.removeEventListener('touchend', onEnd);
       window.removeEventListener('touchcancel', onEnd);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -114,7 +125,9 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
       >
         {days.map((day) => {
           const key = DAY_KEYS[day];
-          const selected = selectedDays.includes(key);
+          const selected = isDragging.current
+            ? previewSet.has(key)
+            : selectedDays.includes(key);
           return (
             <button
               type="button"

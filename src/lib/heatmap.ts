@@ -36,11 +36,15 @@ export function getStepLabels(total: number): string[] {
   const q1 = Math.ceil(total / 4);
   const q2 = Math.ceil(total / 2);
   const q3 = Math.ceil((3 * total) / 4);
+  // count === total always maps to step 5 (see getStep), so cap each
+  // intermediate step at total - 1. Without this, total=1 produces ['1','','','','1']
+  // which renders the legend with two "1" buckets — same number, different colors.
+  const cap = total - 1;
   return [
-    formatRange(1, q1),
-    formatRange(q1 + 1, q2),
-    formatRange(q2 + 1, q3),
-    formatRange(q3 + 1, total - 1),
+    formatRange(1, Math.min(q1, cap)),
+    formatRange(q1 + 1, Math.min(q2, cap)),
+    formatRange(q2 + 1, Math.min(q3, cap)),
+    formatRange(q3 + 1, cap),
     `${total}`,
   ];
 }

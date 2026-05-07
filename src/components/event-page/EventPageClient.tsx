@@ -172,6 +172,11 @@ export default function EventPageClient({
     if (s && initialEvent.participants.find((p) => p.id === s.participantId)) return s;
     return null;
   });
+  // Tracks "password gate cleared this tab" — prevents the PasswordForm from
+  // re-showing after a correct password when the user has no prior local
+  // session (first-time visitors: stored session is null, so without this
+  // flag the gate stays true forever).
+  const [passwordVerified, setPasswordVerified] = useState(false);
 
   const [participantId, setParticipantId] = useState<string | null>(session?.participantId ?? null);
   const [participantPassword, setParticipantPassword] = useState<string | null>(session?.password ?? null);
@@ -259,13 +264,14 @@ export default function EventPageClient({
   }
 
   // Password state
-  if (initialState.type === 'password' && !session) {
+  if (initialState.type === 'password' && !session && !passwordVerified) {
     return (
       <PasswordForm
         event={event}
         eventId={eventId}
         onAuthenticated={(data) => {
           setEvent(data);
+          setPasswordVerified(true);
           const stored = readStoredSession(eventId);
           if (stored) {
             const existing = data.participants.find((p) => p.id === stored.participantId);
@@ -477,7 +483,7 @@ export default function EventPageClient({
       : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-6">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
       {/* Event header — timeful style */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>
@@ -692,7 +698,7 @@ export default function EventPageClient({
         </div>
 
         {/* Right: Sidebar */}
-        <div className="hidden lg:block w-full lg:w-80 shrink-0 lg:pt-10 lg:pl-6 lg:border-l lg:border-gray-100 dark:lg:border-gray-700 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar">
+        <div className="hidden lg:block w-full lg:w-60 shrink-0 lg:pt-10 lg:pl-5 lg:border-l lg:border-gray-100 dark:lg:border-gray-700 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar">
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight */}

@@ -253,16 +253,22 @@ export default function useGridDrag({
 
   // Window-level listeners so dragging doesn't break when pointer leaves the grid
   useEffect(() => {
-    function onWindowPointerUp() {
+    function onWindowMouseUp() {
       if (isDragging.current) handlePointerEnd();
     }
-    window.addEventListener('mouseup', onWindowPointerUp);
-    window.addEventListener('touchend', onWindowPointerUp);
-    window.addEventListener('touchcancel', onWindowPointerUp);
+    function onWindowTouchEnd() {
+      // Track touch end time even when not dragging so synthetic mouse events
+      // fired by iOS after touchend (ghost click, ~300-400ms later) can be ignored.
+      lastTouchEndAt.current = Date.now();
+      if (isDragging.current) handlePointerEnd();
+    }
+    window.addEventListener('mouseup', onWindowMouseUp);
+    window.addEventListener('touchend', onWindowTouchEnd);
+    window.addEventListener('touchcancel', onWindowTouchEnd);
     return () => {
-      window.removeEventListener('mouseup', onWindowPointerUp);
-      window.removeEventListener('touchend', onWindowPointerUp);
-      window.removeEventListener('touchcancel', onWindowPointerUp);
+      window.removeEventListener('mouseup', onWindowMouseUp);
+      window.removeEventListener('touchend', onWindowTouchEnd);
+      window.removeEventListener('touchcancel', onWindowTouchEnd);
     };
   }, [handlePointerEnd]);
 
@@ -308,12 +314,16 @@ export default function useGridDrag({
     },
     onMouseDown: (e: React.MouseEvent) => {
       if (disabled) return;
+      // Ignore synthetic mouse events that iOS fires after touchend (ghost click).
+      // Without this guard the freshly-painted cell gets re-toggled and erased.
+      if (Date.now() - lastTouchEndAt.current < 500) return;
       e.preventDefault();
       handlePointerStart(e.clientX, e.clientY);
     },
     onMouseMove: (e: React.MouseEvent) => {
       if (disabled) return;
       if (!isDragging.current) return;
+      if (Date.now() - lastTouchEndAt.current < 500) return;
       const { clientX, clientY } = e;
       cancelAnimationFrame(rafId.current);
       rafId.current = requestAnimationFrame(() => {
