@@ -30,7 +30,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative flex flex-col items-center px-4 py-20 sm:py-28 overflow-hidden">
+    <div className="relative flex flex-col items-center px-4 py-20 sm:py-28 overflow-hidden flex-1 w-full">
       {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible.
           Vertical gradient ending at footer bg so the page floor flows into
           the footer with no visible seam. The previous diagonal `to-br` with

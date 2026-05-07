@@ -71,22 +71,22 @@ export default function RootLayout({
         />
         <AdSenseMeta />
         <AdSenseScript />
+        <GoogleAnalyticsScript />
+        <ClarityScript />
         <JsonLd />
       </head>
       <body
-        className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors"
+        className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors flex flex-col min-h-screen"
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
           <QueryProvider>
             <Header />
-            <main>{children}</main>
+            <main className="flex-1 flex flex-col">{children}</main>
             <Footer />
             <FloatingAds />
           </QueryProvider>
         </ThemeProvider>
-        <ClarityScript />
-        <GoogleAnalyticsScript />
       </body>
     </html>
   );
