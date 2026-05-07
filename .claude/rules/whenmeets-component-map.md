@@ -110,6 +110,22 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `AdSlot` | 단일 `<ins class="adsbygoogle">` — 마운트 시 `adsbygoogle.push()` | `src/components/ads/AdSlot.tsx` |
 | `FloatingAds` | 2xl 좌·우 하단 + 모바일(<lg) 하단 배너 (이벤트 페이지에서는 모바일 배너 숨김) | `src/components/ads/FloatingAds.tsx` |
 
+### SEO / AEO (global)
+
+| Component | Role | File |
+|-----------|------|------|
+| `JsonLd` | schema.org JSON-LD: WebApplication + Organization + WebSite + FAQPage | `src/components/seo/JsonLd.tsx` |
+| `app/robots.ts` | `/robots.txt` 자동 생성 (Next.js 관습 파일) | `src/app/robots.ts` |
+| `app/sitemap.ts` | `/sitemap.xml` 자동 생성 (Next.js 관습 파일) | `src/app/sitemap.ts` |
+| `app/llms.txt/route.ts` | AI 답변 엔진(ChatGPT/Perplexity/Claude)용 `/llms.txt` | `src/app/llms.txt/route.ts` |
+
+### Analytics (global, env-gated)
+
+| Component | Role | File |
+|-----------|------|------|
+| `ClarityScript` | Microsoft Clarity (heatmap + session recording) — `NEXT_PUBLIC_CLARITY_PROJECT_ID` | `src/components/analytics/ClarityScript.tsx` |
+| `GoogleAnalyticsScript` | GA4 gtag.js — `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-...` 형식) | `src/components/analytics/GoogleAnalyticsScript.tsx` |
+
 **Shared concerns:**
 - 환경변수 ID(`NEXT_PUBLIC_ADSENSE_*`) 미설정 시 모든 광고 컴포넌트는 렌더 안 됨 → 키 없는 환경에서도 안전
 - 모바일 하단 배너 활성 시 `body { padding-bottom }`로 콘텐츠 가림 방지 — 이벤트 페이지(`/e/[id]`)는 `MobileBottomBar`(z-40)와 충돌 회피 위해 모바일 광고 비표시
