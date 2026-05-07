@@ -105,7 +105,8 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 | Component | Role | File |
 |-----------|------|------|
-| `AdSenseScript` | AdSense loader (`<head>`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 렌더 안 함 | `src/components/ads/AdSenseScript.tsx` |
+| `AdSenseScript` | AdSense loader (`<head>`, `beforeInteractive`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 비어 있으면 렌더 안 함 | `src/components/ads/AdSenseScript.tsx` |
+| `AdSenseMeta` | `<meta name="google-adsense-account">` 사이트 소유권 확인용 | `src/components/ads/AdSenseMeta.tsx` |
 | `AdSlot` | 단일 `<ins class="adsbygoogle">` — 마운트 시 `adsbygoogle.push()` | `src/components/ads/AdSlot.tsx` |
 | `FloatingAds` | 2xl 좌·우 하단 + 모바일(<lg) 하단 배너 (이벤트 페이지에서는 모바일 배너 숨김) | `src/components/ads/FloatingAds.tsx` |
 

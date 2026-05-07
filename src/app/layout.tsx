@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import QueryProvider from '@/components/providers/QueryProvider';
 import AdSenseScript from '@/components/ads/AdSenseScript';
+import AdSenseMeta from '@/components/ads/AdSenseMeta';
 import FloatingAds from '@/components/ads/FloatingAds';
 import './globals.css';
 
@@ -47,6 +48,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
+        <AdSenseMeta />
       </head>
       <body
         className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors"
