@@ -176,12 +176,25 @@ export default function AvailabilityGrid({
             ))}
           </div>
 
-          {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr */}
+          {/* Grid columns — always GRID_WIDTH wide, columns fill with 1fr.
+              Vertical lines are drawn via columnGap + container background
+              instead of per-cell borders. CSS grid `1fr` columns produce
+              fractional pixel widths, which round 1px borders inconsistently
+              (sometimes 0px, sometimes 2px). columnGap is always rendered at
+              exactly 1px regardless of column width. */}
           <div
             data-grid-container=""
             ref={columnsProps?.ref}
             className={`grid${disableTouchScroll ? ' touch-none' : ''}`}
-            style={{ flex: 1, minWidth: 0, gridTemplateColumns: gridTemplateCols }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              gridTemplateColumns: gridTemplateCols,
+              columnGap: '1px',
+              paddingLeft: '1px',
+              paddingRight: '1px',
+              backgroundColor: '#999999',
+            }}
             {...columnsRestProps}
           >
             {/* Date headers — sticky to viewport top on desktop while scrolling time grid */}
@@ -224,15 +237,15 @@ export default function AvailabilityGrid({
                 const isHourLine = isFirstRow || slot % SLOTS_PER_HOUR === 0;
                 const isHalfHourLine = !isFirstRow && slot % SLOTS_PER_HOUR === 2;
 
-                // Direct borders on the cell wrapper. More reliable than inset
-                // box-shadow on a transparent overlay — inset shadows can be
-                // visually overpowered by the cell's own background stacking.
+                // Vertical lines come from grid columnGap (consistent 1px).
+                // Only horizontal lines remain on the cell wrapper — row
+                // positions are integer pixels (CELL_HEIGHT) so they don't
+                // have the sub-pixel rounding problem vertical borders had.
+                // Date-gap (skipped dates) is rendered as a wider gridTemplate
+                // column, no need for a thicker per-cell borderLeft.
                 const cellBorder: React.CSSProperties = {
                   boxSizing: 'border-box',
-                  borderRight: `1px solid ${lineColor}`,
                 };
-                if (isFirst) cellBorder.borderLeft = `1px solid ${lineColor}`;
-                else if (hasGapBefore) cellBorder.borderLeft = `2px solid ${lineColor}`;
                 if (isHalfHourLine) cellBorder.borderTop = `1px dashed ${lineColor}`;
                 else if (isHourLine) cellBorder.borderTop = `1px solid ${lineColor}`;
                 if (isLastRow) cellBorder.borderBottom = `1px solid ${lineColor}`;
@@ -244,6 +257,7 @@ export default function AvailabilityGrid({
                 elements.push(
                   <div
                     key={`${date}-${slot}`}
+                    className="bg-white dark:bg-gray-900"
                     style={{ height: CELL_HEIGHT, position: 'relative', ...cellBorder }}
                   >
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
