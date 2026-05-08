@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useProfile } from '@/hooks/useProfile';
+import InAppBrowserModal from './InAppBrowserModal';
+import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
 
 export default function AuthButton() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserType>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, loading, supabase } = useAuthUser();
   const { profile } = useProfile();
@@ -39,6 +42,11 @@ export default function AuthButton() {
   }, []);
 
   const handleSignIn = async () => {
+    const detected = detectInAppBrowser();
+    if (detected) {
+      setInAppBrowser(detected);
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -62,12 +70,18 @@ export default function AuthButton() {
 
   if (!user) {
     return (
-      <button
-        onClick={handleSignIn}
-        className="h-9 px-4 bg-teal-600 text-white text-sm font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer whitespace-nowrap"
-      >
-        로그인
-      </button>
+      <>
+        <button
+          onClick={handleSignIn}
+          className="h-9 px-4 bg-teal-600 text-white text-sm font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) hover:-translate-y-px active:translate-y-0 transition-all cursor-pointer whitespace-nowrap"
+        >
+          로그인
+        </button>
+        <InAppBrowserModal
+          type={inAppBrowser}
+          onClose={() => setInAppBrowser(null)}
+        />
+      </>
     );
   }
 

@@ -6,6 +6,12 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- 서비스 favicon — `src/app/icon.tsx` (32×32) + `src/app/apple-icon.tsx` (180×180), 헤더 W 로고와 동일한 teal-600 + white 스타일을 `next/og` `ImageResponse`로 동적 생성. Next.js 기본 favicon.ico 제거
+- OG/Twitter 공유 이미지 — `src/app/opengraph-image.tsx` (1200×630, Twitter도 re-export). 카카오톡·트위터·페이스북 공유 시 사용자 프로필 사진 대신 brand 이미지 노출. Pretendard 폰트(jsdelivr CDN)로 한국어 텍스트 렌더, teal 그라데이션 + 로고 + 슬로건
+- 인앱 브라우저 감지 + 외부 브라우저 안내 — 카카오톡 인앱브라우저에서 Google OAuth `disallowed_useragent` 403 차단 회피. 카톡/네이버/라인/인스타그램/페이스북 UA 감지 후 로그인 클릭 시 모달 표시. 카톡은 `kakaotalk://web/openExternal?url=` 스킴으로 외부 브라우저 자동 열기, 미지원 브라우저는 링크 복사 + 수동 안내 (`src/lib/inAppBrowser.ts`, `src/components/auth/InAppBrowserModal.tsx`, `src/components/auth/AuthButton.tsx`)
+
 ## [0.5.1] - 2026-05-08
 
 ### Fixed
