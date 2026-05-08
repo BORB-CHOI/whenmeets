@@ -6,6 +6,23 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-08
+
+### Fixed
+
+- 모든 페이지 가로폭이 PC 모드에서 모바일처럼 좁게 렌더되던 회귀 — `<main>`의 `flex-1 flex flex-col` 중 `flex flex-col`이 자식의 `mx-auto`를 무력화시켜 `max-w-4xl` centering이 깨졌음. sticky footer는 `flex-1`만으로 동작하므로 `flex flex-col` 제거 (`src/app/layout.tsx`)
+- 그리드 범례(HeatmapLegend) 왼쪽 여백이 시간 컬럼 폭과 어긋나던 버그 — 시간 컬럼이 44/24px → 20/18px로 줄었는데 범례 패딩 `pl-6 sm:pl-11`이 옛 값 그대로 남아있었음. 시간 컬럼 폭과 동기화 (`src/components/event-page/EventPageClient.tsx`)
+- 모바일 그리드 편집 모드에서 시간 라벨/우측 여백 터치 시 페이지 스크롤이 잘 안 되던 UX — 시간 컬럼 18→28px 확장 + 우측 패딩 `pr-3`→`pr-7`로 좌우 대칭 28px hit 영역 확보. 시간 라벨은 `justify-end + pr-1`로 우측 정렬되어 그리드 옆 시각 위치 유지, 좌측 10px가 invisible scroll-pass-through 영역
+- 사이드바 "If Needed 숨기기" 토글의 "(1명 단독 시 자동 표시)" 보조 라벨 제거 — toggle disabled 시각 상태(opacity-50, cursor-not-allowed)와 자동 동작이 이미 충분, 텍스트는 시각적 노이즈
+
+### Changed
+
+- `TIME_COL_WIDTH_MOBILE` 18 → 28px (모바일 손가락 hit 영역), `TIME_COL_WIDTH_DESKTOP` 20px 유지. 매직 넘버는 `src/lib/constants.ts`로 추출
+
+### Docs
+
+- `.claude/rules/whenmeets-conventions.md`에 "Global Blast-Radius Changes" 섹션 추가 — 루트 레이아웃·body·main·globals.css 같은 전역 영향 파일 변경 시 최소 변경 원칙, flex/grid/position 추가의 high-risk 인지, 단일 관심사 커밋, 다중 페이지 시각 회귀 검증, dev server는 사용자 터미널에서 실행
+
 ## [0.5.0] - 2026-05-07
 
 ### Added

@@ -656,7 +656,7 @@ export default function EventPageClient({
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
-              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+              <div className="flex justify-start mt-2 pl-7 sm:pl-5">
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
@@ -690,7 +690,7 @@ export default function EventPageClient({
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
-              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+              <div className="flex justify-start mt-2 pl-7 sm:pl-5">
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
@@ -842,12 +842,7 @@ export default function EventPageClient({
                         isSingleSelection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                     >
-                      <span>
-                        &quot;If Needed&quot; 숨기기
-                        {isSingleSelection && (
-                          <span className="ml-1 text-[10px] text-gray-400">(1명 단독 시 자동 표시)</span>
-                        )}
-                      </span>
+                      <span>&quot;If Needed&quot; 숨기기</span>
                       <ToggleSwitch checked={!effectiveIncludeIfNeeded} />
                     </button>
                   )}
