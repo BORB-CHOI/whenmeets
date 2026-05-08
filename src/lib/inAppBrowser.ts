@@ -13,8 +13,8 @@ export function detectInAppBrowser(ua?: string): InAppBrowserType {
   const lower = userAgent.toLowerCase();
 
   if (lower.includes('kakaotalk')) return 'kakaotalk';
-  if (lower.includes('naver') || lower.includes('whale')) return 'naver';
-  if (lower.includes('line/') || lower.includes(' line ')) return 'line';
+  if (lower.includes('naver(inapp') || lower.includes('naver/inapp')) return 'naver';
+  if (lower.includes('line/')) return 'line';
   if (lower.includes('instagram')) return 'instagram';
   if (lower.includes('fban') || lower.includes('fbav')) return 'facebook';
   return null;
