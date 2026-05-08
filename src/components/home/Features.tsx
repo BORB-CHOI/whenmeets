@@ -1,10 +1,10 @@
 const FEATURES = [
   {
-    title: '회원가입 0초',
-    body: '참여자는 가입 없이 링크만 받으면 즉시 들어옵니다. 만든 사람도 익명으로 시작 가능.',
+    title: '한 화면, 30초',
+    body: '다른 도구의 step-by-step 위저드(4~6단계)와 달리 모달 하나에서 제목·날짜·시간만 입력하면 끝. 회원가입도 없음. 참여자도 링크만 받으면 즉시 들어옵니다.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-        <path d="M13 4l-1.5 16M19 9l-7 6-3-2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 6v6l4 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
