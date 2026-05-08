@@ -6,7 +6,7 @@ import { createAuthServerClient } from '@/lib/supabase/auth-server';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, dates, time_start, time_end, password, mode, date_only } = body;
+  const { title, dates, time_start, time_end, password, mode, date_only, start_on_monday } = body;
 
   if (!title || !dates || !Array.isArray(dates) || dates.length === 0) {
     return NextResponse.json({ error: 'Title and dates are required' }, { status: 400 });
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     time_end: end,
     mode: eventMode,
     date_only: isDateOnly,
+    start_on_monday: start_on_monday === true,
   };
 
   if (userId) {

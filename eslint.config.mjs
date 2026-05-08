@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local agent harness files are not part of the Next.js app lint surface.
+    ".claude/**",
   ]),
 ]);
 

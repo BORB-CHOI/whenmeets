@@ -17,6 +17,8 @@ export interface Event {
   mode: EventMode;       // 'available' = mark available, 'unavailable' = mark unavailable
   date_only: boolean;    // true = dates-only mode (uses "all_day" slot key)
   description?: string;
+  /** When true, week-aware grids (요일 mode + month calendars) start the week on Monday. */
+  start_on_monday?: boolean;
 }
 
 export interface Participant {

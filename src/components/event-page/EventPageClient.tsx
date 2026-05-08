@@ -100,6 +100,10 @@ export default function EventPageClient({
   const sidebarCountRef = useRef<SidebarCountHandle | null>(null);
   const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
   const hoverRafRef = useRef<number>(0);
+  // Concurrent-call guard: rapid clicks (or auto-fired editing flows) must not
+  // POST /participants twice. The second POST hits the race window where the
+  // first row hasn't committed yet, so the API falls back to numbered names.
+  const editClickInProgress = useRef(false);
 
   const scheduleHoverUpdate = useCallback((fn: () => void) => {
     cancelAnimationFrame(hoverRafRef.current);
@@ -320,19 +324,25 @@ export default function EventPageClient({
 
   // Handle "Edit availability" click
   async function handleEditClick() {
-    hoverPopoverRef.current?.update(null);
-    setMobileSlotSheet(null);
-    if (authUserName) {
-      // Logged-in user: ALWAYS auto-join via API which resolves to own (user_id) slot
-      // or creates a new numbered slot if name collides with another participant.
-      // This prevents editing an anonymous slot with the same display name.
-      const ok = await autoJoinWithName(authUserName);
-      if (ok) setViewMode('edit');
-      else setShowNameModal(true);
-    } else if (session) {
-      setViewMode('edit');
-    } else {
-      setShowNameModal(true);
+    if (editClickInProgress.current) return;
+    editClickInProgress.current = true;
+    try {
+      hoverPopoverRef.current?.update(null);
+      setMobileSlotSheet(null);
+      if (authUserName) {
+        // Logged-in user: ALWAYS auto-join via API which resolves to own (user_id) slot
+        // or creates a new numbered slot if name collides with another participant.
+        // This prevents editing an anonymous slot with the same display name.
+        const ok = await autoJoinWithName(authUserName);
+        if (ok) setViewMode('edit');
+        else setShowNameModal(true);
+      } else if (session) {
+        setViewMode('edit');
+      } else {
+        setShowNameModal(true);
+      }
+    } finally {
+      editClickInProgress.current = false;
     }
   }
 

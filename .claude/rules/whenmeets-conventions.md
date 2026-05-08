@@ -11,6 +11,39 @@ paths:
 DESIGN.md는 현재 없음 (코드와 불일치하여 삭제됨).
 디자인 판단 시 실제 코드의 기존 패턴을 따를 것. 새로운 디자인 방향이 필요하면 사용자에게 확인.
 
+## Design Modification Principles (MANDATORY)
+
+기존 디자인은 무조건 유지하면서 문제만 해결한다. 임의로 디자인을 바꾸거나 새로운 시각적 요소를 끼워넣는 것 금지.
+
+1. **문제만 정확히 잡고 디자인 구조는 보존.** "라인 들쭉날쭉" 같은 시각적 결함은 진짜 root cause(보통 sub-pixel 분배)를 잡아야지 구조를 바꿔서 다른 부분을 망가뜨리지 마라. CSS Grid `1fr` / flex grow 의 sub-pixel 라운딩이 1px border 위치를 0.5px 단위로 어긋나게 만들면 → 칼럼 width를 정수 px로 강제(`Math.floor`)하는 식으로 잡는다.
+2. **회색 배경 같은 단순 처리 금지.** 점프 날짜처럼 시각적 분리가 필요한 자리는 두 줄 / 물결선 / 점선 등 디자인적 의도가 보이는 처리. 단순 회색 채움 같은 손쉬운 처리는 안 됨.
+3. **창의적 디자인 결정은 알아서.** 사용자는 디자인 디테일까지 일일이 지시하기를 원치 않음. 시각적 분리·강조가 필요하면 옵션 검토하고 가장 의도적이고 깔끔한 방법 선택.
+4. **같은 디자인이면 같은 컴포넌트로.** 비슷한 UI를 별도로 만들지 말고 기존 컴포넌트 재사용. 디자인 일관성은 "생긴 것만 똑같이"가 아니라 "한 컴포넌트가 여러 곳에서 재사용"되어야 함. 예: 캘린더 month 그리드를 day-of-week 모드에서도 재사용.
+5. **변경 후 모든 모드 회귀 검증 필수.** 이벤트 페이지: 캘린더/요일 모드 × 시간있음/없음 × 편집/결과 모드 — 8가지 조합 모두 시각 확인. 글로벌 영향 변경(루트 레이아웃·globals.css)은 그 외 페이지까지 추가 검증.
+6. **한국어 표기.** 캘린더 day headers, 모든 라벨 한국어(일/월/화/수/목/금/토) — 영어 사용 금지.
+7. **시간/캘린더 그리드 sub-pixel 잡는 표준 패턴 (DPR-aware).**
+   CSS px 정수만 강제하는 건 부족하다. browser zoom (110%/125%) + devicePixelRatio (1.5/2)에서는 css 1px이 fractional device px가 되어 라인이 흐려지거나 두께 차이 발생. 모든 측정값을 device pixel grid에 snap해야 한다.
+   ```ts
+   function getDevicePixelRatio() {
+     return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+   }
+   function toDevicePixel(value: number, dpr: number) {
+     return Math.max(1 / dpr, Math.round(value * dpr) / dpr);
+   }
+   ```
+   - `devicePixelRatio` state로 보유 + `resize`/`window.visualViewport.resize` 리스너로 갱신 (pinch-zoom도 잡힘)
+   - 모든 width/height/gap/lineWidth를 `toDevicePixel`로 snap
+   - cell width = `Math.floor((available - gapTotal) * dpr / N) / dpr`로 device-aligned 정수 분배
+   - **cell border 대신 `display: grid; gap: lineWidth; background: lineColor` + cell `background: white`**: gap이 곧 line. 인접 border 겹침 방지 + sub-pixel 안전 (사용자 검증된 표준 패턴)
+   - CSS `dashed` border 금지 (brower-dependent dash + per-cell reset). 점선 필요 시 `repeating-linear-gradient` background-image로 명시 패턴
+   - 적용: `AvailabilityGrid`, `MonthCalendarGrid` (이 둘이 모든 그리드 컴포넌트의 base)
+
+8. **사용자 판단은 검증 대상이 아닌 사실.** "X가 이렇게 보인다", "Y는 잘 동작한다"는 진술을 받으면 root cause 분석의 starting point로 그대로 받아들여라. "혹시 zoom level 때문 아닐까", "색상으로 오해하는 거 아닐까" 같은 가설로 사용자 관찰을 의심·검증하지 마라. 사용자가 "내 눈 의심하냐"를 외치는 순간 모든 추론 즉시 멈추고 관찰을 사실로 받아들여 코드 root cause로 역추적.
+
+9. **표면 증상별 다른 땜빵 묶지 마라.** 같은 영역에서 두세 증상이 나오면 한 root cause로 통합 가능한지 먼저 의심. "라인 두께 차이", "라인 사라짐", "라인 끊김", "줌 시 흐려짐"은 모두 sub-pixel rasterization 가족 — 색상 진하게/구조 변경/border 방향 등 표면 fix 매번 다르게 만들지 말고 한 layer 더 깊이 (css unit → device pixel mapping → DPR) 파라. 표면 fix 했는데 다른 데서 또 터지면 root cause 못 잡은 신호.
+
+10. **참고 자료 비교 시 깊이 추론.** "A는 잘 된다"는 사용자 진술을 받으면 A가 잘 되는 메커니즘을 끝까지 파라. surface level 코드 비교 ("A도 우리랑 비슷한 cell border인데?")로 dismiss하는 순간 또 헛돈다. mounted/computed/CSS/build config/DOM tree/parent constraints 모두 의심.
+
 ## UI Component Library — shadcn/ui 패턴 (Radix UI 기반)
 
 모든 인터랙션 컴포넌트는 **shadcn/ui 패턴**을 따른다.
