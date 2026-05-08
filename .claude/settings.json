@@ -12,6 +12,16 @@
         "description": "Block destructive git commands (reset --hard, restore, checkout HEAD --, clean -f, push --force)"
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/scripts/hooks/pre-bash-block-main-commit.js\""
+          }
+        ],
+        "description": "Block direct commits to main/master — must use feature branch + PR"
+      },
+      {
         "matcher": "Edit|Write",
         "hooks": [
           {
