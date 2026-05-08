@@ -1,6 +1,6 @@
 const FEATURES = [
   {
-    title: '한 화면, 30초',
+    title: '3초면 이벤트 생성',
     body: '다른 도구의 step-by-step 위저드(4~6단계)와 달리 모달 하나에서 제목·날짜·시간만 입력하면 끝. 회원가입도 없음. 참여자도 링크만 받으면 즉시 들어옵니다.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">

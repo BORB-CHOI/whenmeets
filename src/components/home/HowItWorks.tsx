@@ -6,7 +6,7 @@ const STEPS = [
   {
     n: 1,
     title: '이벤트 만들기',
-    body: '제목과 후보 날짜, 가능한 시간대만 입력하세요. 회원가입 없이 30초 안에 끝납니다.',
+    body: '제목과 후보 날짜, 가능한 시간대만 입력하세요. 회원가입 없이 3초면 끝납니다.',
     Mockup: Step1Mockup,
   },
   {
@@ -51,7 +51,7 @@ export default function HowItWorks() {
             key={n}
             className="flex flex-col items-center text-center"
           >
-            <div className="relative w-full max-w-[320px] aspect-[4/3] rounded-2xl bg-gradient-to-br from-teal-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border border-gray-200/60 dark:border-gray-700/60 shadow-sm flex items-center justify-center p-6">
+            <div className="relative w-full max-w-80 aspect-4/3 rounded-2xl bg-linear-to-br from-teal-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border border-gray-200/60 dark:border-gray-700/60 shadow-sm flex items-center justify-center p-6">
               <Mockup />
               <span className="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-teal-600 text-white text-sm font-bold flex items-center justify-center shadow-md">
                 {n}
