@@ -4,6 +4,10 @@ export const CELL_HEIGHT = 15;
 /** Slots per hour (4 = 15-minute intervals) */
 export const SLOTS_PER_HOUR = 4;
 
+/** Time-label column width (px). Hugs the widest hour label ("23"). */
+export const TIME_COL_WIDTH_DESKTOP = 20;
+export const TIME_COL_WIDTH_MOBILE = 18;
+
 /** Convert slot index to "HH:MM" string (15-min intervals: slot 0=00:00, 4=01:00, 36=09:00) */
 export function slotToTime(slot: number): string {
   const hours = Math.floor(slot / SLOTS_PER_HOUR);

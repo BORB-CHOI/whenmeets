@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useMemo, useEffect, useRef } from 'react';
-import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT, isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
+import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT, isDayOfWeekKey, DAY_OF_WEEK_LABELS, TIME_COL_WIDTH_DESKTOP, TIME_COL_WIDTH_MOBILE } from '@/lib/constants';
 
 interface AvailabilityGridProps {
   dates: string[];
@@ -17,11 +17,10 @@ interface AvailabilityGridProps {
 
 const GRID_WIDTH = 770; // 7 columns * 110px
 // Time-label column hugs the widest hour ("23" ≈ 14px at 11px tabular-nums)
-// plus the right gap to the grid. Sized so two-digit hours sit with no empty
-// strip on the left; single-digit hours unavoidably have a few px on the left
-// because labels are right-aligned (next to the grid).
-const timeColWidth_DESKTOP = 20;
-const timeColWidth_MOBILE = 18;
+// plus the right gap to the grid. Source of truth: src/lib/constants.ts so
+// downstream consumers (e.g. HeatmapLegend padding) stay in sync.
+const timeColWidth_DESKTOP = TIME_COL_WIDTH_DESKTOP;
+const timeColWidth_MOBILE = TIME_COL_WIDTH_MOBILE;
 const MOBILE_BREAKPOINT = 640;
 const HEADER_HEIGHT = 48;
 

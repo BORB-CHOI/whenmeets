@@ -656,7 +656,7 @@ export default function EventPageClient({
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
-              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+              <div className="flex justify-start mt-2 pl-[18px] sm:pl-5">
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
@@ -690,7 +690,7 @@ export default function EventPageClient({
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
-              <div className="flex justify-start mt-2 pl-6 sm:pl-11">
+              <div className="flex justify-start mt-2 pl-[18px] sm:pl-5">
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
