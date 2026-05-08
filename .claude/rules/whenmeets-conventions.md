@@ -111,6 +111,36 @@ exit 애니메이션이 필요하면 Framer Motion `AnimatePresence` + `forceMou
 - Calendar height: fixed regardless of month length.
 - No layout shift on data load — use skeleton or fixed-size containers.
 
+## Global Blast-Radius Changes (MANDATORY)
+
+루트 레이아웃 / `<html>` / `<body>` / `<main>` / `globals.css` / 전역 wrapper provider —
+이런 파일은 **모든 페이지의 레이아웃에 동시 영향**을 준다. 한 페이지 문제를 고치려고 건드렸다가
+다른 페이지가 깨지는 회귀가 발생하기 쉬움. 다음 규칙 강제:
+
+1. **최소 변경 원칙.** 목표(예: sticky footer)에 정확히 필요한 클래스만 추가. "함께 가야 할 것 같아서"
+   추가하는 클래스는 금지. 의심되면 빼고 동작 확인 후 필요시에만 추가.
+
+2. **`flex` / `grid` / `position` 추가는 high-risk.** 이런 속성을 부모에 추가하면 자식의
+   `mx-auto`, `width`, `align-self`, `position` 등이 의도치 않게 깨질 수 있음.
+   특히 **flex 컨테이너 안의 `mx-auto`는 stretch를 무력화하고 자식을 content-width로 줄임** —
+   `max-w-*` centering이 깨지는 가장 흔한 원인. 부모를 flex로 만들 때 자식의 `mx-auto` 동작을 반드시 의심.
+
+3. **단일 관심사 커밋.** sticky footer + analytics + SEO 같이 묶지 말고 별도 커밋. 회귀 발생 시
+   `git bisect` / `git diff` 범위가 좁아져야 원인 파악이 빠름.
+
+4. **시각 회귀 검증.** 글로벌 변경 후 머지 전 최소 다음 페이지를 모두 확인:
+   - `/` (홈)
+   - `/dashboard`
+   - `/mypage`
+   - `/e/[id]` (date 모드, day-of-week 모드 둘 다)
+   - 모달 / 스켈레톤 상태
+   각 페이지의 가로폭·중앙정렬·footer 위치·overflow를 시각적으로 확인.
+   대상 페이지 하나만 보고 머지하지 말 것.
+
+5. **Dev server는 사용자 터미널에서.** Bash run_in_background로 dev server를 띄우지 말 것 —
+   사용자가 직접 중지할 수 없음. 띄워야 한다면 사용자에게 직접 실행 요청. 빌드 검증이 필요하면
+   `next build` 같은 일회성 커맨드를 foreground로 실행.
+
 ## Commit Messages
 
 All commit messages MUST be written in Korean.

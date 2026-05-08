@@ -6,6 +6,21 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-08
+
+### Fixed
+
+- 모든 페이지 가로폭이 PC 모드에서 모바일처럼 좁게 렌더되던 회귀 — `<main>`의 `flex-1 flex flex-col` 중 `flex flex-col`이 자식의 `mx-auto`를 무력화시켜 `max-w-4xl` centering이 깨졌음. sticky footer는 `flex-1`만으로 동작하므로 `flex flex-col` 제거 (`src/app/layout.tsx`)
+- 그리드 범례(HeatmapLegend) 왼쪽 여백이 시간 컬럼 폭과 어긋나던 버그 — 시간 컬럼이 44/24px → 20/18px로 줄었는데 범례 패딩 `pl-6 sm:pl-11`이 옛 값 그대로 남아있었음. `pl-[18px] sm:pl-5`로 정렬 (`src/components/event-page/EventPageClient.tsx`)
+
+### Changed
+
+- `TIME_COL_WIDTH_DESKTOP` / `TIME_COL_WIDTH_MOBILE`을 `src/lib/constants.ts`로 추출 — 매직 넘버를 source of truth로 통일
+
+### Docs
+
+- `.claude/rules/whenmeets-conventions.md`에 "Global Blast-Radius Changes" 섹션 추가 — 루트 레이아웃·body·main·globals.css 같은 전역 영향 파일 변경 시 최소 변경 원칙, flex/grid/position 추가의 high-risk 인지, 단일 관심사 커밋, 다중 페이지 시각 회귀 검증, dev server는 사용자 터미널에서 실행
+
 ## [0.5.0] - 2026-05-07
 
 ### Added
