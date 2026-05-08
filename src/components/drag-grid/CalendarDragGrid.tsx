@@ -2,7 +2,9 @@
 
 import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
+import { isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
 import { getCellColorClass } from './GridCell';
+import MonthCalendarGrid from '@/components/calendar-grid/MonthCalendarGrid';
 
 interface CalendarDragGridProps {
   dates: string[];
@@ -24,10 +26,8 @@ const COLOR_CLASSES_TO_REMOVE = [
   'bg-[#FFE8B8]',
 ];
 
-const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-function parseDate(s: string) {
-  return new Date(s + 'T00:00:00');
+function cellLabel(dateStr: string): string | number {
+  return isDayOfWeekKey(dateStr) ? DAY_OF_WEEK_LABELS[dateStr] : parseInt(dateStr.split('-')[2]);
 }
 
 export default function CalendarDragGrid({
@@ -44,37 +44,6 @@ export default function CalendarDragGrid({
   const erasing = useRef(false);
   const draftRef = useRef<Availability>({});
   const dateSet = useMemo(() => new Set(dates), [dates]);
-
-  // Determine month range to display
-  const sortedDates = useMemo(() => [...dates].sort(), [dates]);
-  const firstDate = parseDate(sortedDates[0]);
-  const lastDate = parseDate(sortedDates[sortedDates.length - 1]);
-
-  // Build calendar months
-  const months = useMemo(() => {
-    const result: { year: number; month: number; label: string; days: (string | null)[] }[] = [];
-    let y = firstDate.getFullYear();
-    let m = firstDate.getMonth();
-    const endY = lastDate.getFullYear();
-    const endM = lastDate.getMonth();
-
-    while (y < endY || (y === endY && m <= endM)) {
-      const label = new Date(y, m).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      const firstDow = new Date(y, m, 1).getDay();
-      const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const days: (string | null)[] = [];
-
-      for (let i = 0; i < firstDow; i++) days.push(null);
-      for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        days.push(ds);
-      }
-
-      result.push({ year: y, month: m, label, days });
-      if (m === 11) { m = 0; y++; } else { m++; }
-    }
-    return result;
-  }, [firstDate, lastDate]);
 
   function getCellValue(date: string): AvailabilityLevel | -1 {
     const val = availability[date]?.['all_day'];
@@ -111,7 +80,6 @@ export default function CalendarDragGrid({
     if (disabled) return;
     if (!dateSet.has(date)) return;
     isDragging.current = true;
-    // Shallow clone for draft — mutated during drag, committed on end
     const clone: Availability = {};
     for (const d in availability) {
       clone[d] = { ...availability[d] };
@@ -141,14 +109,12 @@ export default function CalendarDragGrid({
 
   const handlePointerUp = useCallback(() => {
     if (isDragging.current) {
-      // Commit draft to React state once on drag end
       onAvailabilityChange({ ...draftRef.current });
     }
     isDragging.current = false;
     erasing.current = false;
   }, [onAvailabilityChange]);
 
-  // Window-level listeners for drag end
   useEffect(() => {
     function onEnd() { if (isDragging.current) handlePointerUp(); }
     window.addEventListener('mouseup', onEnd);
@@ -164,7 +130,6 @@ export default function CalendarDragGrid({
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
 
   // Native (non-passive) touchmove so preventDefault works on mobile.
-  // React's synthetic onTouchMove is passive by default in modern React.
   useEffect(() => {
     if (!rootEl) return;
     function onTouchMoveNative(e: TouchEvent) {
@@ -182,59 +147,42 @@ export default function CalendarDragGrid({
   }, [rootEl]);
 
   return (
-    <div
-      ref={setRootEl}
-      onMouseMove={(e) => handlePointerMoveAt(e.clientX, e.clientY)}
-      className="select-none"
-      style={{ touchAction: 'pan-y' }}
-    >
-      {months.map((month) => (
-        <div key={`${month.year}-${month.month}`} className="mb-6">
-          {/* Month header */}
-          <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-3">{month.label}</h3>
-
-          {/* Day-of-week headers */}
-          <div className="grid grid-cols-7 gap-px mb-1">
-            {DAY_HEADERS.map((d) => (
-              <div key={d} className="text-center text-xs font-medium text-gray-400 dark:text-gray-500 py-1">{d}</div>
-            ))}
+    <MonthCalendarGrid
+      dates={dates}
+      rootRef={setRootEl}
+      rootProps={{
+        onMouseMove: (e) => handlePointerMoveAt(e.clientX, e.clientY),
+        style: { touchAction: 'pan-y' },
+      }}
+      renderCell={(dateStr, isActive) => {
+        if (!dateStr) {
+          return <div className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
+        }
+        if (!isActive) {
+          return (
+            <div className="bg-gray-50 dark:bg-gray-800 aspect-square flex items-center justify-center text-sm text-gray-300 dark:text-gray-600">
+              {cellLabel(dateStr)}
+            </div>
+          );
+        }
+        const value = getCellValue(dateStr);
+        const hasOverlay = overlayTotal > 0 && (overlayCountMap[dateStr]?.['all_day'] ?? 0) > 0;
+        return (
+          <div
+            data-cal-date={dateStr}
+            onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
+            onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
+            className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}
+          >
+            {cellLabel(dateStr)}
+            {hasOverlay && (
+              <span className="absolute bottom-0.5 right-1 text-[8px] text-teal-500 font-medium">
+                +{overlayCountMap[dateStr]?.['all_day'] ?? 0}
+              </span>
+            )}
           </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-            {month.days.map((dateStr, idx) => {
-              if (!dateStr) {
-                return <div key={`empty-${idx}`} className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
-              }
-
-              const isEventDate = dateSet.has(dateStr);
-              const value = getCellValue(dateStr);
-              const day = parseInt(dateStr.split('-')[2]);
-              const hasOverlay = overlayTotal > 0 && (overlayCountMap[dateStr]?.['all_day'] ?? 0) > 0;
-
-              return (
-                <div
-                  key={dateStr}
-                  data-cal-date={dateStr}
-                  onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-                  onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-                  className={`aspect-square flex items-center justify-center text-sm relative
-                    ${isEventDate ? `${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2` : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}
-                    ${isEventDate && value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : ''}
-                    ${isEventDate && value === -1 ? 'text-gray-500 dark:text-gray-400' : ''}`}
-                >
-                  {day}
-                  {hasOverlay && isEventDate && (
-                    <span className="absolute bottom-0.5 right-1 text-[8px] text-teal-500 font-medium">
-                      +{overlayCountMap[dateStr]?.['all_day'] ?? 0}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+        );
+      }}
+    />
   );
 }
