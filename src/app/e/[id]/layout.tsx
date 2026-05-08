@@ -36,11 +36,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'WhenMeets',
       type: 'website',
       locale: 'ko_KR',
+      images: [
+        {
+          url: '/opengraph-image',
+          width: 1200,
+          height: 630,
+          alt: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
+        },
+      ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: `${event.title} - WhenMeets`,
       description,
+      images: ['/twitter-image'],
     },
   };
 }
