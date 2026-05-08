@@ -158,7 +158,7 @@ export default function AvailabilityGrid({
             ) : (
               <div style={{ height: HEADER_HEIGHT }} />
             )}
-            {slots.map((slot) => (
+            {slots.map((slot, idx) => (
               <div
                 key={slot}
                 className="flex items-start justify-end pr-1"
@@ -167,7 +167,7 @@ export default function AvailabilityGrid({
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
                     className="text-[11px] font-bold text-gray-600 dark:text-gray-300 tabular-nums leading-none"
-                    style={{ marginTop: -4 }}
+                    style={{ marginTop: idx === 0 ? 0 : -4 }}
                   >
                     {Math.floor(slot / SLOTS_PER_HOUR)}
                   </span>
