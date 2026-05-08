@@ -257,7 +257,7 @@ export default function AvailabilityGrid({
                 elements.push(
                   <div
                     key={`${date}-${slot}`}
-                    className="bg-white dark:bg-gray-900"
+                    className="bg-white"
                     style={{ height: CELL_HEIGHT, position: 'relative', ...cellBorder }}
                   >
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
