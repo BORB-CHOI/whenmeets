@@ -23,6 +23,8 @@ import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import HoverPopoverPortal, { type HoverPopoverHandle } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
+import InAppBrowserModal from '@/components/auth/InAppBrowserModal';
+import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -66,6 +68,7 @@ export default function EventPageClient({
 }: EventPageClientProps) {
   const queryClient = useQueryClient();
   const [event, setEventState] = useState<EventData>(initialEvent);
+  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserType>(null);
   // Seed the query cache with SSR initial data so cross-page navigation reuses it.
   useEffect(() => {
     queryClient.setQueryData(eventQueryKey(eventId), initialEvent);
@@ -959,6 +962,11 @@ export default function EventPageClient({
                 <button
                   type="button"
                   onClick={async () => {
+                    const detected = detectInAppBrowser();
+                    if (detected) {
+                      setInAppBrowser(detected);
+                      return;
+                    }
                     const supabase = createAuthBrowserClient();
                     await supabase.auth.signInWithOAuth({
                       provider: 'google',
@@ -1108,6 +1116,11 @@ export default function EventPageClient({
           renderContent={(date, slot) => <SlotHoverInfo date={date} slot={slot} />}
         />
       )}
+
+      <InAppBrowserModal
+        type={inAppBrowser}
+        onClose={() => setInAppBrowser(null)}
+      />
     </div>
   );
 }
