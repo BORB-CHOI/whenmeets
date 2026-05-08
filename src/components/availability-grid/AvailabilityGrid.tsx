@@ -136,7 +136,7 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
+        <div className={`flex items-start mx-auto ${needsPagination ? 'pr-0' : 'pr-7 sm:pr-0'}`} style={{ width: '100%', maxWidth: containerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
           {/* Time column. When paginated, the header row holds the prev button
               flush against the first date header. Otherwise the header area is
               an empty spacer matching HEADER_HEIGHT. */}
