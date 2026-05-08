@@ -1,6 +1,6 @@
 export default function Step1Mockup() {
   return (
-    <div className="w-full max-w-[260px] bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/60 dark:border-gray-700/60 p-3.5">
+    <div className="w-full max-w-65 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/60 dark:border-gray-700/60 p-3.5">
       <div className="text-[11px] font-bold text-gray-700 dark:text-gray-200 mb-2.5">
         새 이벤트
       </div>
