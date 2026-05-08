@@ -25,12 +25,13 @@ A change to one MUST be reflected in the others.
 | Component | Role | File |
 |-----------|------|------|
 | `DragGrid` | Drag-based availability input | `src/components/drag-grid/DragGrid.tsx` |
-| `CalendarDragGrid` | Calendar mode input | `src/components/drag-grid/CalendarDragGrid.tsx` |
+| `CalendarDragGrid` | Calendar/요일 mode input (uses `MonthCalendarGrid`) | `src/components/drag-grid/CalendarDragGrid.tsx` |
 | `GridCell` | Individual cell rendering (input) | `src/components/drag-grid/GridCell.tsx` |
 | `GridEditor` | Event page editing wrapper | `src/components/event-page/GridEditor.tsx` |
-| `HeatmapGrid` | Results heatmap (weekly) | `src/components/results/HeatmapGrid.tsx` |
-| `CalendarHeatmapGrid` | Results heatmap (calendar) | `src/components/results/CalendarHeatmapGrid.tsx` |
-| `AvailabilityGrid` | Read-only availability display | `src/components/availability-grid/AvailabilityGrid.tsx` |
+| `HeatmapGrid` | Results heatmap (weekly) — integer cellWidth, SVG-wave date-gap separator | `src/components/results/HeatmapGrid.tsx` |
+| `CalendarHeatmapGrid` | Results heatmap (calendar/요일, uses `MonthCalendarGrid`) | `src/components/results/CalendarHeatmapGrid.tsx` |
+| `AvailabilityGrid` | Read-only availability display — integer cellWidth, SVG-wave date-gap separator | `src/components/availability-grid/AvailabilityGrid.tsx` |
+| `MonthCalendarGrid` | Shared month / 요일 grid layout (한국어 day headers, integer cell size, sub-pixel safe) | `src/components/calendar-grid/MonthCalendarGrid.tsx` |
 
 **Shared concerns:**
 - Cell height/width must be consistent between input and results grids

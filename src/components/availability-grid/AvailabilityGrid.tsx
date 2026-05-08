@@ -23,6 +23,15 @@ const timeColWidth_DESKTOP = TIME_COL_WIDTH_DESKTOP;
 const timeColWidth_MOBILE = TIME_COL_WIDTH_MOBILE;
 const MOBILE_BREAKPOINT = 640;
 const HEADER_HEIGHT = 48;
+const GAP_WIDTH = 6;
+
+function getDevicePixelRatio() {
+  return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+}
+
+function toDevicePixel(value: number, dpr: number) {
+  return Math.max(1 / dpr, Math.round(value * dpr) / dpr);
+}
 
 function formatDateHeader(dateStr: string): { num: string; day: string } {
   if (isDayOfWeekKey(dateStr)) {
@@ -53,6 +62,7 @@ export default function AvailabilityGrid({
   const [page, setPage] = useState(0);
   const [containerWidth, setContainerWidth] = useState(GRID_WIDTH);
   const [timeColWidth, setTimeColWidth] = useState(timeColWidth_DESKTOP);
+  const [devicePixelRatio, setDevicePixelRatio] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const columnsRestProps = useMemo(() => {
     if (!columnsProps) return undefined;
@@ -71,6 +81,8 @@ export default function AvailabilityGrid({
 
   useEffect(() => {
     function updateWidth() {
+      const dpr = getDevicePixelRatio();
+      setDevicePixelRatio(dpr);
       const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
       const tcw = isMobile ? timeColWidth_MOBILE : timeColWidth_DESKTOP;
       setTimeColWidth(tcw);
@@ -92,9 +104,11 @@ export default function AvailabilityGrid({
     }
 
     window.addEventListener('resize', updateWidth, { passive: true });
+    window.visualViewport?.addEventListener('resize', updateWidth, { passive: true });
     return () => {
       observer?.disconnect();
       window.removeEventListener('resize', updateWidth);
+      window.visualViewport?.removeEventListener('resize', updateWidth);
     };
   }, [needsPagination]);
 
@@ -121,12 +135,44 @@ export default function AvailabilityGrid({
   // Build grid template columns with gap spacers
   const gridTemplateCols = useMemo(() => {
     const parts: string[] = [];
-    for (let i = 0; i < visibleDates.length; i++) {
-      if (dateGapIndices.has(i)) parts.push('6px'); // gap spacer
-      parts.push('1fr');
+    const numCols = visibleDates.length;
+    const gapWidth = toDevicePixel(GAP_WIDTH, devicePixelRatio);
+    const lineWidth = toDevicePixel(1, devicePixelRatio);
+    const gapTotal = dateGapIndices.size * gapWidth;
+    const availableForCells = Math.max(lineWidth * numCols, containerWidth - gapTotal);
+    const cellWidth = numCols > 0
+      ? Math.max(lineWidth, Math.floor((availableForCells * devicePixelRatio) / numCols) / devicePixelRatio)
+      : lineWidth;
+
+    for (let i = 0; i < numCols; i++) {
+      if (dateGapIndices.has(i)) parts.push(`${gapWidth}px`);
+      parts.push(`${cellWidth}px`);
     }
     return parts.join(' ');
-  }, [visibleDates.length, dateGapIndices]);
+  }, [visibleDates.length, dateGapIndices, containerWidth, devicePixelRatio]);
+
+  // Force the grid area to a width that divides evenly across columns. The 1fr
+  // tracks then resolve to integer pixels and 1px borders land on exact device
+  // pixels — sub-pixel smearing is what made some vertical lines render thicker
+  // or thinner than others.
+  const adjustedContainerWidth = useMemo(() => {
+    const numCols = visibleDates.length;
+    if (numCols === 0) return containerWidth;
+    const gapWidth = toDevicePixel(GAP_WIDTH, devicePixelRatio);
+    const lineWidth = toDevicePixel(1, devicePixelRatio);
+    const gapTotal = dateGapIndices.size * gapWidth;
+    const availableForCells = Math.max(lineWidth * numCols, containerWidth - gapTotal);
+    const cell = Math.floor((availableForCells * devicePixelRatio) / numCols) / devicePixelRatio;
+    if (cell <= 0) return containerWidth;
+    return cell * numCols + gapTotal;
+  }, [containerWidth, visibleDates.length, dateGapIndices, devicePixelRatio]);
+
+  const gridLineWidth = toDevicePixel(1, devicePixelRatio);
+  const slotHeight = toDevicePixel(CELL_HEIGHT, devicePixelRatio);
+  const gapBarrierStyle: React.CSSProperties = {
+    backgroundColor: 'rgba(229, 231, 235, 0.55)',
+    backgroundImage: `repeating-linear-gradient(135deg, transparent 0 ${gridLineWidth * 3}px, rgba(153, 153, 153, 0.85) ${gridLineWidth * 3}px ${gridLineWidth * 4}px, transparent ${gridLineWidth * 4}px ${gridLineWidth * 7}px)`,
+  };
 
   const canPrev = page > 0;
   const canNext = page < totalPages - 1;
@@ -136,7 +182,7 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className={`flex items-start mx-auto ${needsPagination ? 'pr-0' : 'pr-7 sm:pr-0'}`} style={{ width: '100%', maxWidth: containerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
+        <div className={`flex items-start mx-auto ${needsPagination ? 'pr-0' : 'pr-7 sm:pr-0'}`} style={{ width: '100%', maxWidth: adjustedContainerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
           {/* Time column. When paginated, the header row holds the prev button
               flush against the first date header. Otherwise the header area is
               an empty spacer matching HEADER_HEIGHT. */}
@@ -162,7 +208,7 @@ export default function AvailabilityGrid({
               <div
                 key={slot}
                 className="flex items-start justify-end pr-1"
-                style={{ height: CELL_HEIGHT }}
+                style={{ height: slotHeight }}
               >
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
@@ -181,7 +227,12 @@ export default function AvailabilityGrid({
             data-grid-container=""
             ref={columnsProps?.ref}
             className={`grid${disableTouchScroll ? ' touch-none' : ''}`}
-            style={{ flex: 1, minWidth: 0, gridTemplateColumns: gridTemplateCols }}
+            style={{
+              flex: '0 0 auto',
+              width: adjustedContainerWidth,
+              minWidth: adjustedContainerWidth,
+              gridTemplateColumns: gridTemplateCols,
+            }}
             {...columnsRestProps}
           >
             {/* Date headers — sticky to viewport top on desktop while scrolling time grid */}
@@ -229,22 +280,22 @@ export default function AvailabilityGrid({
                 // visually overpowered by the cell's own background stacking.
                 const cellBorder: React.CSSProperties = {
                   boxSizing: 'border-box',
-                  borderRight: `1px solid ${lineColor}`,
+                  borderRight: `${gridLineWidth}px solid ${lineColor}`,
                 };
-                if (isFirst) cellBorder.borderLeft = `1px solid ${lineColor}`;
-                else if (hasGapBefore) cellBorder.borderLeft = `2px solid ${lineColor}`;
-                if (isHalfHourLine) cellBorder.borderTop = `1px dashed ${lineColor}`;
-                else if (isHourLine) cellBorder.borderTop = `1px solid ${lineColor}`;
-                if (isLastRow) cellBorder.borderBottom = `1px solid ${lineColor}`;
+                if (isFirst) cellBorder.borderLeft = `${gridLineWidth}px solid ${lineColor}`;
+                else if (hasGapBefore) cellBorder.borderLeft = `${gridLineWidth * 2}px solid ${lineColor}`;
+                if (isHalfHourLine) cellBorder.borderTop = `${gridLineWidth}px dashed ${lineColor}`;
+                else if (isHourLine) cellBorder.borderTop = `${gridLineWidth}px solid ${lineColor}`;
+                if (isLastRow) cellBorder.borderBottom = `${gridLineWidth}px solid ${lineColor}`;
 
                 const elements = [];
                 if (hasGapBefore) {
-                  elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: CELL_HEIGHT }} />);
+                  elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: slotHeight, ...gapBarrierStyle }} />);
                 }
                 elements.push(
                   <div
                     key={`${date}-${slot}`}
-                    style={{ height: CELL_HEIGHT, position: 'relative', ...cellBorder }}
+                    style={{ height: slotHeight, position: 'relative', ...cellBorder }}
                   >
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
                   </div>
