@@ -135,10 +135,14 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className="flex items-stretch mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 72 : 0) }}>
-          {/* Pagination — prev (left) */}
+        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 72 : 0) }}>
+          {/* Pagination — prev (left). Aligned with date-header row, sticky on
+              desktop so it stays reachable while scrolling the grid. */}
           {needsPagination && (
-            <div className="shrink-0 flex flex-col items-center justify-center" style={{ width: 36 }}>
+            <div
+              className="shrink-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+              style={{ width: 36, height: HEADER_HEIGHT }}
+            >
               <button
                 onClick={() => setPage((p) => p - 1)}
                 disabled={!canPrev}
@@ -248,9 +252,12 @@ export default function AvailabilityGrid({
             ))}
           </div>
 
-          {/* Pagination — next (right) */}
+          {/* Pagination — next (right). Same sticky behavior as prev. */}
           {needsPagination && (
-            <div className="shrink-0 flex flex-col items-center justify-center" style={{ width: 36 }}>
+            <div
+              className="shrink-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+              style={{ width: 36, height: HEADER_HEIGHT }}
+            >
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!canNext}
