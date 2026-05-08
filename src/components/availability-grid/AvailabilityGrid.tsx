@@ -210,32 +210,37 @@ export default function AvailabilityGrid({
             {slots.map((slot, rowIdx) => (
               visibleDates.map((date, colIdx) => {
                 const isFirst = colIdx === 0;
-                const isLast = colIdx === visibleDates.length - 1;
                 const isFirstRow = rowIdx === 0;
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
                 const lineColor = '#999999';
-                const shadows: string[] = [`inset -1px 0 0 0 ${lineColor}`];
-                if (isFirst) shadows.push(`inset 1px 0 0 0 ${lineColor}`);
-                if (hasGapBefore) shadows.push(`inset 2px 0 0 0 ${lineColor}`);
-                if (isLast) shadows.push(`inset -1px 0 0 0 ${lineColor}`);
                 const isHourLine = isFirstRow || slot % SLOTS_PER_HOUR === 0;
                 const isHalfHourLine = !isFirstRow && slot % SLOTS_PER_HOUR === 2;
-                if (isHourLine) shadows.push(`inset 0 1px 0 0 ${lineColor}`);
-                if (isLastRow) shadows.push(`inset 0 -1px 0 0 ${lineColor}`);
 
-                const overlayStyle: React.CSSProperties = { boxShadow: shadows.join(', ') };
-                if (isHalfHourLine) overlayStyle.borderTop = `1px dashed ${lineColor}`;
+                // Direct borders on the cell wrapper. More reliable than inset
+                // box-shadow on a transparent overlay — inset shadows can be
+                // visually overpowered by the cell's own background stacking.
+                const cellBorder: React.CSSProperties = {
+                  boxSizing: 'border-box',
+                  borderRight: `1px solid ${lineColor}`,
+                };
+                if (isFirst) cellBorder.borderLeft = `1px solid ${lineColor}`;
+                else if (hasGapBefore) cellBorder.borderLeft = `2px solid ${lineColor}`;
+                if (isHalfHourLine) cellBorder.borderTop = `1px dashed ${lineColor}`;
+                else if (isHourLine) cellBorder.borderTop = `1px solid ${lineColor}`;
+                if (isLastRow) cellBorder.borderBottom = `1px solid ${lineColor}`;
 
                 const elements = [];
                 if (hasGapBefore) {
                   elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: CELL_HEIGHT }} />);
                 }
                 elements.push(
-                  <div key={`${date}-${slot}`} style={{ height: CELL_HEIGHT, position: 'relative' }}>
+                  <div
+                    key={`${date}-${slot}`}
+                    style={{ height: CELL_HEIGHT, position: 'relative', ...cellBorder }}
+                  >
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
-                    <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
                   </div>
                 );
                 return elements;
