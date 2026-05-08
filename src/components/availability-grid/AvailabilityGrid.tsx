@@ -77,7 +77,7 @@ export default function AvailabilityGrid({
         // post-mount shrink flicker (initial state used GRID_WIDTH, then effect
         // computed available - tcw - 16) and (b) leftover empty space the
         // table couldn't fill.
-        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0)));
+        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 72 : 0)));
       }
     }
 
@@ -135,7 +135,21 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
+        <div className="flex items-stretch mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 72 : 0) }}>
+          {/* Pagination — prev (left) */}
+          {needsPagination && (
+            <div className="shrink-0 flex flex-col items-center justify-center" style={{ width: 36 }}>
+              <button
+                onClick={() => setPage((p) => p - 1)}
+                disabled={!canPrev}
+                aria-label="이전 페이지"
+                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+          )}
+
           {/* Time labels */}
           <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
             {slots.map((slot) => (
@@ -201,7 +215,7 @@ export default function AvailabilityGrid({
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                const lineColor = '#d1d5db';
+                const lineColor = '#999999';
                 const shadows: string[] = [`inset -1px 0 0 0 ${lineColor}`];
                 if (isFirst) shadows.push(`inset 1px 0 0 0 ${lineColor}`);
                 if (hasGapBefore) shadows.push(`inset 2px 0 0 0 ${lineColor}`);
@@ -229,19 +243,13 @@ export default function AvailabilityGrid({
             ))}
           </div>
 
-          {/* Pagination arrows */}
+          {/* Pagination — next (right) */}
           {needsPagination && (
-            <div className="shrink-0 flex flex-col items-center gap-1 pt-1 pl-3" style={{ width: 36 }}>
-              <button
-                onClick={() => setPage((p) => p - 1)}
-                disabled={!canPrev}
-                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
+            <div className="shrink-0 flex flex-col items-center justify-center" style={{ width: 36 }}>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!canNext}
+                aria-label="다음 페이지"
                 className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
