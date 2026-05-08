@@ -64,6 +64,11 @@ export default function AvailabilityGrid({
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
 
+  // When paginated, the prev button is folded INTO the time column header row
+  // (so it sits flush next to the first date header). Time-col width grows to
+  // 36px to fit the button. Right-side next button stays as its own 36px col.
+  const effectiveTimeColWidth = needsPagination ? Math.max(36, timeColWidth) : timeColWidth;
+
   useEffect(() => {
     function updateWidth() {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
@@ -71,13 +76,9 @@ export default function AvailabilityGrid({
       setTimeColWidth(tcw);
       if (containerRef.current) {
         const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
-        // No extra buffer: the inner flex (mx-auto + maxWidth) already centers,
-        // and any safety margin came from page-level px. Subtracting 16 here
-        // shrank the grid below the parent's width and produced (a) a
-        // post-mount shrink flicker (initial state used GRID_WIDTH, then effect
-        // computed available - tcw - 16) and (b) leftover empty space the
-        // table couldn't fill.
-        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 72 : 0)));
+        const effectiveTcw = needsPagination ? Math.max(36, tcw) : tcw;
+        // Reserve space for time col (with prev btn folded in) + right next btn.
+        setContainerWidth(Math.min(GRID_WIDTH, available - effectiveTcw - (needsPagination ? 36 : 0)));
       }
     }
 
@@ -135,27 +136,28 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 72 : 0) }}>
-          {/* Pagination — prev (left). Aligned with date-header row, sticky on
-              desktop so it stays reachable while scrolling the grid. */}
-          {needsPagination && (
-            <div
-              className="shrink-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
-              style={{ width: 36, height: HEADER_HEIGHT }}
-            >
-              <button
-                onClick={() => setPage((p) => p - 1)}
-                disabled={!canPrev}
-                aria-label="이전 페이지"
-                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
+          {/* Time column. When paginated, the header row holds the prev button
+              flush against the first date header. Otherwise the header area is
+              an empty spacer matching HEADER_HEIGHT. */}
+          <div className="shrink-0 flex flex-col" style={{ width: effectiveTimeColWidth }}>
+            {needsPagination ? (
+              <div
+                className="flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                style={{ height: HEADER_HEIGHT }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-            </div>
-          )}
-
-          {/* Time labels */}
-          <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={!canPrev}
+                  aria-label="이전 페이지"
+                  className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+              </div>
+            ) : (
+              <div style={{ height: HEADER_HEIGHT }} />
+            )}
             {slots.map((slot) => (
               <div
                 key={slot}

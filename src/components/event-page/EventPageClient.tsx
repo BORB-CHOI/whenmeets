@@ -659,7 +659,7 @@ export default function EventPageClient({
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
-              <div className={`flex justify-start mt-2 ${event.dates.length > 7 ? 'pl-16 sm:pl-14 pr-9' : 'pl-7 sm:pl-5'}`}>
+              <div className={`flex justify-start mt-2 ${event.dates.length > 7 ? 'pl-9 pr-9' : 'pl-7 sm:pl-5'}`}>
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
@@ -693,7 +693,7 @@ export default function EventPageClient({
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
-              <div className={`flex justify-start mt-2 ${event.dates.length > 7 ? 'pl-16 sm:pl-14 pr-9' : 'pl-7 sm:pl-5'}`}>
+              <div className={`flex justify-start mt-2 ${event.dates.length > 7 ? 'pl-9 pr-9' : 'pl-7 sm:pl-5'}`}>
                 <HeatmapLegend total={selectedIds.size} />
               </div>
             </>
