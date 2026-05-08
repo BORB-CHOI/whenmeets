@@ -6,6 +6,24 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-05-08
+
+### Added
+
+- 홈 콘텐츠 섹션 3종 (AdSense 정책 대응 + SEO 보강) — 기존 hero가 thin onboarding 화면 단독이라 "콘텐츠 없음/낮음" 정책 위반 후보였음. 다음 추가:
+  - **How it works** — 3 step (이벤트 만들기 / 링크 공유 / 시간 고르기). 각 step에 mockup UI 포함 (CSS-only, 폰트/색상은 실제 그리드와 동일)
+  - **Features** — 4 cards (회원가입 0초, 모바일 우선, 실시간 동기화, 무료/오픈소스)
+  - **FAQ** — 5 Q&A (회원가입 / when2meet 차이 / 응답 보호 / 요일 모드 / 데이터·비용), framer-motion accordion
+- 이벤트 페이지 OG 이미지 (직전 PR에서 누락) — `/e/[id]/layout.tsx` `generateMetadata`에 `openGraph.images` + Twitter `summary_large_image` 명시. 카톡으로 이벤트 링크 공유 시 brand 이미지 노출
+
+### Fixed
+
+- 이벤트 페이지 Google 로그인 버튼이 인앱브라우저 가드 우회 — `EventPageClient.tsx`의 "Google로 계속하기"가 `AuthButton`과 별개로 `signInWithOAuth` 직접 호출. 카톡으로 이벤트 링크 들어와 로그인 시 `disallowed_useragent` 403 그대로 발생. 동일한 `detectInAppBrowser` 가드 + `InAppBrowserModal` 적용
+
+### Changed
+
+- AdSense 액션 페이지 광고 비표시 — `/new`, `/mypage`, `/dashboard`는 폼/네비게이션 화면이라 정책상 광고 비허용. `FloatingAds`에서 prefix 매칭으로 모든 광고 숨김 (`src/components/ads/FloatingAds.tsx`)
+
 ## [0.5.2] - 2026-05-08
 
 ### Added
