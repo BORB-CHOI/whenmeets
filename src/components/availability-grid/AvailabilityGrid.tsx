@@ -64,6 +64,11 @@ export default function AvailabilityGrid({
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
 
+  // When paginated, the prev button is folded INTO the time column header row
+  // (so it sits flush next to the first date header). Time-col width grows to
+  // 36px to fit the button. Right-side next button stays as its own 36px col.
+  const effectiveTimeColWidth = needsPagination ? Math.max(36, timeColWidth) : timeColWidth;
+
   useEffect(() => {
     function updateWidth() {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
@@ -71,13 +76,9 @@ export default function AvailabilityGrid({
       setTimeColWidth(tcw);
       if (containerRef.current) {
         const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
-        // No extra buffer: the inner flex (mx-auto + maxWidth) already centers,
-        // and any safety margin came from page-level px. Subtracting 16 here
-        // shrank the grid below the parent's width and produced (a) a
-        // post-mount shrink flicker (initial state used GRID_WIDTH, then effect
-        // computed available - tcw - 16) and (b) leftover empty space the
-        // table couldn't fill.
-        setContainerWidth(Math.min(GRID_WIDTH, available - tcw - (needsPagination ? 80 : 0)));
+        const effectiveTcw = needsPagination ? Math.max(36, tcw) : tcw;
+        // Reserve space for time col (with prev btn folded in) + right next btn.
+        setContainerWidth(Math.min(GRID_WIDTH, available - effectiveTcw - (needsPagination ? 36 : 0)));
       }
     }
 
@@ -135,10 +136,29 @@ export default function AvailabilityGrid({
       {header}
 
       <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
-        <div className="flex items-start mx-auto pr-7 sm:pr-0" style={{ width: '100%', maxWidth: containerWidth + timeColWidth + (needsPagination ? 80 : 0) }}>
-          {/* Time labels */}
-          <div className="shrink-0 flex flex-col" style={{ width: timeColWidth, paddingTop: HEADER_HEIGHT }}>
-            {slots.map((slot) => (
+        <div className={`flex items-start mx-auto ${needsPagination ? 'pr-0' : 'pr-7 sm:pr-0'}`} style={{ width: '100%', maxWidth: containerWidth + effectiveTimeColWidth + (needsPagination ? 36 : 0) }}>
+          {/* Time column. When paginated, the header row holds the prev button
+              flush against the first date header. Otherwise the header area is
+              an empty spacer matching HEADER_HEIGHT. */}
+          <div className="shrink-0 flex flex-col" style={{ width: effectiveTimeColWidth }}>
+            {needsPagination ? (
+              <div
+                className="flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                style={{ height: HEADER_HEIGHT }}
+              >
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={!canPrev}
+                  aria-label="이전 페이지"
+                  className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+              </div>
+            ) : (
+              <div style={{ height: HEADER_HEIGHT }} />
+            )}
+            {slots.map((slot, idx) => (
               <div
                 key={slot}
                 className="flex items-start justify-end pr-1"
@@ -147,7 +167,7 @@ export default function AvailabilityGrid({
                 {slot % SLOTS_PER_HOUR === 0 && (
                   <span
                     className="text-[11px] font-bold text-gray-600 dark:text-gray-300 tabular-nums leading-none"
-                    style={{ marginTop: -4 }}
+                    style={{ marginTop: idx === 0 ? 0 : -4 }}
                   >
                     {Math.floor(slot / SLOTS_PER_HOUR)}
                   </span>
@@ -196,32 +216,37 @@ export default function AvailabilityGrid({
             {slots.map((slot, rowIdx) => (
               visibleDates.map((date, colIdx) => {
                 const isFirst = colIdx === 0;
-                const isLast = colIdx === visibleDates.length - 1;
                 const isFirstRow = rowIdx === 0;
                 const isLastRow = rowIdx === slots.length - 1;
                 const hasGapBefore = dateGapIndices.has(colIdx);
 
-                const lineColor = '#d1d5db';
-                const shadows: string[] = [`inset -1px 0 0 0 ${lineColor}`];
-                if (isFirst) shadows.push(`inset 1px 0 0 0 ${lineColor}`);
-                if (hasGapBefore) shadows.push(`inset 2px 0 0 0 ${lineColor}`);
-                if (isLast) shadows.push(`inset -1px 0 0 0 ${lineColor}`);
+                const lineColor = '#999999';
                 const isHourLine = isFirstRow || slot % SLOTS_PER_HOUR === 0;
                 const isHalfHourLine = !isFirstRow && slot % SLOTS_PER_HOUR === 2;
-                if (isHourLine) shadows.push(`inset 0 1px 0 0 ${lineColor}`);
-                if (isLastRow) shadows.push(`inset 0 -1px 0 0 ${lineColor}`);
 
-                const overlayStyle: React.CSSProperties = { boxShadow: shadows.join(', ') };
-                if (isHalfHourLine) overlayStyle.borderTop = `1px dashed ${lineColor}`;
+                // Direct borders on the cell wrapper. More reliable than inset
+                // box-shadow on a transparent overlay — inset shadows can be
+                // visually overpowered by the cell's own background stacking.
+                const cellBorder: React.CSSProperties = {
+                  boxSizing: 'border-box',
+                  borderRight: `1px solid ${lineColor}`,
+                };
+                if (isFirst) cellBorder.borderLeft = `1px solid ${lineColor}`;
+                else if (hasGapBefore) cellBorder.borderLeft = `2px solid ${lineColor}`;
+                if (isHalfHourLine) cellBorder.borderTop = `1px dashed ${lineColor}`;
+                else if (isHourLine) cellBorder.borderTop = `1px solid ${lineColor}`;
+                if (isLastRow) cellBorder.borderBottom = `1px solid ${lineColor}`;
 
                 const elements = [];
                 if (hasGapBefore) {
                   elements.push(<div key={`gap-${colIdx}-${slot}`} style={{ height: CELL_HEIGHT }} />);
                 }
                 elements.push(
-                  <div key={`${date}-${slot}`} style={{ height: CELL_HEIGHT, position: 'relative' }}>
+                  <div
+                    key={`${date}-${slot}`}
+                    style={{ height: CELL_HEIGHT, position: 'relative', ...cellBorder }}
+                  >
                     {renderCell(date, slot, { dateIdx: colIdx, slotIdx: rowIdx })}
-                    <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
                   </div>
                 );
                 return elements;
@@ -229,19 +254,16 @@ export default function AvailabilityGrid({
             ))}
           </div>
 
-          {/* Pagination arrows */}
+          {/* Pagination — next (right). Same sticky behavior as prev. */}
           {needsPagination && (
-            <div className="shrink-0 flex flex-col items-center gap-1 pt-1 pl-3" style={{ width: 36 }}>
-              <button
-                onClick={() => setPage((p) => p - 1)}
-                disabled={!canPrev}
-                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
+            <div
+              className="shrink-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+              style={{ width: 36, height: HEADER_HEIGHT }}
+            >
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!canNext}
+                aria-label="다음 페이지"
                 className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>

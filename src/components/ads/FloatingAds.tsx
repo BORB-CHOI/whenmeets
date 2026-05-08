@@ -21,11 +21,21 @@ const DESKTOP_SIDE_AD_HEIGHT_PX = 600;
  * The mobile banner injects a body-level padding-bottom so footer + main
  * content scroll fully into view above the ad instead of being covered by it.
  */
+// Action-only pages with no publisher content — AdSense forbids ads on
+// "screens used for action/navigation" or "screens with no/low publisher content".
+// Hide all ads here regardless of breakpoint.
+const ACTION_PAGE_PREFIXES = ['/new', '/mypage', '/dashboard'];
+
 export default function FloatingAds() {
   const pathname = usePathname() ?? '';
   const desktopLeft = process.env.NEXT_PUBLIC_ADSENSE_SLOT_DESKTOP_LEFT;
   const desktopRight = process.env.NEXT_PUBLIC_ADSENSE_SLOT_DESKTOP_RIGHT;
   const mobileBottom = process.env.NEXT_PUBLIC_ADSENSE_SLOT_MOBILE_BOTTOM;
+
+  const isActionPage = ACTION_PAGE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (isActionPage) {
+    return null;
+  }
 
   // Avoid stacking two fixed bottom bars on the event page where MobileBottomBar lives.
   const isEventPage = pathname.startsWith('/e/');

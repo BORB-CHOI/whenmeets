@@ -6,6 +6,33 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-05-08
+
+### Added
+
+- 홈 콘텐츠 섹션 3종 (AdSense 정책 대응 + SEO 보강) — 기존 hero가 thin onboarding 화면 단독이라 "콘텐츠 없음/낮음" 정책 위반 후보였음. 다음 추가:
+  - **How it works** — 3 step (이벤트 만들기 / 링크 공유 / 시간 고르기). 각 step에 실제 UI를 모방한 mockup 포함 (Step 2는 실제 이벤트 페이지 헤더 + "복사됨!" 상태 + "링크가 복사되었습니다" 토스트 그대로 재현)
+  - **Features** — 4 cards: **3초면 이벤트 생성** (단일 모달 vs 타 도구 4~6단계 위저드), 모바일 우선, 실시간 동기화, 무료/오픈소스
+  - **FAQ** — 6 Q&A: when2meet 비교(2008년 UI/모바일 드래그/한국어 부재 등), Timeful 비교(비로그인 입력 + 셀별 인원수 숫자 + 안되는 시간 모드 + 횟수 무제한), 카톡 보안 브라우저 오류 대응, 3단계 응답 구분, 응답 비밀번호 보호, 요일 모드. framer-motion accordion
+- 이벤트 페이지 OG 이미지 (직전 PR에서 누락) — `/e/[id]/layout.tsx` `generateMetadata`에 `openGraph.images` + Twitter `summary_large_image` 명시. 카톡으로 이벤트 링크 공유 시 brand 이미지 노출
+- main/master 직접 commit 차단 PreToolUse hook — `git commit` 명령어가 main 브랜치에서 실행되면 exit 2로 차단 + feature 브랜치 + PR 워크플로 안내. 비상 시 `HARNESS_BYPASS_MAIN_COMMIT=1`로 우회 (`.claude/scripts/hooks/pre-bash-block-main-commit.js`)
+
+### Fixed
+
+- 이벤트 페이지 Google 로그인 버튼이 인앱브라우저 가드 우회 — `EventPageClient.tsx`의 "Google로 계속하기"가 `AuthButton`과 별개로 `signInWithOAuth` 직접 호출. 카톡으로 이벤트 링크 들어와 로그인 시 `disallowed_useragent` 403 그대로 발생. 동일한 `detectInAppBrowser` 가드 + `InAppBrowserModal` 적용
+- 그리드 라인 가시성 — 기존 box-shadow inset 방식이 일부 환경에서 transparent overlay 위에 잘 안 보이던 문제. cell wrapper에 직접 border 적용으로 전환해 모든 브라우저에서 확실히 렌더. 색상은 `#d1d5db` → `#999999`로 진하게 (`src/components/availability-grid/AvailabilityGrid.tsx`)
+- 히어로 슬로건 "모바일에서도 편하게 쓰는 그룹 일정 조율." 줄바꿈 — `whitespace-nowrap` + 모바일 `text-base sm:text-lg` 분기로 320px에서도 한 줄 보장
+
+### Changed
+
+- AdSense 액션 페이지 광고 비표시 — `/new`, `/mypage`, `/dashboard`는 폼/네비게이션 화면이라 정책상 광고 비허용. `FloatingAds`에서 prefix 매칭으로 모든 광고 숨김 (`src/components/ads/FloatingAds.tsx`)
+- 페이지네이션 UX 재설계 (날짜 8개 이상)
+  - 기존 우측 단일 컬럼에 prev/next 세로 stack → prev/next 좌우 분리
+  - prev 버튼은 시간축 컬럼 헤더 영역 안에 통합 → 첫 날짜 헤더 바로 옆에 밀착
+  - 데스크톱에서 `lg:sticky lg:top-16`로 날짜 헤더와 함께 viewport 상단에 고정 (스크롤해도 계속 보임)
+  - 전체 가로 budget 92px → 72px로 표 가로폭 +20px 확보
+  - 범례 padding(`HeatmapLegend` wrapper)도 페이지네이션 여부에 따라 동적 조정해 그리드 column 영역과 정렬
+
 ## [0.5.2] - 2026-05-08
 
 ### Added
