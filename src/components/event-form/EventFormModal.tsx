@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { EventMode } from '@/lib/types';
-import { addEventToHistory } from '@/lib/event-history';
-import SegmentedControl from '@/components/ui/SegmentedControl';
-import DatePicker from './DatePicker';
-import TimeRangePicker from './TimeRangePicker';
-import DayOfWeekPicker from './DayOfWeekPicker';
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import type { EventMode } from "@/lib/types";
+import { addEventToHistory } from "@/lib/event-history";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import DatePicker from "./DatePicker";
+import TimeRangePicker from "./TimeRangePicker";
+import DayOfWeekPicker from "./DayOfWeekPicker";
 
 interface EventFormModalProps {
   open: boolean;
@@ -26,15 +26,20 @@ interface EventFormModalProps {
   onEventUpdated?: () => void;
 }
 
-type DateSelectionMode = 'calendar' | 'days_of_week';
+type DateSelectionMode = "calendar" | "days_of_week";
 
 function detectDateSelectionMode(dates: string[]): DateSelectionMode {
-  if (dates.length === 0) return 'calendar';
+  if (dates.length === 0) return "calendar";
   // ISO dates look like YYYY-MM-DD (10 chars with dashes at positions 4 and 7)
-  return /^\d{4}-\d{2}-\d{2}$/.test(dates[0]) ? 'calendar' : 'days_of_week';
+  return /^\d{4}-\d{2}-\d{2}$/.test(dates[0]) ? "calendar" : "days_of_week";
 }
 
-export default function EventFormModal({ open, onClose, editEvent, onEventUpdated }: EventFormModalProps) {
+export default function EventFormModal({
+  open,
+  onClose,
+  editEvent,
+  onEventUpdated,
+}: EventFormModalProps) {
   const router = useRouter();
   const now = new Date();
   const [title, setTitle] = useState(
@@ -43,18 +48,39 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
   const [dates, setDates] = useState<string[]>(editEvent?.dates ?? []);
   const [timeStart, setTimeStart] = useState(editEvent?.time_start ?? 36);
   const [timeEnd, setTimeEnd] = useState(editEvent?.time_end ?? 84);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [showTimeRange, setShowTimeRange] = useState(editEvent ? !editEvent.date_only : true);
-  const [mode, setMode] = useState<EventMode>(editEvent?.mode ?? 'available');
+  const [error, setError] = useState("");
+  const [showTimeRange, setShowTimeRange] = useState(
+    editEvent ? !editEvent.date_only : true,
+  );
+  const [mode, setMode] = useState<EventMode>(editEvent?.mode ?? "available");
   const [titleError, setTitleError] = useState(false);
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>(
-    editEvent ? detectDateSelectionMode(editEvent.dates) : 'calendar',
+    editEvent ? detectDateSelectionMode(editEvent.dates) : "calendar",
   );
 
   const dateOnly = !showTimeRange;
+
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the title input only on desktop (hover-capable, fine pointer).
+  // On mobile/touch devices, auto-focusing forces the virtual keyboard to open
+  // the moment the modal appears, which is disruptive.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+    const isTouchDevice = window.matchMedia(
+      "(hover: none) and (pointer: coarse)",
+    ).matches;
+    if (isTouchDevice) return;
+    // Defer to next frame so the input is mounted and animations don't steal focus.
+    const id = requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   // Reset all state when the modal (re)opens. Without this, after a successful
   // PATCH the previous `submitting=true` state persists across opens, leaving
@@ -63,18 +89,23 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
   // captured at first mount).
   useEffect(() => {
     if (!open) return;
-    setTitle(editEvent?.title ?? `새 이벤트 ${new Date().getMonth() + 1}/${new Date().getDate()}`);
+    setTitle(
+      editEvent?.title ??
+        `새 이벤트 ${new Date().getMonth() + 1}/${new Date().getDate()}`,
+    );
     setDates(editEvent?.dates ?? []);
     setTimeStart(editEvent?.time_start ?? 36);
     setTimeEnd(editEvent?.time_end ?? 84);
-    setPassword('');
+    setPassword("");
     setShowPassword(false);
     setSubmitting(false);
-    setError('');
+    setError("");
     setShowTimeRange(editEvent ? !editEvent.date_only : true);
-    setMode(editEvent?.mode ?? 'available');
+    setMode(editEvent?.mode ?? "available");
     setTitleError(false);
-    setDateSelectionMode(editEvent ? detectDateSelectionMode(editEvent.dates) : 'calendar');
+    setDateSelectionMode(
+      editEvent ? detectDateSelectionMode(editEvent.dates) : "calendar",
+    );
     // editEvent identity changes per render in the parent; key off id only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editEvent?.id]);
@@ -84,22 +115,22 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
     setTitleError(false);
 
     if (!title.trim()) {
-      setError('제목을 입력해주세요');
+      setError("제목을 입력해주세요");
       setTitleError(true);
       return;
     }
     if (dates.length === 0) {
-      setError('최소 하나의 날짜를 선택해주세요');
+      setError("최소 하나의 날짜를 선택해주세요");
       return;
     }
 
     setSubmitting(true);
-    setError('');
+    setError("");
 
     if (editEvent) {
       const res = await fetch(`/api/events/${editEvent.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           dates,
@@ -111,7 +142,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || '이벤트 수정에 실패했습니다');
+        setError(data.error || "이벤트 수정에 실패했습니다");
         setSubmitting(false);
         return;
       }
@@ -121,9 +152,9 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
       return;
     }
 
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: title.trim(),
         dates,
@@ -137,7 +168,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || '이벤트 생성에 실패했습니다');
+      setError(data.error || "이벤트 생성에 실패했습니다");
       setSubmitting(false);
       return;
     }
@@ -147,7 +178,7 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
       id,
       title: title.trim(),
       dates,
-      role: 'creator',
+      role: "creator",
       participantCount: 0,
       lastVisited: new Date().toISOString(),
     });
@@ -166,8 +197,20 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.backdropMousedown = 'true'; }}
-          onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.backdropMousedown === 'true') onClose(); (e.currentTarget as HTMLElement).dataset.backdropMousedown = ''; }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget)
+              (e.currentTarget as HTMLElement).dataset.backdropMousedown =
+                "true";
+          }}
+          onClick={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              (e.currentTarget as HTMLElement).dataset.backdropMousedown ===
+                "true"
+            )
+              onClose();
+            (e.currentTarget as HTMLElement).dataset.backdropMousedown = "";
+          }}
         >
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -175,18 +218,30 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col"
-            style={{ height: '90vh' }}
+            style={{ height: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Fixed header */}
             <div className="flex items-center justify-between px-6 pt-4 pb-2 shrink-0">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{editEvent ? '이벤트 수정' : '이벤트 만들기'}</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {editEvent ? "이벤트 수정" : "이벤트 만들기"}
+              </h2>
               <button
                 onClick={onClose}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -195,26 +250,39 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
             <form
               onSubmit={handleSubmit}
               className="px-6 pb-5 pt-2 flex flex-col gap-3 overflow-y-scroll overscroll-contain flex-1"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: '#D1D5DB transparent', scrollbarGutter: 'stable' }}
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "#D1D5DB transparent",
+                scrollbarGutter: "stable",
+              }}
             >
               {/* Title */}
               <input
+                ref={titleInputRef}
                 type="text"
                 value={title}
-                onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(false); }}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (titleError) setTitleError(false);
+                }}
                 placeholder="이벤트 제목"
                 className={`w-full px-4 py-2.5 border rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100 ${
-                  titleError ? 'border-red-500 ring ring-red-500/10' : 'border-gray-200 dark:border-gray-600'
+                  titleError
+                    ? "border-red-500 ring ring-red-500/10"
+                    : "border-gray-200 dark:border-gray-600"
                 }`}
                 maxLength={100}
-                autoFocus
               />
 
               {/* Response mode */}
               <SegmentedControl
                 options={[
-                  { value: 'available', label: '되는 시간 수합' },
-                  { value: 'unavailable', label: '안 되는 시간 수합', variant: 'danger' as const },
+                  { value: "available", label: "되는 시간 수합" },
+                  {
+                    value: "unavailable",
+                    label: "안 되는 시간 수합",
+                    variant: "danger" as const,
+                  },
                 ]}
                 value={mode}
                 onChange={(v) => setMode(v as EventMode)}
@@ -229,18 +297,24 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                   <div className="shrink-0">
                     <SegmentedControl
                       options={[
-                        { value: 'calendar' as const, label: '캘린더' },
-                        { value: 'days_of_week' as const, label: '요일' },
+                        { value: "calendar" as const, label: "캘린더" },
+                        { value: "days_of_week" as const, label: "요일" },
                       ]}
                       value={dateSelectionMode}
-                      onChange={(v) => { setDateSelectionMode(v as DateSelectionMode); setDates([]); }}
+                      onChange={(v) => {
+                        setDateSelectionMode(v as DateSelectionMode);
+                        setDates([]);
+                      }}
                     />
                   </div>
                 </div>
-                {dateSelectionMode === 'calendar' ? (
+                {dateSelectionMode === "calendar" ? (
                   <DatePicker selectedDates={dates} onDatesChange={setDates} />
                 ) : (
-                  <DayOfWeekPicker selectedDays={dates} onDaysChange={setDates} />
+                  <DayOfWeekPicker
+                    selectedDays={dates}
+                    onDaysChange={setDates}
+                  />
                 )}
               </div>
 
@@ -253,14 +327,16 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                     onChange={(e) => setShowTimeRange(e.target.checked)}
                     className="rounded border-gray-300 text-teal-600 cursor-pointer"
                   />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">특정 시간대 지정</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    특정 시간대 지정
+                  </span>
                 </label>
 
                 <AnimatePresence initial={false}>
                   {showTimeRange && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                       className="overflow-hidden"
@@ -285,20 +361,30 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                   onClick={() => setShowPassword(!showPassword)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
                     showPassword
-                      ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50'
-                      : 'text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-900/50 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50'
+                      ? "text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50"
+                      : "text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-900/50 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50"
                   }`}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                    />
                   </svg>
-                  {showPassword ? '비밀번호 제거' : '비밀번호 추가 (선택)'}
+                  {showPassword ? "비밀번호 제거" : "비밀번호 추가 (선택)"}
                 </button>
                 <AnimatePresence initial={false}>
                   {showPassword && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.15 }}
                       className="overflow-hidden"
@@ -323,8 +409,12 @@ export default function EventFormModal({ open, onClose, editEvent, onEventUpdate
                 className="w-full py-2.5 bg-teal-600 text-white font-semibold rounded-md shadow-[var(--shadow-primary)] hover:bg-teal-700 hover:shadow-[var(--shadow-primary-hover)] transition-all disabled:opacity-50 cursor-pointer"
               >
                 {submitting
-                  ? (editEvent ? '수정 중...' : '생성 중...')
-                  : (editEvent ? '수정 완료' : '이벤트 만들기')}
+                  ? editEvent
+                    ? "수정 중..."
+                    : "생성 중..."
+                  : editEvent
+                    ? "수정 완료"
+                    : "이벤트 만들기"}
               </button>
             </form>
           </motion.div>
