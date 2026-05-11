@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.__dark_disabled_never_match__));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,15 +10,6 @@
   --color-primary-hover: #00695C;
   --shadow-primary: 0px 2px 8px rgba(0, 137, 123, 0.5);
   --shadow-primary-hover: 0px 4px 12px rgba(0, 137, 123, 0.4);
-}
-
-.dark {
-  --background: #111827;
-  --foreground: #ededed;
-  --color-primary: #4DB6AC;
-  --color-primary-hover: #80CBC4;
-  --shadow-primary: 0px 2px 8px rgba(77, 182, 172, 0.3);
-  --shadow-primary-hover: 0px 4px 12px rgba(77, 182, 172, 0.25);
 }
 
 @theme {
@@ -66,9 +59,6 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #D1D5DB transparent;
 }
-.dark .custom-scrollbar {
-  scrollbar-color: #4B5563 transparent;
-}
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -79,14 +69,8 @@ body {
   background: #D1D5DB;
   border-radius: 3px;
 }
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #4B5563;
-}
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
 }
 
 /* Select popover enter animation (shadcn style) */

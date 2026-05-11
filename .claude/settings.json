@@ -30,6 +30,16 @@
           }
         ],
         "description": "Block Edit/Write that delete >100 lines in a single call"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/scripts/hooks/pre-edit-block-dark-class.js\""
+          }
+        ],
+        "description": "Block Edit/Write that introduce Tailwind `dark:` classes (dark mode is disabled project-wide)"
       }
     ],
     "PostToolUse": [
