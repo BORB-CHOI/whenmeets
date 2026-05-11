@@ -737,18 +737,12 @@ export default function EventPageClient({
                     <div className="font-medium">
                       {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ If Needed 시간을 드래그하세요'}
                     </div>
-                    {activeMode === 1 && (
-                      <div className="mt-1 text-xs text-amber-700/80 leading-relaxed">
-                        가능은 하지만 우선순위가 낮은 시간. 다른 사람들과 잘 맞지 않으면 이 시간에라도 모일 수 있어요.
-                      </div>
-                    )}
                   </div>
                 </>
               )}
 
               {/* Legend */}
               <div className="mb-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">범례</h3>
                 <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex items-start gap-2">
                     <div className="w-4 h-4 rounded-sm bg-teal-400/60 mt-0.5 shrink-0" />
@@ -808,7 +802,7 @@ export default function EventPageClient({
               {/* Delete availability */}
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-sm text-red-500 hover:text-red-700 cursor-pointer mt-4"
+                className="block w-full text-center text-sm text-red-500 hover:text-red-700 cursor-pointer mt-4"
               >
                 내 응답 삭제
               </button>

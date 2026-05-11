@@ -68,7 +68,7 @@ export default function EventCard({
             onRequestDelete?.(id);
           }}
           title="이벤트 삭제"
-          className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+          className="absolute top-3 right-3 p-1.5 text-gray-400 rounded-md transition-all duration-150 ease-out cursor-pointer hover:text-red-500 hover:bg-red-50 active:scale-90 active:bg-red-100 active:text-red-600"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path
