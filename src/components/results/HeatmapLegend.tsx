@@ -1,23 +1,37 @@
 'use client';
 
-import { getStepColor, getStepLabels, type HeatmapStep } from '@/lib/heatmap';
+import { getStepColor, getStep, type HeatmapStep } from '@/lib/heatmap';
 
 interface HeatmapLegendProps {
   total: number;
 }
 
-const STEPS: HeatmapStep[] = [0, 1, 2, 3, 4, 5];
-
 export default function HeatmapLegend({ total }: HeatmapLegendProps) {
   if (total === 0) return null;
 
-  const labels = ['0', ...getStepLabels(total)];
+  const items = [
+    { step: 0 as HeatmapStep, label: '0' },
+    ...Array.from({ length: total }, (_, i) => i + 1).reduce<
+      { step: HeatmapStep; label: string; min: number; max: number }[]
+    >((buckets, count) => {
+      const step = getStep(count, total);
+      const last = buckets[buckets.length - 1];
+      if (last?.step === step) {
+        last.max = count;
+      } else {
+        buckets.push({ step, label: '', min: count, max: count });
+      }
+      return buckets;
+    }, []).map(({ step, min, max }) => ({
+      step,
+      label: min === max ? String(min) : `${min}+`,
+    })),
+  ];
 
   return (
     <div className="flex items-center gap-1.5 px-1 py-2">
-      {STEPS.map((s, i) => {
-        const label = labels[i];
-        if (!label) return null;
+      {items.map(({ step, label }) => {
+        const s = step;
         const isEmpty = s === 0;
         const isDarkBg = s >= 3;
         return (

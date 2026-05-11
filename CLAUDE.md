@@ -62,6 +62,20 @@ Rules in `.claude/rules/` MUST stay in sync with the actual codebase. When you:
 After any structural change (new file, renamed file, deleted file, moved file),
 verify that `whenmeets-component-map.md` still reflects reality. If it doesn't, fix it before committing.
 
+## Dark mode disabled
+
+다크 모드는 프로젝트 전체에서 **비활성**이며 새 코드에 다크 모드 흔적을 절대 추가하지 말 것.
+
+- `src/app/layout.tsx`: `ThemeProvider forcedTheme="light"`
+- `src/app/globals.css`: `@custom-variant dark (&:where(.__dark_disabled_never_match__));` — Tailwind의 `dark:` 변형이 영구적으로 매칭되지 않게 재정의됨
+- `.claude/scripts/hooks/pre-edit-block-dark-class.js` + `.claude/settings.json` PreToolUse hook — Edit/Write가 `dark:` Tailwind 클래스를 추가하려 하면 자동으로 차단됨
+
+새 코드 작성/기존 코드 수정 시:
+- `dark:*` Tailwind 변형 클래스 0건 (hook이 막음)
+- `<html className="dark">`, `useTheme`, `prefers-color-scheme` 미디어 쿼리 신규 작성 금지
+- 기존 파일에 남아 있는 `dark:` 클래스를 같은 hunk에서 수정한다면 그 hunk 안에서 제거
+- 다크 모드 복귀 PR이 별도 진행되기 전까지 이 상태 유지
+
 ## Design System
 
 DESIGN.md는 현재 없음 (코드와 불일치하여 삭제됨).
