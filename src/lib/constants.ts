@@ -4,9 +4,10 @@ export const CELL_HEIGHT = 15;
 /** Slots per hour (4 = 15-minute intervals) */
 export const SLOTS_PER_HOUR = 4;
 
-/** Time-label column width (px). Mobile is wider for finger-sized scroll-pass-through. */
+/** Time-label column width (px). Kept compact on mobile so the grid sits visually
+ * centered when mirrored by an equal-width spacer on the right side. */
 export const TIME_COL_WIDTH_DESKTOP = 20;
-export const TIME_COL_WIDTH_MOBILE = 28;
+export const TIME_COL_WIDTH_MOBILE = 20;
 
 /** Convert slot index to "HH:MM" string (15-min intervals: slot 0=00:00, 4=01:00, 36=09:00) */
 export function slotToTime(slot: number): string {
