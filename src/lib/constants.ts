@@ -4,8 +4,6 @@ export const CELL_HEIGHT = 15;
 /** Slots per hour (4 = 15-minute intervals) */
 export const SLOTS_PER_HOUR = 4;
 
-/** Time-label column width (px). Kept compact on mobile so the grid sits visually
- * centered when mirrored by an equal-width spacer on the right side. */
 export const TIME_COL_WIDTH_DESKTOP = 20;
 export const TIME_COL_WIDTH_MOBILE = 20;
 

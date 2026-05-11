@@ -22,14 +22,6 @@ const DATE_GAP_WIDTH = 6;
 const PAGINATION_BTN = 36;
 const LINE_COLOR = '#999999';
 
-function getDevicePixelRatio() {
-  return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
-}
-
-function toDevicePixel(value: number, dpr: number) {
-  return Math.max(1 / dpr, Math.round(value * dpr) / dpr);
-}
-
 function formatDateHeader(dateStr: string): { num: string; day: string } {
   if (isDayOfWeekKey(dateStr)) {
     return { num: '', day: DAY_OF_WEEK_LABELS[dateStr] };
@@ -57,11 +49,9 @@ export default function AvailabilityGrid({
 }: AvailabilityGridProps) {
   const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
   const [page, setPage] = useState(0);
-  // 0 = not yet measured. Render a placeholder until first layout to avoid
-  // hydration flash where the grid first paints at desktop width on mobile.
   const [containerWidth, setContainerWidth] = useState(0);
+  const [availableWidth, setAvailableWidth] = useState(0);
   const [timeColWidth, setTimeColWidth] = useState(TIME_COL_WIDTH_DESKTOP);
-  const [devicePixelRatio, setDevicePixelRatio] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const columnsRestProps = useMemo(() => {
     if (!columnsProps) return undefined;
@@ -73,25 +63,21 @@ export default function AvailabilityGrid({
   const totalPages = Math.ceil(dates.length / maxColumns);
   const needsPagination = dates.length > maxColumns;
 
-  // Left column folds the prev-pagination button into the header row when
-  // paginating; right side mirrors that width so the grid sits centered.
   const effectiveTimeColWidth = needsPagination ? Math.max(PAGINATION_BTN, timeColWidth) : timeColWidth;
   const rightSpacerWidth = needsPagination ? PAGINATION_BTN : timeColWidth;
-  const lineWidth = toDevicePixel(1, devicePixelRatio);
+  const lineWidth = 1;
 
   useEffect(() => {
     function updateWidth() {
-      const dpr = getDevicePixelRatio();
-      setDevicePixelRatio(dpr);
       const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
       const tcw = isMobile ? TIME_COL_WIDTH_MOBILE : TIME_COL_WIDTH_DESKTOP;
       setTimeColWidth(tcw);
       if (containerRef.current) {
         const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
+        setAvailableWidth(available);
         const effTcw = needsPagination ? Math.max(PAGINATION_BTN, tcw) : tcw;
         const rightW = needsPagination ? PAGINATION_BTN : tcw;
-        const outerBorder = 2 * toDevicePixel(1, dpr);
-        const gridInner = available - effTcw - rightW - outerBorder;
+        const gridInner = available - effTcw - rightW;
         setContainerWidth(Math.max(0, Math.min(GRID_WIDTH, gridInner)));
       }
     }
@@ -132,43 +118,40 @@ export default function AvailabilityGrid({
     return gaps;
   }, [visibleDates]);
 
-  // Layout math. Cell widths and the date-gap spacer are device-pixel aligned
-  // so the column-gap (the "lines") lands on exact device pixels in every column.
   const { gridTemplateCols, adjustedContainerWidth } = useMemo(() => {
     const numCols = visibleDates.length;
-    const numSpacers = dateGapIndices.size;
-    const dateGap = toDevicePixel(DATE_GAP_WIDTH, devicePixelRatio);
-    const totalItems = numCols + numSpacers;
-    const interiorGapsTotal = Math.max(0, totalItems - 1) * lineWidth;
-    const spacerTotal = numSpacers * dateGap;
-    const availableForCells = Math.max(
-      lineWidth * numCols,
-      containerWidth - interiorGapsTotal - spacerTotal,
-    );
-    const cellWidth = numCols > 0
-      ? Math.max(lineWidth, Math.floor((availableForCells * devicePixelRatio) / numCols) / devicePixelRatio)
-      : lineWidth;
-
     const parts: string[] = [];
     for (let i = 0; i < numCols; i++) {
-      if (dateGapIndices.has(i)) parts.push(`${dateGap}px`);
-      parts.push(`${cellWidth}px`);
+      if (dateGapIndices.has(i)) {
+        parts.push(`${DATE_GAP_WIDTH}px`);
+      }
+      parts.push('minmax(0, 1fr)');
     }
 
     return {
       gridTemplateCols: parts.join(' '),
-      adjustedContainerWidth: cellWidth * numCols + spacerTotal + interiorGapsTotal,
+      adjustedContainerWidth: containerWidth,
     };
-  }, [visibleDates.length, dateGapIndices, containerWidth, devicePixelRatio, lineWidth]);
+  }, [visibleDates.length, dateGapIndices, containerWidth]);
 
-  const slotHeight = toDevicePixel(CELL_HEIGHT, devicePixelRatio);
-  const gridOuterWidth = adjustedContainerWidth + 2 * lineWidth;
+  const slotHeight = CELL_HEIGHT;
+  const gridOuterWidth = adjustedContainerWidth;
   const totalFlexWidth = gridOuterWidth + effectiveTimeColWidth + rightSpacerWidth;
+  const centeredMarginLeft = Math.max(0, Math.floor((availableWidth - totalFlexWidth) / 2));
   const measured = containerWidth > 0;
   const placeholderHeight = HEADER_HEIGHT + slots.length * CELL_HEIGHT;
 
   const gapBarrierStyle: React.CSSProperties = {
-    backgroundColor: 'rgba(229, 231, 235, 0.55)',
+    position: 'relative',
+    backgroundColor: 'rgb(240, 241, 244)',
+    overflow: 'hidden',
+  };
+  const gapHatchStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: lineWidth,
+    right: lineWidth,
     backgroundImage: `repeating-linear-gradient(135deg, transparent 0 ${lineWidth * 3}px, rgba(153, 153, 153, 0.85) ${lineWidth * 3}px ${lineWidth * 4}px, transparent ${lineWidth * 4}px ${lineWidth * 7}px)`,
   };
 
@@ -183,12 +166,17 @@ export default function AvailabilityGrid({
         {!measured ? (
           <div style={{ height: placeholderHeight }} aria-hidden />
         ) : (
-          <div className="flex items-start mx-auto" style={{ width: '100%', maxWidth: totalFlexWidth }}>
-            {/* Left column: hour labels (with prev-pagination button at top when paginated) */}
+          <div
+            className="flex items-start"
+            style={{
+              width: totalFlexWidth,
+              marginLeft: centeredMarginLeft,
+            }}
+          >
             <div className="shrink-0 flex flex-col" style={{ width: effectiveTimeColWidth }}>
               {needsPagination ? (
                 <div
-                  className="flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                  className="flex items-center justify-center bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
                   style={{ height: HEADER_HEIGHT }}
                 >
                   <button
@@ -211,7 +199,7 @@ export default function AvailabilityGrid({
                 >
                   {slot % SLOTS_PER_HOUR === 0 && (
                     <span
-                      className="text-[11px] font-bold text-gray-600 dark:text-gray-300 tabular-nums leading-none"
+                      className="text-[11px] font-bold text-gray-600 tabular-nums leading-none"
                       style={{ marginTop: idx === 0 ? 0 : -4 }}
                     >
                       {Math.floor(slot / SLOTS_PER_HOUR)}
@@ -221,24 +209,17 @@ export default function AvailabilityGrid({
               ))}
             </div>
 
-            {/* Main column: date headers stacked on top of the cell grid. They share
-                gridTemplateColumns so columns line up exactly. The headers use a
-                white column-gap (invisible against the white header bg); the cell
-                grid uses a gray column-gap which becomes the visible vertical lines. */}
             <div className="flex flex-col" style={{ flex: '0 0 auto', width: gridOuterWidth }}>
-              {/* Date header row — sticky on desktop. */}
               <div
-                className="grid bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                className="grid bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
                 style={{
                   gridTemplateColumns: gridTemplateCols,
-                  columnGap: `${lineWidth}px`,
-                  paddingLeft: lineWidth,
-                  paddingRight: lineWidth,
                   boxSizing: 'content-box',
                   width: adjustedContainerWidth,
+                  marginLeft: lineWidth,
                 }}
               >
-                {visibleDates.map((date, colIdx) => {
+                {visibleDates.flatMap((date, colIdx) => {
                   const elements: ReactNode[] = [];
                   if (dateGapIndices.has(colIdx)) {
                     elements.push(
@@ -252,7 +233,7 @@ export default function AvailabilityGrid({
                       className="flex items-center justify-center px-1"
                       style={{ height: HEADER_HEIGHT }}
                     >
-                      <span className="flex flex-col items-center justify-center gap-0.5 text-center text-gray-600 dark:text-gray-300 tabular-nums leading-tight">
+                      <span className="flex flex-col items-center justify-center gap-0.5 text-center text-gray-600 tabular-nums leading-tight">
                         {num && <span className="text-[11px] font-medium">{num}</span>}
                         <span className="text-[12px] font-bold">{day}</span>
                       </span>
@@ -262,28 +243,19 @@ export default function AvailabilityGrid({
                 })}
               </div>
 
-              {/* Cell grid — gap-as-line for vertical separators (sub-pixel safe pattern
-                  used everywhere else in the codebase, see MonthCalendarGrid). Cells get
-                  their borderTop only for hour/half-hour rows; bottom edge of the grid
-                  is drawn as a single container borderBottom. */}
               <div
                 data-grid-container=""
                 ref={columnsProps?.ref}
                 className={`grid${disableTouchScroll ? ' touch-none' : ''}`}
                 style={{
                   gridTemplateColumns: gridTemplateCols,
-                  columnGap: `${lineWidth}px`,
-                  backgroundColor: LINE_COLOR,
-                  borderLeft: `${lineWidth}px solid ${LINE_COLOR}`,
-                  borderRight: `${lineWidth}px solid ${LINE_COLOR}`,
-                  borderBottom: `${lineWidth}px solid ${LINE_COLOR}`,
                   boxSizing: 'content-box',
                   width: adjustedContainerWidth,
                 }}
                 {...columnsRestProps}
               >
                 {slots.map((slot, rowIdx) => (
-                  visibleDates.map((date, colIdx) => {
+                  visibleDates.flatMap((date, colIdx) => {
                     const hasGapBefore = dateGapIndices.has(colIdx);
                     const isFirstRow = rowIdx === 0;
                     const isHourLine = isFirstRow || slot % SLOTS_PER_HOUR === 0;
@@ -294,14 +266,33 @@ export default function AvailabilityGrid({
                       position: 'relative',
                       backgroundColor: '#ffffff',
                       boxSizing: 'border-box',
+                      overflow: 'hidden',
+                      borderRight: `${lineWidth}px solid ${LINE_COLOR}`,
                     };
+                    if (colIdx === 0 || hasGapBefore) {
+                      cellStyle.borderLeft = `${lineWidth}px solid ${LINE_COLOR}`;
+                    }
+                    if (rowIdx === slots.length - 1) {
+                      cellStyle.borderBottom = `${lineWidth}px solid ${LINE_COLOR}`;
+                    }
                     if (isHalfHourLine) cellStyle.borderTop = `${lineWidth}px dashed ${LINE_COLOR}`;
                     else if (isHourLine) cellStyle.borderTop = `${lineWidth}px solid ${LINE_COLOR}`;
 
                     const elements: ReactNode[] = [];
                     if (hasGapBefore) {
+                      const gapStyle: React.CSSProperties = {
+                        height: slotHeight,
+                        ...gapBarrierStyle,
+                      };
+                      if (isHalfHourLine) gapStyle.borderTop = `${lineWidth}px dashed ${LINE_COLOR}`;
+                      else if (isHourLine) gapStyle.borderTop = `${lineWidth}px solid ${LINE_COLOR}`;
+                      if (rowIdx === slots.length - 1) {
+                        gapStyle.borderBottom = `${lineWidth}px solid ${LINE_COLOR}`;
+                      }
                       elements.push(
-                        <div key={`gap-${colIdx}-${slot}`} style={{ height: slotHeight, ...gapBarrierStyle }} />,
+                        <div key={`gap-${colIdx}-${slot}`} style={gapStyle}>
+                          <div style={gapHatchStyle} />
+                        </div>,
                       );
                     }
                     elements.push(
@@ -315,11 +306,9 @@ export default function AvailabilityGrid({
               </div>
             </div>
 
-            {/* Right side: next-pagination button OR a mirror spacer that matches
-                the left time column so the cell grid stays visually centered. */}
             {needsPagination ? (
               <div
-                className="shrink-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                className="shrink-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
                 style={{ width: PAGINATION_BTN, height: HEADER_HEIGHT }}
               >
                 <button
