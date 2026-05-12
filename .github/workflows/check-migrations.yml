@@ -15,7 +15,7 @@ on:
 
 jobs:
   check:
-    name: check pending migrations
+    name: check-migrations
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
