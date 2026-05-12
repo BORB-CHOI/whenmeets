@@ -6,6 +6,11 @@ All notable changes to WhenMeets will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **마이그레이션 적용 누락 가드 (GitHub Actions)** — `.github/workflows/check-migrations.yml` + `scripts/check-pending-migrations.mjs`. PR/머지 시점에 Supabase Management API로 prod에 적용된 마이그레이션 목록을 가져와, `supabase/migrations/` 로컬 파일 중 prod에 없는 게 있으면 check fail. branch protection으로 머지 차단 가능. v0.5.3 머지 직후 `start_on_monday` 컬럼이 prod DB에 없는 채로 코드만 배포되어 모든 이벤트 생성이 500 응답한 사고의 재발 방지용. GitHub Secret `SUPABASE_ACCESS_TOKEN`만 신규 필요 (project ref는 workflow YAML에 하드코딩, Vercel env엔 PAT 노출 안 함).
+- **PR 템플릿** — `.github/pull_request_template.md`. 머지 전 체크리스트, "마이그레이션 별도 PR" 권장, 8가지 모드 회귀 점검 가이드.
+
 ## [0.5.3] - 2026-05-08
 
 ### Added
