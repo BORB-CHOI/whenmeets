@@ -89,6 +89,17 @@ Never commit directly to main. When starting any new task (feature, bugfix, refa
 3. All work happens on the feature branch
 4. Use `/ship` to create a PR back to main
 
+## Database migrations
+
+- 마이그레이션 파일: `supabase/migrations/NNN_*.sql` (3자리 prefix, 순차).
+- Prod 적용: 머지 후 `npx supabase db push`를 **사람이 수동 실행**해야 적용됨. Vercel 자동 배포는 코드만 처리.
+- **GitHub Actions 가드** (`.github/workflows/check-migrations.yml`): PR/머지 시점에 `scripts/check-pending-migrations.mjs`가 Supabase Management API로 prod 적용 상태를 조회. 적용 안 된 마이그레이션이 있으면 check fail → branch protection으로 머지 차단. GitHub Secret `SUPABASE_ACCESS_TOKEN` 필요 (project ref는 workflow YAML에 하드코딩). Vercel env엔 PAT 안 줌 (인증 스코프 최소화).
+- **PR 스코프 규칙**: 마이그레이션이 포함되는 PR은 **그 마이그레이션을 직접 사용하는 코드 변경만** 포함. 다른 기능/픽스와 묶지 말 것 (drive-by migration 금지). 사고 추적이 깨짐.
+- 머지 직후 워크플로:
+  1. `npx supabase db push --dry-run`로 적용 대상 확인
+  2. `npx supabase db push`로 prod 적용
+  3. Vercel 재배포 트리거 (또는 다음 푸시까지 대기)
+
 ## Versioning
 
 - **Source of truth**: `package.json`의 `version` 필드. SemVer (MAJOR.MINOR.PATCH).
