@@ -1,6 +1,7 @@
 'use client';
 
-import type { Availability } from '@/lib/types';
+import type { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
+import SegmentedControl from '@/components/ui/SegmentedControl';
 import CalendarImportButton from './CalendarImportButton';
 
 interface MobileBottomBarProps {
@@ -12,6 +13,9 @@ interface MobileBottomBarProps {
   timeStart: number;
   timeEnd: number;
   onCalendarImport: (availability: Availability) => void;
+  eventMode: EventMode;
+  activeMode: AvailabilityLevel;
+  onActiveModeChange: (level: AvailabilityLevel) => void;
 }
 
 const mobileActionBase =
@@ -56,12 +60,35 @@ export default function MobileBottomBar({
   timeStart,
   timeEnd,
   onCalendarImport,
+  eventMode,
+  activeMode,
+  onActiveModeChange,
 }: MobileBottomBarProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+      {/* Edit-mode toggle bar (above action bar) */}
+      {isEditMode && eventMode !== 'unavailable' && (
+        <div className="border-t border-gray-200 bg-white/95 px-4 py-2 backdrop-blur-md">
+          <SegmentedControl
+            options={[
+              { value: 'available', label: 'Available' },
+              { value: 'if_needed', label: 'If Needed', variant: 'warning' },
+            ]}
+            value={activeMode === 2 ? 'available' : 'if_needed'}
+            onChange={(v) => onActiveModeChange(v === 'available' ? 2 : 1)}
+          />
+        </div>
+      )}
+      {isEditMode && eventMode === 'unavailable' && (
+        <div className="border-t border-gray-200 bg-white/95 px-4 py-2 backdrop-blur-md">
+          <div className="rounded-md bg-red-50 px-3 py-1.5 text-center text-sm font-medium text-red-700">
+            ⛔ 안 되는 시간을 드래그하세요
+          </div>
+        </div>
+      )}
       {/* Bottom bar */}
       <div
-        className="border-t border-gray-200 bg-white/95 px-4 backdrop-blur-md dark:border-gray-700 dark:bg-gray-900/95"
+        className="border-t border-gray-200 bg-white/95 px-4 backdrop-blur-md"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="grid min-h-[72px] grid-cols-2 items-center gap-3">

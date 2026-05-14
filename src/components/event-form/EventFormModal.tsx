@@ -65,17 +65,20 @@ export default function EventFormModal({
 
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus the title input only on desktop (hover-capable, fine pointer).
-  // On mobile/touch devices, auto-focusing forces the virtual keyboard to open
-  // the moment the modal appears, which is disruptive.
+  // Auto-focus the title input only on desktop. Mobile in-app browsers
+  // (KakaoTalk, Instagram, etc.) lie about `hover`/`pointer` media features,
+  // so combine media query with touch capability signals and a viewport check.
   useEffect(() => {
     if (!open) return;
     if (typeof window === "undefined") return;
-    const isTouchDevice = window.matchMedia(
+    const nav = navigator as Navigator & { maxTouchPoints?: number };
+    const hasTouch =
+      "ontouchstart" in window || (nav.maxTouchPoints ?? 0) > 0;
+    const coarsePointer = window.matchMedia(
       "(hover: none) and (pointer: coarse)",
     ).matches;
-    if (isTouchDevice) return;
-    // Defer to next frame so the input is mounted and animations don't steal focus.
+    const narrowViewport = window.innerWidth < 768;
+    if (hasTouch || coarsePointer || narrowViewport) return;
     const id = requestAnimationFrame(() => {
       titleInputRef.current?.focus();
     });
