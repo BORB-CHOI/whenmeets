@@ -710,17 +710,17 @@ export default function EventPageClient({
           )}
         </div>
 
-        {/* Right: Sidebar */}
-        <div className="hidden lg:block w-full lg:w-60 shrink-0 lg:pt-10 lg:pl-5 lg:border-l lg:border-gray-100 dark:lg:border-gray-700 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar">
+        {/* Right: Sidebar (PC: sticky right column; Mobile: stacked below grid) */}
+        <div className="w-full lg:w-60 shrink-0 lg:pt-10 lg:pl-5 lg:border-l lg:border-gray-100 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar mt-6 lg:mt-0">
           {viewMode === 'edit' ? (
             <>
-              {/* Mode selector toggle + highlight */}
+              {/* Mode selector toggle + highlight (PC only — mobile has fixed toggle bar) */}
               {event.mode === 'unavailable' ? (
-                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium mb-5">
+                <div className="hidden lg:block p-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium mb-5">
                   ✓ 안 되는 시간을 드래그하세요
                 </div>
               ) : (
-                <>
+                <div className="hidden lg:block">
                   <div className="mb-3">
                     <SegmentedControl
                       options={[
@@ -738,7 +738,7 @@ export default function EventPageClient({
                       {activeMode === 2 ? '✓ 되는 시간을 드래그하세요' : '✓ If Needed 시간을 드래그하세요'}
                     </div>
                   </div>
-                </>
+                </div>
               )}
 
               {/* Legend */}
@@ -1045,6 +1045,9 @@ export default function EventPageClient({
         timeStart={event.time_start}
         timeEnd={event.time_end}
         onCalendarImport={handleAvailabilityChange}
+        eventMode={event.mode}
+        activeMode={activeMode}
+        onActiveModeChange={setActiveMode}
       />
 
       <AnimatePresence>
@@ -1095,8 +1098,8 @@ export default function EventPageClient({
         )}
       </AnimatePresence>
 
-      {/* Bottom spacer for mobile bottom bar */}
-      <div className="h-24 lg:hidden" />
+      {/* Bottom spacer for mobile bottom bar (taller in edit mode to clear the toggle row) */}
+      <div className={`${viewMode === 'edit' ? 'h-36' : 'h-24'} lg:hidden`} />
 
       {/* Toast for copy */}
       <AnimatePresence>
