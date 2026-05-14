@@ -144,9 +144,13 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `/dashboard` route | 폴더+이벤트 SSR 로드 (folders, created, participated) | `src/app/dashboard/page.tsx` |
 
 **Shared concerns:**
-- 폴더는 `folders` 테이블(`user_id`, `name` unique per user, `position`)에 저장. `events.folder_id`는 nullable + `ON DELETE SET NULL`.
-- 폴더 기능은 "내가 만든 이벤트" 탭에서만 노출 — 참여 이벤트는 flat 리스트.
+- 폴더는 `folders` 테이블(`user_id`, `name` unique per user, `position`).
+- 이벤트의 폴더 배정은 **사용자별**로 관리: `user_event_folders(user_id, event_id, folder_id)` 매핑 테이블.
+  같은 이벤트가 사용자마다 다른 폴더에 속할 수 있음. 한 사용자의 폴더 이동이 다른 사용자 뷰에 영향 없음.
+- 폴더 그룹은 모든 탭(전체/만든/참여)에서 동일하게 적용. DnD도 모든 이벤트(소유·참여 무관) 가능 — 사용자 자기 뷰만 바뀜.
 - 소유자 뱃지는 `is_owner` flag로 분기 (서버에서 `events.created_by === userId` 비교).
+- 폴더 mutation 후 `router.refresh()`로 RSC 캐시 무효화 (뒤로 가기 시 stale UI 방지).
+- 폴더 접힘/펼침 상태는 `localStorage`(`whenmeets:dashboard:collapsedFolders`)에 영속화.
 
 ### MyPage (profile)
 
@@ -185,7 +189,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `GET/PATCH /api/user/profile` | MyPageClient (PATCH), useProfile (GET via Supabase RLS) |
 | `GET/POST /api/folders` | DashboardClient (folder CRUD) |
 | `PATCH/DELETE /api/folders/[id]` | DashboardClient (rename/delete folder) |
-| `PATCH /api/events/[id]/folder` | DashboardClient (move event to folder) |
+| `PATCH /api/events/[id]/folder` | DashboardClient (move event to folder — upserts `user_event_folders` for caller; visibility check: 소유자 OR 참여자) |
 
 When modifying an API response shape, check ALL consuming components.
 

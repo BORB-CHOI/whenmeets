@@ -27,26 +27,31 @@ interface FolderListItem {
 async function loadDashboardData(userId: string) {
   const supabase = createServerClient();
 
-  const [createdResult, membershipResult, foldersResult] = await Promise.all([
-    supabase
-      .from('events')
-      .select('id, title, dates, created_at, folder_id, created_by')
-      .eq('created_by', userId)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(100),
-    supabase
-      .from('participants')
-      .select('event_id')
-      .eq('user_id', userId)
-      .limit(100),
-    supabase
-      .from('folders')
-      .select('id, name, position')
-      .eq('user_id', userId)
-      .order('position', { ascending: true })
-      .order('created_at', { ascending: true }),
-  ]);
+  const [createdResult, membershipResult, foldersResult, folderAssignmentsResult] =
+    await Promise.all([
+      supabase
+        .from('events')
+        .select('id, title, dates, created_at, created_by')
+        .eq('created_by', userId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('participants')
+        .select('event_id')
+        .eq('user_id', userId)
+        .limit(100),
+      supabase
+        .from('folders')
+        .select('id, name, position')
+        .eq('user_id', userId)
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('user_event_folders')
+        .select('event_id, folder_id')
+        .eq('user_id', userId),
+    ]);
   const createdRaw = createdResult.data ?? [];
   const participatedEventIds = (membershipResult.data ?? []).map((r) => r.event_id as string);
 
@@ -54,7 +59,7 @@ async function loadDashboardData(userId: string) {
   if (participatedEventIds.length > 0) {
     const { data } = await supabase
       .from('events')
-      .select('id, title, dates, created_at, folder_id, created_by')
+      .select('id, title, dates, created_at, created_by')
       .in('id', participatedEventIds)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -77,6 +82,12 @@ async function loadDashboardData(userId: string) {
     }
   }
 
+  // Per-user folder assignment map. Absence = "폴더 없음".
+  const folderMap: Record<string, string> = {};
+  for (const row of folderAssignmentsResult.data ?? []) {
+    folderMap[row.event_id as string] = row.folder_id as string;
+  }
+
   function attachMeta(events: typeof createdRaw): EventListItem[] {
     return events.map((e) => ({
       id: e.id as string,
@@ -84,7 +95,7 @@ async function loadDashboardData(userId: string) {
       dates: e.dates as string[],
       created_at: e.created_at as string,
       participant_count: countMap[e.id as string] || 0,
-      folder_id: (e.folder_id as string | null) ?? null,
+      folder_id: folderMap[e.id as string] ?? null,
       is_owner: (e.created_by as string | null) === userId,
     }));
   }

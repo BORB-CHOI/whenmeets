@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import EventCard from './EventCard';
 import FolderHeader from './FolderHeader';
@@ -32,6 +33,15 @@ interface DashboardClientProps {
 
 const tabs = [
   {
+    key: 'all',
+    label: '전체 이벤트',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      </svg>
+    ),
+  },
+  {
     key: 'created',
     label: '내가 만든 이벤트',
     icon: (
@@ -54,17 +64,48 @@ const tabs = [
 type TabKey = (typeof tabs)[number]['key'];
 
 const NO_FOLDER_KEY = '__no_folder__';
+const COLLAPSED_STORAGE_KEY = 'whenmeets:dashboard:collapsedFolders';
+
+function readPersistedCollapsed(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((v): v is string => typeof v === 'string'));
+  } catch {
+    return new Set();
+  }
+}
 
 export default function DashboardClient({
   createdEvents: initialCreated,
-  participatedEvents,
+  participatedEvents: initialParticipated,
   folders: initialFolders,
 }: DashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>('created');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [createdEvents, setCreatedEvents] = useState(initialCreated);
+  const [participatedEvents, setParticipatedEvents] = useState(initialParticipated);
   const [folders, setFolders] = useState(initialFolders);
   const [animateTab, setAnimateTab] = useState(false);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Lazy initializer reads localStorage once on mount — survives reloads + return visits.
+  // SSR pass returns an empty Set; on hydration the client reads persisted state.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => readPersistedCollapsed());
+
+  // Persist on every change. Stored as a JSON array of group keys (folder IDs + NO_FOLDER_KEY).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSED_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsed)),
+      );
+    } catch {
+      // Quota / privacy mode — collapsed state is non-critical, swallow.
+    }
+  }, [collapsed]);
 
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -84,12 +125,39 @@ export default function DashboardClient({
   const [moving, setMoving] = useState(false);
   const [moveError, setMoveError] = useState('');
 
+  // Drag-and-drop state
+  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+
   const activeIndex = tabs.findIndex((t) => t.key === activeTab);
-  const events = activeTab === 'created' ? createdEvents : participatedEvents;
-  const deleteTarget = deleteTargetId ? createdEvents.find((e) => e.id === deleteTargetId) ?? null : null;
+
+  // The visible event set per tab.
+  // Folder structure is per-user (see migration 013: user_event_folders) —
+  // every event has a folder_id that reflects THIS user's organization,
+  // including events the user only participates in. So all 3 tabs can
+  // support folder grouping and drag-and-drop equally.
+  const events = useMemo(() => {
+    if (activeTab === 'all') {
+      const byId = new Map<string, EventItem>();
+      for (const e of participatedEvents) byId.set(e.id, e);
+      for (const e of createdEvents) byId.set(e.id, e);
+      return Array.from(byId.values()).sort((a, b) =>
+        a.created_at < b.created_at ? 1 : -1,
+      );
+    }
+    if (activeTab === 'created') return createdEvents;
+    return participatedEvents;
+  }, [activeTab, createdEvents, participatedEvents]);
+
+  const deleteTarget = deleteTargetId
+    ? events.find((e) => e.id === deleteTargetId) ?? null
+    : null;
   const deleteFolder = deleteFolderId ? folders.find((f) => f.id === deleteFolderId) ?? null : null;
 
-  // Group events into folders (only meaningful on "created" tab).
+  // Folders apply to every tab — even 참여한 이벤트, since the user owns the
+  // folder structure and decides where to file events they joined.
+  const showFolders = true;
+
   const grouped = useMemo(() => {
     const map = new Map<string, EventItem[]>();
     for (const f of folders) map.set(f.id, []);
@@ -101,11 +169,24 @@ export default function DashboardClient({
     return map;
   }, [events, folders]);
 
+  const orderedGroupKeys: string[] = showFolders
+    ? [...folders.map((f) => f.id), NO_FOLDER_KEY]
+    : [];
+
   function toggleCollapsed(key: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      return next;
+    });
+  }
+
+  function expand(key: string) {
+    setCollapsed((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
       return next;
     });
   }
@@ -117,6 +198,8 @@ export default function DashboardClient({
       const res = await fetch(`/api/events/${deleteTargetId}`, { method: 'DELETE' });
       if (res.ok) {
         setCreatedEvents((prev) => prev.filter((e) => e.id !== deleteTargetId));
+        setParticipatedEvents((prev) => prev.filter((e) => e.id !== deleteTargetId));
+        router.refresh();
       }
     } finally {
       setIsDeleting(false);
@@ -143,6 +226,7 @@ export default function DashboardClient({
         const { folder } = await res.json();
         setFolders((prev) => [...prev, folder]);
         setFolderModalState(null);
+        router.refresh();
       } else {
         const res = await fetch(`/api/folders/${folderModalState.folderId}`, {
           method: 'PATCH',
@@ -160,6 +244,7 @@ export default function DashboardClient({
           ),
         );
         setFolderModalState(null);
+        router.refresh();
       }
     } finally {
       setFolderSubmitting(false);
@@ -173,11 +258,18 @@ export default function DashboardClient({
       const res = await fetch(`/api/folders/${deleteFolderId}`, { method: 'DELETE' });
       if (res.ok) {
         setFolders((prev) => prev.filter((f) => f.id !== deleteFolderId));
+        // CASCADE on user_event_folders drops the rows; mirror that client-side.
         setCreatedEvents((prev) =>
           prev.map((e) =>
             e.folder_id === deleteFolderId ? { ...e, folder_id: null } : e,
           ),
         );
+        setParticipatedEvents((prev) =>
+          prev.map((e) =>
+            e.folder_id === deleteFolderId ? { ...e, folder_id: null } : e,
+          ),
+        );
+        router.refresh();
       }
     } finally {
       setDeletingFolder(false);
@@ -185,49 +277,93 @@ export default function DashboardClient({
     }
   }
 
+  async function moveEvent(eventId: string, folderId: string | null): Promise<boolean> {
+    const event =
+      createdEvents.find((e) => e.id === eventId) ??
+      participatedEvents.find((e) => e.id === eventId);
+    if (!event) return false;
+    if (event.folder_id === folderId) return true;
+
+    const prevFolderId = event.folder_id;
+    // Optimistic update — same event may live in both lists, so update both.
+    const apply = (list: EventItem[]) =>
+      list.map((e) => (e.id === eventId ? { ...e, folder_id: folderId } : e));
+    setCreatedEvents(apply);
+    setParticipatedEvents(apply);
+
+    const res = await fetch(`/api/events/${eventId}/folder`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_id: folderId }),
+    });
+
+    if (!res.ok) {
+      const revert = (list: EventItem[]) =>
+        list.map((e) => (e.id === eventId ? { ...e, folder_id: prevFolderId } : e));
+      setCreatedEvents(revert);
+      setParticipatedEvents(revert);
+      return false;
+    }
+    router.refresh();
+    return true;
+  }
+
   async function handleMoveEvent(folderId: string | null) {
     if (!moveTarget || moving) return;
     setMoveError('');
     setMoving(true);
     try {
-      const res = await fetch(`/api/events/${moveTarget.id}/folder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_id: folderId }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setMoveError(data.error || '이동에 실패했습니다');
+      const ok = await moveEvent(moveTarget.id, folderId);
+      if (!ok) {
+        setMoveError('이동에 실패했습니다');
         return;
       }
-      setCreatedEvents((prev) =>
-        prev.map((e) => (e.id === moveTarget.id ? { ...e, folder_id: folderId } : e)),
-      );
       setMoveTarget(null);
     } finally {
       setMoving(false);
     }
   }
 
-  // For the "created" tab we render folder groups + No folder.
-  // For the "participated" tab we render a single flat list.
-  const showFolders = activeTab === 'created';
-  const orderedGroupKeys: string[] = showFolders
-    ? [...folders.map((f) => f.id), NO_FOLDER_KEY]
-    : [];
+  // Drag handlers
+  function handleDragStart(eventId: string) {
+    setDraggingEventId(eventId);
+  }
+  function handleDragEnd() {
+    setDraggingEventId(null);
+    setDragOverKey(null);
+  }
+  async function handleDropOnFolder(groupKey: string) {
+    const eventId = draggingEventId;
+    setDragOverKey(null);
+    setDraggingEventId(null);
+    if (!eventId) return;
+    const folderId = groupKey === NO_FOLDER_KEY ? null : groupKey;
+    const ok = await moveEvent(eventId, folderId);
+    if (ok) expand(groupKey);
+  }
+
+  // Every event the user can see is draggable — folder structure is per-user,
+  // so dragging only rearranges THIS user's view (events.folder_id is not
+  // touched; user_event_folders mapping is updated). Other users unaffected.
+  function isDraggableEvent(_e: EventItem) {
+    return true;
+  }
 
   return (
     <div>
       {/* Tab bar + Folder action */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative inline-grid grid-cols-2 gap-1 p-1 bg-gray-50 rounded-full border border-gray-200">
+        <div
+          className="relative inline-grid gap-1 p-1 bg-gray-50 rounded-full border border-gray-200"
+          style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+        >
           <div
             className={`absolute top-1 bottom-1 bg-white rounded-full border border-teal-600 shadow-sm ${
               animateTab ? 'transition-transform duration-200 ease-out' : ''
             }`}
             style={{
               left: 4,
-              width: 'calc((100% - 8px) / 2)',
+              width: `calc((100% - 8px) / ${tabs.length})`,
               transform: `translateX(${Math.max(0, activeIndex) * 100}%)`,
             }}
           />
@@ -238,14 +374,16 @@ export default function DashboardClient({
                 setAnimateTab(true);
                 setActiveTab(tab.key);
               }}
-              className={`relative z-10 px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-150 cursor-pointer flex items-center gap-1.5 ${
+              title={tab.label}
+              aria-label={tab.label}
+              className={`relative z-10 px-3 sm:px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-150 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activeTab === tab.key
                   ? 'text-teal-600 font-semibold'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -287,8 +425,35 @@ export default function DashboardClient({
               const list = grouped.get(key) ?? [];
               const isNoFolder = key === NO_FOLDER_KEY;
               const isCollapsed = collapsed.has(key);
+              const isDropTarget = !!draggingEventId;
+              const isDragOver = dragOverKey === key;
               return (
-                <div key={key}>
+                <div
+                  key={key}
+                  onDragOver={(e) => {
+                    if (!draggingEventId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverKey !== key) setDragOverKey(key);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!draggingEventId) return;
+                    const next = e.relatedTarget as Node | null;
+                    if (next && (e.currentTarget as Node).contains(next)) return;
+                    setDragOverKey((curr) => (curr === key ? null : curr));
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDropOnFolder(key);
+                  }}
+                  className={`rounded-lg transition-colors ${
+                    isDropTarget
+                      ? isDragOver
+                        ? 'ring-2 ring-teal-400 bg-teal-50/60'
+                        : 'ring-1 ring-dashed ring-gray-200'
+                      : ''
+                  }`}
+                >
                   <FolderHeader
                     name={isNoFolder ? '폴더 없음' : folder?.name ?? '폴더'}
                     count={list.length}
@@ -320,7 +485,9 @@ export default function DashboardClient({
                         <div className="grid gap-3 pt-2 pl-1">
                           {list.length === 0 ? (
                             <p className="text-sm text-gray-400 px-2 py-3">
-                              이 폴더에는 아직 이벤트가 없습니다.
+                              {isDropTarget
+                                ? '여기에 놓으면 이 폴더로 이동합니다'
+                                : '이 폴더에는 아직 이벤트가 없습니다.'}
                             </p>
                           ) : (
                             list.map((event) => (
@@ -331,8 +498,12 @@ export default function DashboardClient({
                                 dateCount={event.dates.length}
                                 participantCount={event.participant_count}
                                 createdAt={event.created_at}
-                                canDelete={activeTab === 'created'}
+                                canDelete={event.is_owner}
                                 isOwner={event.is_owner}
+                                draggable={isDraggableEvent(event)}
+                                isDragging={draggingEventId === event.id}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
                                 onRequestDelete={(id) => setDeleteTargetId(id)}
                                 onRequestMove={() => {
                                   setMoveError('');

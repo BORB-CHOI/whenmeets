@@ -15,6 +15,11 @@ interface EventCardProps {
   onRequestDelete?: (id: string) => void;
   /** Move-to-folder handler. When undefined, the menu item is hidden. */
   onRequestMove?: (id: string) => void;
+  /** When true, the card is HTML5 draggable for folder reorganization. */
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (id: string) => void;
+  onDragEnd?: () => void;
 }
 
 export default function EventCard({
@@ -27,6 +32,10 @@ export default function EventCard({
   isOwner,
   onRequestDelete,
   onRequestMove,
+  draggable,
+  isDragging,
+  onDragStart,
+  onDragEnd,
 }: EventCardProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,7 +59,22 @@ export default function EventCard({
   });
 
   return (
-    <div className="group relative w-full bg-white border border-gray-200 rounded-lg p-4 min-h-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all">
+    <div
+      draggable={draggable ?? false}
+      onDragStart={
+        draggable
+          ? (e) => {
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', id);
+              onDragStart?.(id);
+            }
+          : undefined
+      }
+      onDragEnd={draggable ? () => onDragEnd?.() : undefined}
+      className={`group relative w-full bg-white border border-gray-200 rounded-lg p-4 min-h-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all ${
+        draggable ? 'cursor-grab active:cursor-grabbing' : ''
+      } ${isDragging ? 'opacity-40' : ''}`}
+    >
       <button
         onClick={() => router.push(`/e/${id}`)}
         className="w-full text-left cursor-pointer"
