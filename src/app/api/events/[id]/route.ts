@@ -30,7 +30,7 @@ export async function GET(
     .single();
 
   if (error || !event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   const hasPassword = !!event.password_hash;
@@ -111,7 +111,7 @@ export async function PATCH(
     .single();
 
   if (!event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   // Auth check: either OAuth creator or password-authenticated user
@@ -119,11 +119,11 @@ export async function PATCH(
     const authClient = await createAuthServerClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (!user || user.id !== event.created_by) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
     }
   } else {
     // Anonymous event without password — no one can edit
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   const updateData: Record<string, unknown> = {};
@@ -141,7 +141,7 @@ export async function PATCH(
     .eq('id', id);
 
   if (error) {
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+    return NextResponse.json({ error: '수정에 실패했습니다' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }
@@ -156,7 +156,7 @@ export async function DELETE(
   const authClient = await createAuthServerClient();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
   }
 
   const supabase = createServerClient();
@@ -170,7 +170,7 @@ export async function DELETE(
     .single();
 
   if (!event || event.created_by !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   // Soft delete: set deleted_at
@@ -180,7 +180,7 @@ export async function DELETE(
     .eq('id', id);
 
   if (error) {
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+    return NextResponse.json({ error: '삭제에 실패했습니다' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

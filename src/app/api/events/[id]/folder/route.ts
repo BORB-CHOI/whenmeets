@@ -21,7 +21,7 @@ export async function PATCH(
   const folderId = body?.folder_id;
 
   if (folderId !== null && (typeof folderId !== 'string' || !UUID_PATTERN.test(folderId))) {
-    return NextResponse.json({ error: 'Invalid folder_id' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 폴더 ID입니다' }, { status: 400 });
   }
 
   const authClient = await createAuthServerClient();
@@ -29,7 +29,7 @@ export async function PATCH(
     data: { user },
   } = await authClient.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
   }
 
   const supabase = createServerClient();
@@ -43,7 +43,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (!event || event.created_by !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   // If moving to a folder (not null), verify folder ownership
@@ -54,7 +54,7 @@ export async function PATCH(
       .eq('id', folderId)
       .maybeSingle();
     if (!folder || folder.user_id !== user.id) {
-      return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
+      return NextResponse.json({ error: '폴더를 찾을 수 없습니다' }, { status: 404 });
     }
   }
 
@@ -64,7 +64,7 @@ export async function PATCH(
     .eq('id', id);
 
   if (error) {
-    return NextResponse.json({ error: 'Failed to move event' }, { status: 500 });
+    return NextResponse.json({ error: '이벤트 이동에 실패했습니다' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

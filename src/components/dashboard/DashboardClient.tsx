@@ -286,8 +286,6 @@ export default function DashboardClient({
               const folder = folders.find((f) => f.id === key);
               const list = grouped.get(key) ?? [];
               const isNoFolder = key === NO_FOLDER_KEY;
-              // Skip an empty "No folder" group only when at least one folder exists.
-              if (isNoFolder && list.length === 0 && folders.length > 0) return null;
               const isCollapsed = collapsed.has(key);
               return (
                 <div key={key}>

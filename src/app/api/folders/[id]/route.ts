@@ -11,7 +11,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   if (!UUID_PATTERN.test(id)) {
-    return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 ID입니다' }, { status: 400 });
   }
 
   const authClient = await createAuthServerClient();
@@ -19,7 +19,7 @@ export async function PATCH(
     data: { user },
   } = await authClient.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
@@ -40,7 +40,7 @@ export async function PATCH(
     .eq('id', id)
     .maybeSingle();
   if (!existing || existing.user_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   const { error } = await supabase
@@ -55,7 +55,7 @@ export async function PATCH(
         { status: 409 },
       );
     }
-    return NextResponse.json({ error: 'Failed to rename folder' }, { status: 500 });
+    return NextResponse.json({ error: '폴더 이름 변경에 실패했습니다' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }
@@ -66,7 +66,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   if (!UUID_PATTERN.test(id)) {
-    return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 ID입니다' }, { status: 400 });
   }
 
   const authClient = await createAuthServerClient();
@@ -74,7 +74,7 @@ export async function DELETE(
     data: { user },
   } = await authClient.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
   }
 
   const supabase = createServerClient();
@@ -85,13 +85,13 @@ export async function DELETE(
     .eq('id', id)
     .maybeSingle();
   if (!existing || existing.user_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   // ON DELETE SET NULL on events.folder_id will move events to "No folder"
   const { error } = await supabase.from('folders').delete().eq('id', id);
   if (error) {
-    return NextResponse.json({ error: 'Failed to delete folder' }, { status: 500 });
+    return NextResponse.json({ error: '폴더 삭제에 실패했습니다' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }

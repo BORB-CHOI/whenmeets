@@ -38,13 +38,13 @@ export async function POST(
   const { name, password } = await request.json();
 
   if (!name || !name.trim()) {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    return NextResponse.json({ error: '이름을 입력해주세요' }, { status: 400 });
   }
 
   const trimmedName = name.trim();
 
   if (trimmedName.length > 50) {
-    return NextResponse.json({ error: 'Name is too long' }, { status: 400 });
+    return NextResponse.json({ error: '이름이 너무 깁니다' }, { status: 400 });
   }
 
   const supabase = createServerClient();
@@ -57,13 +57,13 @@ export async function POST(
     .single();
 
   if (!event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   if (event.password_hash) {
     const cookie = request.cookies.get(`whenmeets_auth_${id}`);
     if (!cookie || !verifyEventToken(id, cookie.value)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
     }
   }
 
