@@ -132,6 +132,22 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 - 모바일 하단 배너 활성 시 `body { padding-bottom }`로 콘텐츠 가림 방지 — 이벤트 페이지(`/e/[id]`)는 `MobileBottomBar`(z-40)와 충돌 회피 위해 모바일 광고 비표시
 - z-index: 광고 z-30 < `MobileBottomBar` z-40 < `Header` z-50 < 모달 z-100
 
+### Dashboard (folders + event list)
+
+| Component | Role | File |
+|-----------|------|------|
+| `DashboardClient` | 탭(만든/참여) + 폴더 그룹 + 모달 오케스트레이션 | `src/components/dashboard/DashboardClient.tsx` |
+| `EventCard` | 이벤트 카드 + 소유자 뱃지(내 이벤트/참여 중) + 옵션 메뉴 | `src/components/dashboard/EventCard.tsx` |
+| `FolderHeader` | 폴더 접기/펴기 + 이름변경/삭제 메뉴 | `src/components/dashboard/FolderHeader.tsx` |
+| `FolderNameModal` | 폴더 생성/이름변경 모달 | `src/components/dashboard/FolderNameModal.tsx` |
+| `MoveToFolderModal` | 이벤트를 폴더로 이동시키는 모달 | `src/components/dashboard/MoveToFolderModal.tsx` |
+| `/dashboard` route | 폴더+이벤트 SSR 로드 (folders, created, participated) | `src/app/dashboard/page.tsx` |
+
+**Shared concerns:**
+- 폴더는 `folders` 테이블(`user_id`, `name` unique per user, `position`)에 저장. `events.folder_id`는 nullable + `ON DELETE SET NULL`.
+- 폴더 기능은 "내가 만든 이벤트" 탭에서만 노출 — 참여 이벤트는 flat 리스트.
+- 소유자 뱃지는 `is_owner` flag로 분기 (서버에서 `events.created_by === userId` 비교).
+
 ### MyPage (profile)
 
 | Component | Role | File |
@@ -167,6 +183,9 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `GET /api/events/[id]/results` | ResultsPageClient |
 | `POST /api/events/[id]/verify` | PasswordForm → EventPageClient |
 | `GET/PATCH /api/user/profile` | MyPageClient (PATCH), useProfile (GET via Supabase RLS) |
+| `GET/POST /api/folders` | DashboardClient (folder CRUD) |
+| `PATCH/DELETE /api/folders/[id]` | DashboardClient (rename/delete folder) |
+| `PATCH /api/events/[id]/folder` | DashboardClient (move event to folder) |
 
 When modifying an API response shape, check ALL consuming components.
 
