@@ -3,6 +3,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  pointerWithin,
+  rectIntersection,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragStartEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from '@dnd-kit/core';
 import EventCard from './EventCard';
 import FolderHeader from './FolderHeader';
 import FolderNameModal from './FolderNameModal';
@@ -17,6 +34,7 @@ interface EventItem {
   participant_count: number;
   folder_id: string | null;
   is_owner: boolean;
+  order_position: number | null;
 }
 
 interface FolderItem {
@@ -29,6 +47,7 @@ interface DashboardClientProps {
   createdEvents: EventItem[];
   participatedEvents: EventItem[];
   folders: FolderItem[];
+  noFolderPosition: number | null;
 }
 
 const tabs = [
@@ -56,6 +75,11 @@ type TabKey = (typeof tabs)[number]['key'];
 
 const NO_FOLDER_KEY = '__no_folder__';
 const COLLAPSED_STORAGE_KEY = 'whenmeets:dashboard:collapsedFolders';
+const CARD_ID_PREFIX = 'event-';
+
+function cardId(eventId: string) {
+  return `${CARD_ID_PREFIX}${eventId}`;
+}
 
 function readPersistedCollapsed(): Set<string> {
   if (typeof window === 'undefined') return new Set();
@@ -70,22 +94,190 @@ function readPersistedCollapsed(): Set<string> {
   }
 }
 
+function computeOrderedKeys(folders: FolderItem[], noFolderPosition: number | null): string[] {
+  if (noFolderPosition === null) {
+    return [...folders.map((f) => f.id), NO_FOLDER_KEY];
+  }
+  type Entry = { key: string; position: number; tieBreaker: number };
+  const entries: Entry[] = [
+    ...folders.map((f, idx) => ({ key: f.id, position: f.position, tieBreaker: idx })),
+    { key: NO_FOLDER_KEY, position: noFolderPosition, tieBreaker: Number.POSITIVE_INFINITY },
+  ];
+  entries.sort((a, b) => a.position - b.position || a.tieBreaker - b.tieBreaker);
+  return entries.map((e) => e.key);
+}
+
+interface DraggableGroupProps {
+  groupKey: string;
+  children: (args: {
+    dragHandle: { attributes: DraggableAttributes; listeners: DraggableSyntheticListeners };
+    isDragging: boolean;
+  }) => React.ReactNode;
+}
+
+// Folder group: same drag pattern as cards.
+// - useDraggable: folder can be dragged via its header handle
+// - top/bottom half useDroppable for folder-drop indicator (folder reorder)
+// - separate inner useDroppable (folder-{key}) to receive card drops (cross-folder move)
+function DraggableGroup({ groupKey, children }: DraggableGroupProps) {
+  const draggable = useDraggable({
+    id: groupKey,
+    data: { type: 'folder', key: groupKey },
+  });
+  const topDrop = useDroppable({
+    id: `folderbefore-${groupKey}`,
+    data: { type: 'folder-drop', position: 'before', targetKey: groupKey },
+  });
+  const bottomDrop = useDroppable({
+    id: `folderafter-${groupKey}`,
+    data: { type: 'folder-drop', position: 'after', targetKey: groupKey },
+  });
+  const folderDrop = useDroppable({
+    id: `folder-${groupKey}`,
+    data: { type: 'folder', key: groupKey },
+  });
+
+  const isDragging = draggable.isDragging;
+
+  return (
+    <div ref={draggable.setNodeRef} className="relative">
+      {/* Drop indicator lines for FOLDER reordering — sit in the space-y-4 gap (16px),
+          so -top/-bottom-2 (8px) lands mid-gap. */}
+      {topDrop.isOver && !isDragging && (
+        <div className="absolute -top-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
+        </div>
+      )}
+      {bottomDrop.isOver && !isDragging && (
+        <div className="absolute -bottom-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
+        </div>
+      )}
+
+      {/* Inner content — receives card drops via folderDrop ref. */}
+      <div ref={folderDrop.setNodeRef} style={{ opacity: isDragging ? 0.3 : 1 }}>
+        {children({
+          dragHandle: { attributes: draggable.attributes, listeners: draggable.listeners },
+          isDragging,
+        })}
+      </div>
+
+      {/* Drop zones for folder-folder ordering — top third / bottom third of folder.
+          Sized smaller (1/3) so the middle region stays a card-drop target (folderDrop). */}
+      <div
+        ref={topDrop.setNodeRef}
+        className="absolute top-0 left-0 right-0 h-1/3 pointer-events-none"
+      />
+      <div
+        ref={bottomDrop.setNodeRef}
+        className="absolute bottom-0 left-0 right-0 h-1/3 pointer-events-none"
+      />
+    </div>
+  );
+}
+
+interface DraggableCardProps {
+  eventId: string;
+  folderKey: string;
+  children: (args: {
+    dragHandle: { attributes: DraggableAttributes; listeners: DraggableSyntheticListeners };
+    isDragging: boolean;
+  }) => React.ReactNode;
+}
+
+function DraggableCard({ eventId, folderKey, children }: DraggableCardProps) {
+  const draggable = useDraggable({
+    id: cardId(eventId),
+    data: { type: 'event', eventId, folderKey },
+  });
+  const topDrop = useDroppable({
+    id: `dropbefore-${eventId}`,
+    data: { type: 'card-drop', position: 'before', targetEventId: eventId, folderKey },
+  });
+  const bottomDrop = useDroppable({
+    id: `dropafter-${eventId}`,
+    data: { type: 'card-drop', position: 'after', targetEventId: eventId, folderKey },
+  });
+
+  const isDragging = draggable.isDragging;
+
+  return (
+    <div ref={draggable.setNodeRef} className="relative">
+      {/* Card drop indicator lines — gap-3 between cards = 12px, so -top/-bottom-1.5 (6px) lands mid-gap. */}
+      {topDrop.isOver && !isDragging && (
+        <div className="absolute -top-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
+        </div>
+      )}
+      {bottomDrop.isOver && !isDragging && (
+        <div className="absolute -bottom-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
+        </div>
+      )}
+
+      <div style={{ opacity: isDragging ? 0.3 : 1 }}>
+        {children({
+          dragHandle: { attributes: draggable.attributes, listeners: draggable.listeners },
+          isDragging,
+        })}
+      </div>
+
+      <div
+        ref={topDrop.setNodeRef}
+        className="absolute top-0 left-0 right-0 h-1/2 pointer-events-none"
+      />
+      <div
+        ref={bottomDrop.setNodeRef}
+        className="absolute bottom-0 left-0 right-0 h-1/2 pointer-events-none"
+      />
+    </div>
+  );
+}
+
+function EmptyFolderDrop({
+  folderKey,
+  cardDragActive,
+}: {
+  folderKey: string;
+  cardDragActive: boolean;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `empty-${folderKey}`,
+    data: { type: 'folder-empty', folderKey },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`text-sm px-2 py-3 lg:col-span-2 rounded-md transition-colors ${
+        cardDragActive
+          ? isOver
+            ? 'text-teal-700 bg-teal-50 border-2 border-dashed border-teal-500 text-center'
+            : 'text-teal-700 bg-teal-50/40 border border-dashed border-teal-300 text-center'
+          : 'text-gray-400'
+      }`}
+    >
+      {cardDragActive
+        ? '여기에 놓으면 이 폴더로 이동합니다'
+        : '이 폴더에는 아직 이벤트가 없습니다.'}
+    </div>
+  );
+}
+
 export default function DashboardClient({
   createdEvents: initialCreated,
   participatedEvents: initialParticipated,
   folders: initialFolders,
+  noFolderPosition: initialNoFolderPosition,
 }: DashboardClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [createdEvents, setCreatedEvents] = useState(initialCreated);
   const [participatedEvents, setParticipatedEvents] = useState(initialParticipated);
   const [folders, setFolders] = useState(initialFolders);
+  const [noFolderPosition, setNoFolderPosition] = useState<number | null>(initialNoFolderPosition);
   const [animateTab, setAnimateTab] = useState(false);
-  // Lazy initializer reads localStorage once on mount — survives reloads + return visits.
-  // SSR pass returns an empty Set; on hydration the client reads persisted state.
   const [collapsed, setCollapsed] = useState<Set<string>>(() => readPersistedCollapsed());
 
-  // Persist on every change. Stored as a JSON array of group keys (folder IDs + NO_FOLDER_KEY).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -116,25 +308,25 @@ export default function DashboardClient({
   const [moving, setMoving] = useState(false);
   const [moveError, setMoveError] = useState('');
 
-  // Drag-and-drop state
-  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
-  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  const [activeDrag, setActiveDrag] = useState<
+    | { type: 'folder'; key: string }
+    | { type: 'event'; eventId: string; folderKey: string }
+    | null
+  >(null);
 
   const activeIndex = tabs.findIndex((t) => t.key === activeTab);
 
-  // The visible event set per tab.
-  // Folder structure is per-user (see migration 013: user_event_folders) —
-  // every event has a folder_id that reflects THIS user's organization,
-  // including events the user only participates in. So all 3 tabs can
-  // support folder grouping and drag-and-drop equally.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 5 } }),
+  );
+
   const events = useMemo(() => {
     if (activeTab === 'all') {
       const byId = new Map<string, EventItem>();
       for (const e of participatedEvents) byId.set(e.id, e);
       for (const e of createdEvents) byId.set(e.id, e);
-      return Array.from(byId.values()).sort((a, b) =>
-        a.created_at < b.created_at ? 1 : -1,
-      );
+      return Array.from(byId.values());
     }
     return createdEvents;
   }, [activeTab, createdEvents, participatedEvents]);
@@ -144,8 +336,6 @@ export default function DashboardClient({
     : null;
   const deleteFolder = deleteFolderId ? folders.find((f) => f.id === deleteFolderId) ?? null : null;
 
-  // Folders apply to every tab — even 참여한 이벤트, since the user owns the
-  // folder structure and decides where to file events they joined.
   const showFolders = true;
 
   const grouped = useMemo(() => {
@@ -156,12 +346,23 @@ export default function DashboardClient({
       const key = e.folder_id && map.has(e.folder_id) ? e.folder_id : NO_FOLDER_KEY;
       map.get(key)!.push(e);
     }
+    for (const list of map.values()) {
+      list.sort((a, b) => {
+        const ap = a.order_position;
+        const bp = b.order_position;
+        if (ap !== null && bp !== null) return ap - bp;
+        if (ap !== null) return -1;
+        if (bp !== null) return 1;
+        return a.created_at < b.created_at ? 1 : -1;
+      });
+    }
     return map;
   }, [events, folders]);
 
-  const orderedGroupKeys: string[] = showFolders
-    ? [...folders.map((f) => f.id), NO_FOLDER_KEY]
-    : [];
+  const orderedGroupKeys = useMemo(
+    () => computeOrderedKeys(folders, noFolderPosition),
+    [folders, noFolderPosition],
+  );
 
   function toggleCollapsed(key: string) {
     setCollapsed((prev) => {
@@ -248,7 +449,6 @@ export default function DashboardClient({
       const res = await fetch(`/api/folders/${deleteFolderId}`, { method: 'DELETE' });
       if (res.ok) {
         setFolders((prev) => prev.filter((f) => f.id !== deleteFolderId));
-        // CASCADE on user_event_folders drops the rows; mirror that client-side.
         setCreatedEvents((prev) =>
           prev.map((e) =>
             e.folder_id === deleteFolderId ? { ...e, folder_id: null } : e,
@@ -267,7 +467,7 @@ export default function DashboardClient({
     }
   }
 
-  async function moveEvent(eventId: string, folderId: string | null): Promise<boolean> {
+  async function moveEventToFolder(eventId: string, folderId: string | null): Promise<boolean> {
     const event =
       createdEvents.find((e) => e.id === eventId) ??
       participatedEvents.find((e) => e.id === eventId);
@@ -275,7 +475,6 @@ export default function DashboardClient({
     if (event.folder_id === folderId) return true;
 
     const prevFolderId = event.folder_id;
-    // Optimistic update — same event may live in both lists, so update both.
     const apply = (list: EventItem[]) =>
       list.map((e) => (e.id === eventId ? { ...e, folder_id: folderId } : e));
     setCreatedEvents(apply);
@@ -303,7 +502,7 @@ export default function DashboardClient({
     setMoveError('');
     setMoving(true);
     try {
-      const ok = await moveEvent(moveTarget.id, folderId);
+      const ok = await moveEventToFolder(moveTarget.id, folderId);
       if (!ok) {
         setMoveError('이동에 실패했습니다');
         return;
@@ -314,34 +513,202 @@ export default function DashboardClient({
     }
   }
 
-  // Drag handlers
-  function handleDragStart(eventId: string) {
-    setDraggingEventId(eventId);
-  }
-  function handleDragEnd() {
-    setDraggingEventId(null);
-    setDragOverKey(null);
-  }
-  async function handleDropOnFolder(groupKey: string) {
-    const eventId = draggingEventId;
-    setDragOverKey(null);
-    setDraggingEventId(null);
-    if (!eventId) return;
-    const folderId = groupKey === NO_FOLDER_KEY ? null : groupKey;
-    const ok = await moveEvent(eventId, folderId);
-    if (ok) expand(groupKey);
+  async function persistGroupOrder(nextKeys: string[]) {
+    const order = nextKeys.map((key, index) => ({ key, position: index }));
+    const res = await fetch('/api/folders/reorder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+    return res.ok;
   }
 
-  // Every event the user can see is draggable — folder structure is per-user,
-  // so dragging only rearranges THIS user's view (events.folder_id is not
-  // touched; user_event_folders mapping is updated). Other users unaffected.
-  function isDraggableEvent(_e: EventItem) {
-    return true;
+  const collisionDetection: CollisionDetection = (args) => {
+    const activeType = args.active.data.current?.type as string | undefined;
+    if (activeType === 'folder') {
+      // Folder drag: only match folder-drop droppables (and exclude self).
+      const selfKey = args.active.id;
+      return pointerWithin({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+          (c) =>
+            c.data.current?.type === 'folder-drop' &&
+            c.data.current?.targetKey !== selfKey,
+        ),
+      });
+    }
+    // Card drag: match card-drop / folder / folder-empty (skip folder-drop).
+    const filtered = {
+      ...args,
+      droppableContainers: args.droppableContainers.filter(
+        (c) => c.data.current?.type !== 'folder-drop',
+      ),
+    };
+    const pointer = pointerWithin(filtered);
+    if (pointer.length > 0) return pointer;
+    return rectIntersection(filtered);
+  };
+
+  function handleDragStart(event: DragStartEvent) {
+    const data = event.active.data.current as
+      | { type: 'folder'; key: string }
+      | { type: 'event'; eventId: string; folderKey: string }
+      | undefined;
+    if (!data) return;
+    setActiveDrag(data);
   }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const dragData = activeDrag;
+    setActiveDrag(null);
+
+    if (!dragData) return;
+    const { over } = event;
+
+    if (dragData.type === 'folder') {
+      const overData = over?.data.current as
+        | { type: 'folder-drop'; position: 'before' | 'after'; targetKey: string }
+        | undefined;
+      if (!overData || overData.type !== 'folder-drop') return;
+
+      const sourceKey = dragData.key;
+      const targetKey = overData.targetKey;
+      if (sourceKey === targetKey) return;
+
+      const sourceIdx = orderedGroupKeys.indexOf(sourceKey);
+      const targetIdx = orderedGroupKeys.indexOf(targetKey);
+      if (sourceIdx < 0 || targetIdx < 0) return;
+
+      let insertIdx = overData.position === 'before' ? targetIdx : targetIdx + 1;
+      if (sourceIdx < insertIdx) insertIdx -= 1;
+      if (sourceIdx === insertIdx) return;
+
+      const without = orderedGroupKeys.filter((k) => k !== sourceKey);
+      const nextKeys = [...without.slice(0, insertIdx), sourceKey, ...without.slice(insertIdx)];
+
+      const prevFolders = folders;
+      const prevNoFolderPosition = noFolderPosition;
+      const nextFolders = folders.map((f) => {
+        const idx = nextKeys.indexOf(f.id);
+        return idx >= 0 ? { ...f, position: idx } : f;
+      });
+      const nextNoFolderPosition = nextKeys.indexOf(NO_FOLDER_KEY);
+      setFolders(nextFolders);
+      setNoFolderPosition(nextNoFolderPosition);
+
+      const ok = await persistGroupOrder(nextKeys);
+      if (!ok) {
+        setFolders(prevFolders);
+        setNoFolderPosition(prevNoFolderPosition);
+      } else {
+        router.refresh();
+      }
+      return;
+    }
+
+    // Card drag end
+    if (!over) return;
+    const activeEventId = dragData.eventId;
+    const activeEvent = events.find((e) => e.id === activeEventId);
+    if (!activeEvent) return;
+
+    const overData = over.data.current as
+      | { type: 'card-drop'; position: 'before' | 'after'; targetEventId: string; folderKey: string }
+      | { type: 'folder'; key: string }
+      | { type: 'folder-empty'; folderKey: string }
+      | undefined;
+    if (!overData) return;
+
+    const sourceFolderKey = activeEvent.folder_id ?? NO_FOLDER_KEY;
+    let destFolderKey: string;
+    let destIndex: number;
+
+    if (overData.type === 'card-drop') {
+      destFolderKey = overData.folderKey;
+      const destList = grouped.get(destFolderKey) ?? [];
+      const targetIdx = destList.findIndex((e) => e.id === overData.targetEventId);
+      if (targetIdx < 0) return;
+      let rawIdx = overData.position === 'before' ? targetIdx : targetIdx + 1;
+      if (sourceFolderKey === destFolderKey) {
+        const activeIdx = destList.findIndex((e) => e.id === activeEventId);
+        if (activeIdx >= 0 && activeIdx < rawIdx) rawIdx -= 1;
+        if (activeIdx === rawIdx) return;
+      }
+      destIndex = rawIdx;
+    } else if (overData.type === 'folder' || overData.type === 'folder-empty') {
+      destFolderKey = overData.type === 'folder' ? overData.key : overData.folderKey;
+      const destList = grouped.get(destFolderKey) ?? [];
+      destIndex = destList.filter((e) => e.id !== activeEventId).length;
+      if (sourceFolderKey === destFolderKey) {
+        const activeIdx = destList.findIndex((e) => e.id === activeEventId);
+        if (activeIdx === destList.length - 1) return;
+      }
+    } else {
+      return;
+    }
+
+    const destFolderId = destFolderKey === NO_FOLDER_KEY ? null : destFolderKey;
+    const destListWithoutActive = (grouped.get(destFolderKey) ?? []).filter(
+      (e) => e.id !== activeEventId,
+    );
+    const nextDestList = [
+      ...destListWithoutActive.slice(0, destIndex),
+      activeEvent,
+      ...destListWithoutActive.slice(destIndex),
+    ];
+
+    const updates: { event_id: string; folder_id: string | null; position: number }[] = [];
+    nextDestList.forEach((e, idx) => {
+      updates.push({ event_id: e.id, folder_id: destFolderId, position: idx });
+    });
+    if (sourceFolderKey !== destFolderKey) {
+      const sourceList = (grouped.get(sourceFolderKey) ?? []).filter(
+        (e) => e.id !== activeEventId,
+      );
+      const sourceFolderId = sourceFolderKey === NO_FOLDER_KEY ? null : sourceFolderKey;
+      sourceList.forEach((e, idx) => {
+        updates.push({ event_id: e.id, folder_id: sourceFolderId, position: idx });
+      });
+    }
+
+    if (updates.length === 0) return;
+
+    const apply = (list: EventItem[]) =>
+      list.map((e) => {
+        const u = updates.find((x) => x.event_id === e.id);
+        if (!u) return e;
+        return { ...e, folder_id: u.folder_id, order_position: u.position };
+      });
+    setCreatedEvents(apply);
+    setParticipatedEvents(apply);
+
+    expand(destFolderKey);
+
+    const res = await fetch('/api/events/reorder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    });
+    if (res.ok) router.refresh();
+  }
+
+  const activeDragEvent = useMemo(() => {
+    if (activeDrag?.type !== 'event') return null;
+    return events.find((e) => e.id === activeDrag.eventId) ?? null;
+  }, [activeDrag, events]);
+
+  const activeDragFolder = useMemo(() => {
+    if (activeDrag?.type !== 'folder') return null;
+    if (activeDrag.key === NO_FOLDER_KEY) return null;
+    return folders.find((f) => f.id === activeDrag.key) ?? null;
+  }, [activeDrag, folders]);
+
+  const cardDragActive = activeDrag?.type === 'event';
+
+  const layoutTransition = { duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] };
 
   return (
     <div>
-      {/* Tab bar + Folder action */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div
           className="relative inline-grid gap-1 p-1 bg-gray-50 rounded-full border border-gray-200"
@@ -396,7 +763,6 @@ export default function DashboardClient({
         )}
       </div>
 
-      {/* Lists */}
       <div className="mt-6">
         {events.length === 0 ? (
           <div className="text-center py-16">
@@ -408,127 +774,151 @@ export default function DashboardClient({
             <p className="text-gray-400 text-sm">아직 이벤트가 없습니다.</p>
             <p className="text-gray-300 text-xs mt-1">상단의 이벤트 만들기 버튼으로 시작하세요</p>
           </div>
-        ) : showFolders ? (
-          <div className="space-y-4">
-            {orderedGroupKeys.map((key) => {
-              const folder = folders.find((f) => f.id === key);
-              const list = grouped.get(key) ?? [];
-              const isNoFolder = key === NO_FOLDER_KEY;
-              const isCollapsed = collapsed.has(key);
-              const isDropTarget = !!draggingEventId;
-              const isDragOver = dragOverKey === key;
-              return (
-                <div
-                  key={key}
-                  onDragOver={(e) => {
-                    if (!draggingEventId) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (dragOverKey !== key) setDragOverKey(key);
-                  }}
-                  onDragLeave={(e) => {
-                    if (!draggingEventId) return;
-                    const next = e.relatedTarget as Node | null;
-                    if (next && (e.currentTarget as Node).contains(next)) return;
-                    setDragOverKey((curr) => (curr === key ? null : curr));
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleDropOnFolder(key);
-                  }}
-                  className={`rounded-lg transition-colors ${
-                    isDropTarget
-                      ? isDragOver
-                        ? 'ring-2 ring-teal-400 bg-teal-50/60'
-                        : 'ring-1 ring-dashed ring-gray-200'
-                      : ''
-                  }`}
-                >
-                  <FolderHeader
-                    name={isNoFolder ? '폴더 없음' : folder?.name ?? '폴더'}
-                    count={list.length}
-                    collapsed={isCollapsed}
-                    onToggle={() => toggleCollapsed(key)}
-                    onRename={
-                      isNoFolder
-                        ? undefined
-                        : () => {
-                            setFolderError('');
-                            setFolderModalState({
-                              type: 'rename',
-                              folderId: key,
-                              initialName: folder?.name ?? '',
-                            });
-                          }
-                    }
-                    onDelete={isNoFolder ? undefined : () => setDeleteFolderId(key)}
-                  />
-                  <AnimatePresence initial={false}>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <div className="grid gap-3 pt-2 pl-1">
-                          {list.length === 0 ? (
-                            <p className="text-sm text-gray-400 px-2 py-3">
-                              {isDropTarget
-                                ? '여기에 놓으면 이 폴더로 이동합니다'
-                                : '이 폴더에는 아직 이벤트가 없습니다.'}
-                            </p>
-                          ) : (
-                            list.map((event) => (
-                              <EventCard
-                                key={event.id}
-                                id={event.id}
-                                title={event.title}
-                                dateCount={event.dates.length}
-                                participantCount={event.participant_count}
-                                createdAt={event.created_at}
-                                canDelete={event.is_owner}
-                                isOwner={event.is_owner}
-                                draggable={isDraggableEvent(event)}
-                                isDragging={draggingEventId === event.id}
-                                onDragStart={handleDragStart}
-                                onDragEnd={handleDragEnd}
-                                onRequestDelete={(id) => setDeleteTargetId(id)}
-                                onRequestMove={() => {
-                                  setMoveError('');
-                                  setMoveTarget(event);
-                                }}
-                              />
-                            ))
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
         ) : (
-          <div className="grid gap-3">
-            {events.map((event) => (
-              <EventCard
-                key={event.id}
-                id={event.id}
-                title={event.title}
-                dateCount={event.dates.length}
-                participantCount={event.participant_count}
-                createdAt={event.created_at}
-                canDelete={false}
-                isOwner={event.is_owner}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveDrag(null)}
+          >
+            <motion.div className="space-y-4">
+              <AnimatePresence initial={false}>
+                {orderedGroupKeys.map((key) => {
+                  const folder = folders.find((f) => f.id === key);
+                  const list = grouped.get(key) ?? [];
+                  const isNoFolder = key === NO_FOLDER_KEY;
+                  const isCollapsed = collapsed.has(key);
+                  const isFolderBeingDragged = activeDrag?.type === 'folder' && activeDrag.key === key;
+                  return (
+                    <motion.div
+                      key={key}
+                      layout={!isFolderBeingDragged}
+                      transition={layoutTransition}
+                    >
+                      <DraggableGroup groupKey={key}>
+                        {({ dragHandle: folderDragHandle }) => (
+                          <div>
+                            <FolderHeader
+                              name={isNoFolder ? '폴더 없음' : folder?.name ?? '폴더'}
+                              count={list.length}
+                              collapsed={isCollapsed}
+                              onToggle={() => toggleCollapsed(key)}
+                              onRename={
+                                isNoFolder
+                                  ? undefined
+                                  : () => {
+                                      setFolderError('');
+                                      setFolderModalState({
+                                        type: 'rename',
+                                        folderId: key,
+                                        initialName: folder?.name ?? '',
+                                      });
+                                    }
+                              }
+                              onDelete={isNoFolder ? undefined : () => setDeleteFolderId(key)}
+                              dragHandle={folderDragHandle}
+                            />
+                            <AnimatePresence initial={false}>
+                              {!isCollapsed && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                  animate={{
+                                    height: 'auto',
+                                    opacity: 1,
+                                    transitionEnd: { overflow: 'visible' },
+                                  }}
+                                  exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                                >
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2 pl-1 pb-1">
+                                    {list.length === 0 ? (
+                                      <EmptyFolderDrop
+                                        folderKey={key}
+                                        cardDragActive={cardDragActive}
+                                      />
+                                    ) : (
+                                      <AnimatePresence initial={false}>
+                                        {list.map((event) => {
+                                          const isCardBeingDragged =
+                                            activeDrag?.type === 'event' &&
+                                            activeDrag.eventId === event.id;
+                                          return (
+                                            <motion.div
+                                              key={event.id}
+                                              layout={!isCardBeingDragged}
+                                              transition={layoutTransition}
+                                            >
+                                              <DraggableCard
+                                                eventId={event.id}
+                                                folderKey={key}
+                                              >
+                                                {({ dragHandle, isDragging }) => (
+                                                  <EventCard
+                                                    id={event.id}
+                                                    title={event.title}
+                                                    dateCount={event.dates.length}
+                                                    participantCount={event.participant_count}
+                                                    createdAt={event.created_at}
+                                                    canDelete={event.is_owner}
+                                                    isOwner={event.is_owner}
+                                                    isDragging={isDragging}
+                                                    dragHandle={dragHandle}
+                                                    onRequestDelete={(id) => setDeleteTargetId(id)}
+                                                    onRequestMove={() => {
+                                                      setMoveError('');
+                                                      setMoveTarget(event);
+                                                    }}
+                                                  />
+                                                )}
+                                              </DraggableCard>
+                                            </motion.div>
+                                          );
+                                        })}
+                                      </AnimatePresence>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                      </DraggableGroup>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+
+            <DragOverlay dropAnimation={null}>
+              {activeDragEvent && (
+                <div className="opacity-90 rotate-1 cursor-grabbing">
+                  <EventCard
+                    id={activeDragEvent.id}
+                    title={activeDragEvent.title}
+                    dateCount={activeDragEvent.dates.length}
+                    participantCount={activeDragEvent.participant_count}
+                    createdAt={activeDragEvent.created_at}
+                    canDelete={false}
+                    isOwner={activeDragEvent.is_owner}
+                  />
+                </div>
+              )}
+              {activeDrag?.type === 'folder' && (
+                <div className="opacity-80 px-2 py-1 bg-white border border-gray-200 rounded-md shadow-md flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {activeDragFolder?.name ?? '폴더 없음'}
+                  </span>
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
 
-      {/* Confirms */}
       <ConfirmModal
         open={!!deleteTargetId}
         title="이벤트 삭제"

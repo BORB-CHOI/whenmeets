@@ -2,6 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
+
+interface DragHandleProps {
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+}
 
 interface EventCardProps {
   id: string;
@@ -15,11 +21,10 @@ interface EventCardProps {
   onRequestDelete?: (id: string) => void;
   /** Move-to-folder handler. When undefined, the menu item is hidden. */
   onRequestMove?: (id: string) => void;
-  /** When true, the card is HTML5 draggable for folder reorganization. */
-  draggable?: boolean;
+  /** Visual state when this card is being dragged via dnd-kit (wrapper handles listeners). */
   isDragging?: boolean;
-  onDragStart?: (id: string) => void;
-  onDragEnd?: () => void;
+  /** dnd-kit sortable bindings for the left-side drag handle button. */
+  dragHandle?: DragHandleProps;
 }
 
 export default function EventCard({
@@ -32,10 +37,8 @@ export default function EventCard({
   isOwner,
   onRequestDelete,
   onRequestMove,
-  draggable,
   isDragging,
-  onDragStart,
-  onDragEnd,
+  dragHandle,
 }: EventCardProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,23 +63,28 @@ export default function EventCard({
 
   return (
     <div
-      draggable={draggable ?? false}
-      onDragStart={
-        draggable
-          ? (e) => {
-              e.dataTransfer.effectAllowed = 'move';
-              e.dataTransfer.setData('text/plain', id);
-              onDragStart?.(id);
-            }
-          : undefined
-      }
-      onDragEnd={draggable ? () => onDragEnd?.() : undefined}
       className={`group relative w-full bg-white border border-gray-200 rounded-lg p-4 min-h-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all ${
         menuOpen ? 'z-20' : ''
-      } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${
-        isDragging ? 'opacity-40' : ''
-      }`}
+      } ${isDragging ? 'opacity-40' : ''} ${dragHandle ? 'pl-9' : ''}`}
     >
+      {dragHandle && (
+        <button
+          type="button"
+          aria-label="이벤트 순서/폴더 변경"
+          title="드래그해서 이동"
+          {...dragHandle.attributes}
+          {...(dragHandle.listeners ?? {})}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="absolute left-1.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-5 h-14 text-gray-400 bg-white border border-gray-200 rounded cursor-grab active:cursor-grabbing hover:bg-white hover:text-gray-600 hover:border-gray-300 transition-colors touch-none"
+        >
+          <svg className="w-3 h-4" fill="none" viewBox="0 0 24 32" stroke="currentColor" strokeWidth={2.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h.01M8 12h.01M8 18h.01M8 24h.01M16 6h.01M16 12h.01M16 18h.01M16 24h.01" />
+          </svg>
+        </button>
+      )}
       <button
         onClick={() => router.push(`/e/${id}`)}
         className="w-full text-left cursor-pointer"

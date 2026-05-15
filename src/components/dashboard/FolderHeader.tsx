@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
+
+interface DragHandleProps {
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+}
 
 interface FolderHeaderProps {
   name: string;
@@ -10,6 +16,8 @@ interface FolderHeaderProps {
   /** Undefined for the implicit "폴더 없음" group. */
   onRename?: () => void;
   onDelete?: () => void;
+  /** dnd-kit useSortable bindings for the drag handle button. */
+  dragHandle?: DragHandleProps;
 }
 
 export default function FolderHeader({
@@ -19,6 +27,7 @@ export default function FolderHeader({
   onToggle,
   onRename,
   onDelete,
+  dragHandle,
 }: FolderHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -38,6 +47,20 @@ export default function FolderHeader({
 
   return (
     <div className="flex items-center justify-between gap-2 group">
+      {dragHandle && (
+        <button
+          type="button"
+          aria-label="폴더 순서 변경"
+          title="드래그해서 폴더 순서 변경"
+          {...dragHandle.attributes}
+          {...(dragHandle.listeners ?? {})}
+          className="inline-flex items-center justify-center w-6 h-6 text-gray-400 bg-white border border-gray-200 rounded cursor-grab active:cursor-grabbing hover:bg-white hover:text-gray-600 hover:border-gray-300 transition-colors touch-none shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+          </svg>
+        </button>
+      )}
       <button
         type="button"
         onClick={onToggle}
