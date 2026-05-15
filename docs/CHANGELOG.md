@@ -10,6 +10,12 @@ All notable changes to WhenMeets will be documented in this file.
 
 - **마이그레이션 적용 누락 가드 (GitHub Actions)** — `.github/workflows/check-migrations.yml` + `scripts/check-pending-migrations.mjs`. PR/머지 시점에 Supabase Management API로 prod에 적용된 마이그레이션 목록을 가져와, `supabase/migrations/` 로컬 파일 중 prod에 없는 게 있으면 check fail. branch protection으로 머지 차단 가능. v0.5.3 머지 직후 `start_on_monday` 컬럼이 prod DB에 없는 채로 코드만 배포되어 모든 이벤트 생성이 500 응답한 사고의 재발 방지용. GitHub Secret `SUPABASE_ACCESS_TOKEN`만 신규 필요 (project ref는 workflow YAML에 하드코딩, Vercel env엔 PAT 노출 안 함).
 - **PR 템플릿** — `.github/pull_request_template.md`. 머지 전 체크리스트, "마이그레이션 별도 PR" 권장, 8가지 모드 회귀 점검 가이드.
+- **대시보드 이벤트 카드 2열 레이아웃 (PC)** — 폴더 내 이벤트 카드가 `lg` 이상(≥1024px) 화면에서 2열로 표시. 모바일은 1열 유지. 한 화면에 더 많은 이벤트를 한눈에 보고 관리 가능 (`src/components/dashboard/DashboardClient.tsx`).
+- **대시보드 폴더 + 카드 드래그 (명시적 핸들 패턴)** — `@dnd-kit/core` + `@dnd-kit/sortable` 도입. 폴더 헤더와 이벤트 카드 좌측에 **테두리 있는 grip 아이콘 핸들**을 두고, 그 핸들에서만 드래그 시작. 모바일 스크롤과의 충돌이 사라져 long-press 없이 즉시 드래그 가능. PC와 모바일 동작이 일관됨.
+- **폴더 순서 변경** — 폴더 헤더 핸들을 잡고 위/아래로 끌어 순서 변경. '폴더 없음' 그룹도 자유롭게 위치 이동 가능. 디바이스 간 동기화 (`PATCH /api/folders/reorder`).
+- **폴더 내 카드 순서 변경 + cross-folder 이동** — 카드 핸들을 잡고 같은 폴더 안에서 재정렬하거나 다른 폴더로 이동. multi-container sortable 패턴: dragOver에서 cross-folder 이동을 즉시 반영, dragEnd에서 affected 폴더들의 모든 카드 position을 일괄 저장 (`PATCH /api/events/reorder`). 드래그 중인 카드 자리에는 **dashed teal placeholder**가 표시되어 들어갈 위치가 명시적으로 보임.
+- **마이그레이션 015 `no_folder_position`** — `profiles` 테이블에 `no_folder_position INTEGER` 컬럼 추가. '폴더 없음'은 `folders` 테이블에 행이 없는 가상 그룹이라 별도 컬럼이 필요. NULL이면 항상 맨 아래.
+- **마이그레이션 016 `user_event_order`** — 사용자별 카드 순서 저장용 새 테이블 `(user_id, event_id, position)`. user_event_folders와 별도 — folder 정보와 무관하게 카드 순서만 보관. 행이 없는 이벤트는 created_at desc fallback.
 
 ## [0.5.3] - 2026-05-08
 
