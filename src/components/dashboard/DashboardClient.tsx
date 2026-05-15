@@ -120,56 +120,54 @@ interface DraggableGroupProps {
 // - top/bottom half useDroppable for folder-drop indicator (folder reorder)
 // - separate inner useDroppable (folder-{key}) to receive card drops (cross-folder move)
 function DraggableGroup({ groupKey, children }: DraggableGroupProps) {
-  const draggable = useDraggable({
+  const {
+    setNodeRef: setDraggableRef,
+    attributes,
+    listeners,
+    isDragging,
+  } = useDraggable({
     id: groupKey,
     data: { type: 'folder', key: groupKey },
   });
-  const topDrop = useDroppable({
+  const { setNodeRef: setTopDropRef, isOver: topIsOver } = useDroppable({
     id: `folderbefore-${groupKey}`,
     data: { type: 'folder-drop', position: 'before', targetKey: groupKey },
   });
-  const bottomDrop = useDroppable({
+  const { setNodeRef: setBottomDropRef, isOver: bottomIsOver } = useDroppable({
     id: `folderafter-${groupKey}`,
     data: { type: 'folder-drop', position: 'after', targetKey: groupKey },
   });
-  const folderDrop = useDroppable({
+  const { setNodeRef: setFolderDropRef } = useDroppable({
     id: `folder-${groupKey}`,
     data: { type: 'folder', key: groupKey },
   });
 
-  const isDragging = draggable.isDragging;
-
   return (
-    <div ref={draggable.setNodeRef} className="relative">
-      {/* Drop indicator lines for FOLDER reordering — sit in the space-y-4 gap (16px),
-          so -top/-bottom-2 (8px) lands mid-gap. */}
-      {topDrop.isOver && !isDragging && (
+    <div ref={setDraggableRef} className="relative">
+      {topIsOver && !isDragging && (
         <div className="absolute -top-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
-      {bottomDrop.isOver && !isDragging && (
+      {bottomIsOver && !isDragging && (
         <div className="absolute -bottom-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
 
-      {/* Inner content — receives card drops via folderDrop ref. */}
-      <div ref={folderDrop.setNodeRef} style={{ opacity: isDragging ? 0.3 : 1 }}>
+      <div ref={setFolderDropRef} style={{ opacity: isDragging ? 0.3 : 1 }}>
         {children({
-          dragHandle: { attributes: draggable.attributes, listeners: draggable.listeners },
+          dragHandle: { attributes, listeners },
           isDragging,
         })}
       </div>
 
-      {/* Drop zones for folder-folder ordering — top third / bottom third of folder.
-          Sized smaller (1/3) so the middle region stays a card-drop target (folderDrop). */}
       <div
-        ref={topDrop.setNodeRef}
+        ref={setTopDropRef}
         className="absolute top-0 left-0 right-0 h-1/3 pointer-events-none"
       />
       <div
-        ref={bottomDrop.setNodeRef}
+        ref={setBottomDropRef}
         className="absolute bottom-0 left-0 right-0 h-1/3 pointer-events-none"
       />
     </div>
@@ -186,30 +184,32 @@ interface DraggableCardProps {
 }
 
 function DraggableCard({ eventId, folderKey, children }: DraggableCardProps) {
-  const draggable = useDraggable({
+  const {
+    setNodeRef: setDraggableRef,
+    attributes,
+    listeners,
+    isDragging,
+  } = useDraggable({
     id: cardId(eventId),
     data: { type: 'event', eventId, folderKey },
   });
-  const topDrop = useDroppable({
+  const { setNodeRef: setTopDropRef, isOver: topIsOver } = useDroppable({
     id: `dropbefore-${eventId}`,
     data: { type: 'card-drop', position: 'before', targetEventId: eventId, folderKey },
   });
-  const bottomDrop = useDroppable({
+  const { setNodeRef: setBottomDropRef, isOver: bottomIsOver } = useDroppable({
     id: `dropafter-${eventId}`,
     data: { type: 'card-drop', position: 'after', targetEventId: eventId, folderKey },
   });
 
-  const isDragging = draggable.isDragging;
-
   return (
-    <div ref={draggable.setNodeRef} className="relative">
-      {/* Card drop indicator lines — gap-3 between cards = 12px, so -top/-bottom-1.5 (6px) lands mid-gap. */}
-      {topDrop.isOver && !isDragging && (
+    <div ref={setDraggableRef} className="relative">
+      {topIsOver && !isDragging && (
         <div className="absolute -top-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
-      {bottomDrop.isOver && !isDragging && (
+      {bottomIsOver && !isDragging && (
         <div className="absolute -bottom-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
@@ -217,17 +217,17 @@ function DraggableCard({ eventId, folderKey, children }: DraggableCardProps) {
 
       <div style={{ opacity: isDragging ? 0.3 : 1 }}>
         {children({
-          dragHandle: { attributes: draggable.attributes, listeners: draggable.listeners },
+          dragHandle: { attributes, listeners },
           isDragging,
         })}
       </div>
 
       <div
-        ref={topDrop.setNodeRef}
+        ref={setTopDropRef}
         className="absolute top-0 left-0 right-0 h-1/2 pointer-events-none"
       />
       <div
-        ref={bottomDrop.setNodeRef}
+        ref={setBottomDropRef}
         className="absolute bottom-0 left-0 right-0 h-1/2 pointer-events-none"
       />
     </div>
