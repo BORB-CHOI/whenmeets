@@ -4,7 +4,7 @@ All notable changes to WhenMeets will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
-## [Unreleased]
+## [0.5.4] - 2026-05-16
 
 ### Added
 
