@@ -136,7 +136,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 | Component | Role | File |
 |-----------|------|------|
-| `DashboardClient` | 탭(만든/참여) + 폴더 그룹 + 모달 오케스트레이션 | `src/components/dashboard/DashboardClient.tsx` |
+| `DashboardClient` | 탭(전체/만든) + 폴더 그룹 + 모달 오케스트레이션 | `src/components/dashboard/DashboardClient.tsx` |
 | `EventCard` | 이벤트 카드 + 소유자 뱃지(내 이벤트/참여 중) + 옵션 메뉴 | `src/components/dashboard/EventCard.tsx` |
 | `FolderHeader` | 폴더 접기/펴기 + 이름변경/삭제 메뉴 | `src/components/dashboard/FolderHeader.tsx` |
 | `FolderNameModal` | 폴더 생성/이름변경 모달 | `src/components/dashboard/FolderNameModal.tsx` |

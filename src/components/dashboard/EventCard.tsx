@@ -72,8 +72,10 @@ export default function EventCard({
       }
       onDragEnd={draggable ? () => onDragEnd?.() : undefined}
       className={`group relative w-full bg-white border border-gray-200 rounded-lg p-4 min-h-16 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all ${
-        draggable ? 'cursor-grab active:cursor-grabbing' : ''
-      } ${isDragging ? 'opacity-40' : ''}`}
+        menuOpen ? 'z-20' : ''
+      } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${
+        isDragging ? 'opacity-40' : ''
+      }`}
     >
       <button
         onClick={() => router.push(`/e/${id}`)}
