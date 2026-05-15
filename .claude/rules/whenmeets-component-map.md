@@ -132,6 +132,40 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 - 모바일 하단 배너 활성 시 `body { padding-bottom }`로 콘텐츠 가림 방지 — 이벤트 페이지(`/e/[id]`)는 `MobileBottomBar`(z-40)와 충돌 회피 위해 모바일 광고 비표시
 - z-index: 광고 z-30 < `MobileBottomBar` z-40 < `Header` z-50 < 모달 z-100
 
+### Dashboard (folders + event list)
+
+| Component | Role | File |
+|-----------|------|------|
+| `DashboardClient` | 탭(전체/만든) + 폴더 그룹 + 모달 오케스트레이션 | `src/components/dashboard/DashboardClient.tsx` |
+| `EventCard` | 이벤트 카드 + 소유자 뱃지(내 이벤트/참여 중) + 옵션 메뉴 | `src/components/dashboard/EventCard.tsx` |
+| `FolderHeader` | 폴더 접기/펴기 + 이름변경/삭제 메뉴 | `src/components/dashboard/FolderHeader.tsx` |
+| `FolderNameModal` | 폴더 생성/이름변경 모달 | `src/components/dashboard/FolderNameModal.tsx` |
+| `MoveToFolderModal` | 이벤트를 폴더로 이동시키는 모달 | `src/components/dashboard/MoveToFolderModal.tsx` |
+| `/dashboard` route | 폴더+이벤트 SSR 로드 (folders, created, participated) | `src/app/dashboard/page.tsx` |
+
+**Shared concerns:**
+- 폴더는 `folders` 테이블(`user_id`, `name` unique per user, `position`).
+- 이벤트의 폴더 배정은 **사용자별**로 관리: `user_event_folders(user_id, event_id, folder_id)` 매핑 테이블.
+  같은 이벤트가 사용자마다 다른 폴더에 속할 수 있음. 한 사용자의 폴더 이동이 다른 사용자 뷰에 영향 없음.
+- 폴더 그룹은 모든 탭(전체/만든/참여)에서 동일하게 적용. DnD도 모든 이벤트(소유·참여 무관) 가능 — 사용자 자기 뷰만 바뀜.
+- 소유자 뱃지는 `is_owner` flag로 분기 (서버에서 `events.created_by === userId` 비교).
+- 폴더 mutation 후 `router.refresh()`로 RSC 캐시 무효화 (뒤로 가기 시 stale UI 방지).
+- 폴더 접힘/펼침 상태는 `localStorage`(`whenmeets:dashboard:collapsedFolders`)에 영속화.
+- 드래그앤드롭: **@dnd-kit** 기반 (`@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`).
+  - **명시적 드래그 핸들 패턴**: 폴더 헤더 좌측 + 이벤트 카드 좌측에 grip 아이콘(테두리 + bg 있는 버튼). 카드/헤더 본체는 클릭 트랜지션(이벤트 페이지 이동, 폴더 접기). 드래그는 핸들에서만 시작 → 모바일 스크롤과 충돌 0.
+  - 폴더 헤더 핸들 드래그 → 폴더 순서 재정렬 (외부 SortableContext + verticalListSortingStrategy)
+  - 이벤트 카드 핸들 드래그 → **폴더 내 순서 변경 + cross-folder 이동** (multi-container sortable 패턴: 각 폴더가 자체 SortableContext, `handleDragOver`에서 cross-container 시 즉시 folder_id 변경, `handleDragEnd`에서 affected 폴더들의 모든 카드 position 일괄 PATCH)
+  - `active.data.current.type` (`'folder'` vs `'event'`)로 drag 종류 분기
+  - `collisionDetection`: 폴더 드래그 → 폴더 droppable만 / 카드 드래그 → pointerWithin → rectIntersection fallback (빈 폴더에도 drop 가능)
+  - PointerSensor distance 6 + TouchSensor delay 0 + tolerance 5. 명시적 핸들 덕분에 long-press 필요 없음
+  - DragOverlay로 끌고 다니는 카드/폴더 표시 (회전 + opacity)
+  - **Drop placeholder**: `isDragging`인 카드는 컨텐츠 invisible + wrapper에 `ring-2 ring-dashed ring-teal-400 bg-teal-50/40` → 카드가 들어갈 자리가 dashed 영역으로 명시
+- `'폴더 없음'`도 사용자가 자유롭게 위치 변경 가능 — folders 테이블에 행이 없으므로 `profiles.no_folder_position` 컬럼(NULL이면 맨 아래)에 별도 저장.
+- 사용자별 이벤트 카드 순서: `user_event_order(user_id, event_id, position)` 테이블 (마이그레이션 016). 행이 없으면 created_at desc fallback. user_event_folders와 별도 — folder 정보와 무관하게 카드 순서만 보관.
+- 폴더 순서 일괄 업데이트: `PATCH /api/folders/reorder` (folders.position + profiles.no_folder_position을 한 번에).
+- 카드 순서/폴더 일괄 업데이트: `PATCH /api/events/reorder` (user_event_folders upsert + user_event_order upsert을 트랜잭션처럼 묶음. visibility check: 소유자 OR 참여자).
+- 폴더 내 이벤트 카드 그리드: 모바일 1열, `lg` 이상 2열 (`grid grid-cols-1 lg:grid-cols-2 gap-3`).
+
 ### MyPage (profile)
 
 | Component | Role | File |
@@ -167,6 +201,11 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `GET /api/events/[id]/results` | ResultsPageClient |
 | `POST /api/events/[id]/verify` | PasswordForm → EventPageClient |
 | `GET/PATCH /api/user/profile` | MyPageClient (PATCH), useProfile (GET via Supabase RLS) |
+| `GET/POST /api/folders` | DashboardClient (folder CRUD) |
+| `PATCH/DELETE /api/folders/[id]` | DashboardClient (rename/delete folder) |
+| `PATCH /api/folders/reorder` | DashboardClient (폴더 순서 일괄 변경 — folders.position 다건 + profiles.no_folder_position 한 트랜잭션) |
+| `PATCH /api/events/[id]/folder` | DashboardClient (move event to folder — upserts `user_event_folders` for caller; visibility check: 소유자 OR 참여자) |
+| `PATCH /api/events/reorder` | DashboardClient (카드 cross-folder 이동 + 폴더 내 순서 일괄 — user_event_folders upsert/delete + user_event_order upsert) |
 
 When modifying an API response shape, check ALL consuming components.
 

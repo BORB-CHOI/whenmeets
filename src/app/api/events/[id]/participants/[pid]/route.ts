@@ -31,11 +31,11 @@ export async function PATCH(
   ]);
 
   if (!eventCheck.data) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
   const participant = participantQuery.data;
   if (!participant) {
-    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+    return NextResponse.json({ error: '참여자를 찾을 수 없습니다' }, { status: 404 });
   }
 
   // Ownership check: a participant bound to a logged-in user can only be
@@ -51,13 +51,13 @@ export async function PATCH(
       // ignore
     }
     if (currentUserId !== participant.user_id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
     }
   } else if (participant.password_hash) {
     // Anonymous-with-password slot: verify password
     const { password } = body;
     if (!password || !(await bcrypt.compare(password, participant.password_hash))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: '비밀번호가 일치하지 않습니다' }, { status: 401 });
     }
   }
   // Anonymous-no-password slot: shared-edit (legacy behavior)
@@ -66,21 +66,21 @@ export async function PATCH(
 
   // Validate availability shape: Record<string, Record<string, 0|1|2>>
   if (typeof availability !== 'object' || availability === null || Array.isArray(availability)) {
-    return NextResponse.json({ error: 'Invalid availability format' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 응답 형식입니다' }, { status: 400 });
   }
 
   // Size limits to prevent abuse
   const dateKeys = Object.keys(availability);
   if (dateKeys.length > 60) {
-    return NextResponse.json({ error: 'Too many dates in availability' }, { status: 400 });
+    return NextResponse.json({ error: '응답에 날짜가 너무 많습니다' }, { status: 400 });
   }
   for (const [dateKey, slots] of Object.entries(availability)) {
     if (typeof dateKey !== 'string' || typeof slots !== 'object' || slots === null || Array.isArray(slots)) {
-      return NextResponse.json({ error: 'Invalid availability format' }, { status: 400 });
+      return NextResponse.json({ error: '잘못된 응답 형식입니다' }, { status: 400 });
     }
     for (const val of Object.values(slots as Record<string, unknown>)) {
       if (val !== 0 && val !== 1 && val !== 2) {
-        return NextResponse.json({ error: 'Invalid availability value' }, { status: 400 });
+        return NextResponse.json({ error: '잘못된 응답 값입니다' }, { status: 400 });
       }
     }
   }
@@ -112,7 +112,7 @@ export async function DELETE(
     .is('deleted_at', null)
     .single();
   if (!event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   const { data: participant } = await supabase
@@ -122,7 +122,7 @@ export async function DELETE(
     .eq('event_id', id)
     .single();
   if (!participant) {
-    return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+    return NextResponse.json({ error: '참여자를 찾을 수 없습니다' }, { status: 404 });
   }
 
   let currentUserId: string | null = null;
@@ -170,9 +170,9 @@ export async function DELETE(
 
   if (!authorized) {
     if (!participant.user_id && participant.password_hash) {
-      return NextResponse.json({ error: 'Password required', requires_password: true }, { status: 401 });
+      return NextResponse.json({ error: '비밀번호가 필요합니다', requires_password: true }, { status: 401 });
     }
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
   }
 
   const { error } = await supabase

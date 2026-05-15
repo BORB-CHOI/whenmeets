@@ -18,14 +18,14 @@ export async function GET(
     .single();
 
   if (!event) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   // Auth check BEFORE fetching participants
   if (event.password_hash) {
     const cookie = request.cookies.get(`whenmeets_auth_${id}`);
     if (!cookie || !verifyEventToken(id, cookie.value)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
     }
   }
 

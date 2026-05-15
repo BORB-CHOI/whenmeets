@@ -9,15 +9,15 @@ export async function POST(request: NextRequest) {
   const { title, dates, time_start, time_end, password, mode, date_only, start_on_monday } = body;
 
   if (!title || !dates || !Array.isArray(dates) || dates.length === 0) {
-    return NextResponse.json({ error: 'Title and dates are required' }, { status: 400 });
+    return NextResponse.json({ error: '제목과 날짜는 필수입니다' }, { status: 400 });
   }
 
   if (title.trim().length > 200) {
-    return NextResponse.json({ error: 'Title is too long' }, { status: 400 });
+    return NextResponse.json({ error: '제목이 너무 깁니다' }, { status: 400 });
   }
 
   if (dates.length > 60) {
-    return NextResponse.json({ error: 'Too many dates (max 60)' }, { status: 400 });
+    return NextResponse.json({ error: '날짜가 너무 많습니다 (최대 60개)' }, { status: 400 });
   }
 
   // Detect days-of-week mode vs calendar mode
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const isCalendar = dates.every((d: unknown) => typeof d === 'string' && dateRegex.test(d));
 
   if (!isDaysOfWeek && !isCalendar) {
-    return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 날짜 형식입니다' }, { status: 400 });
   }
 
   // Validate calendar dates are real dates (e.g. reject 2026-02-31)
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   const start = time_start ?? 36;
   const end = time_end ?? 84;
   if (typeof start !== 'number' || typeof end !== 'number' || start < 0 || end > 96 || start >= end) {
-    return NextResponse.json({ error: 'Invalid time range' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 시간 범위입니다' }, { status: 400 });
   }
 
   const id = nanoid(10);

@@ -11,7 +11,7 @@ export async function POST(
   const { password } = await request.json();
 
   if (!password) {
-    return NextResponse.json({ error: 'Password required' }, { status: 400 });
+    return NextResponse.json({ error: '비밀번호가 필요합니다' }, { status: 400 });
   }
 
   const supabase = createServerClient();
@@ -23,12 +23,12 @@ export async function POST(
     .single();
 
   if (!event?.password_hash) {
-    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    return NextResponse.json({ error: '이벤트를 찾을 수 없습니다' }, { status: 404 });
   }
 
   const valid = await bcrypt.compare(password, event.password_hash);
   if (!valid) {
-    return NextResponse.json({ error: 'Wrong password' }, { status: 401 });
+    return NextResponse.json({ error: '비밀번호가 일치하지 않습니다' }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });
