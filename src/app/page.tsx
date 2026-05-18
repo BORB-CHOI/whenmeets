@@ -10,6 +10,7 @@ import Features from '@/components/home/Features';
 import Faq from '@/components/home/Faq';
 import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
+import { renderEmphasis } from '@/lib/render-emphasis';
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
@@ -225,7 +226,7 @@ export default function Home() {
                   {fixture.title}
                 </h3>
                 <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                  {fixture.scenarioHeadline}
+                  {renderEmphasis(fixture.scenarioHeadline)}
                 </p>
                 <div className="mt-auto pt-4 text-xs font-semibold text-teal-600 group-hover:underline">
                   데모와 함께 자세히 보기 →

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { renderEmphasis } from '@/lib/render-emphasis';
 
 export const metadata: Metadata = {
   title: '사용 가이드 | WhenMeets',
@@ -38,15 +39,15 @@ const WHENMEETS_ONLY: DifferentiatorPoint[] = [
   },
   {
     title: '그리드 셀별 가능 인원수 숫자 표시',
-    body: '결과 히트맵의 각 칸 안에 그 시간에 가능한 인원 수가 숫자로 같이 표시됩니다. 색만 보고 “몇 명일까” 추측할 필요가 없어, 8명 이상 모임에서 “모두 가능” 슬랏을 빠르게 골라낼 수 있습니다.',
+    body: '결과 히트맵의 각 칸 안에 그 시간에 가능한 인원 수가 숫자로 같이 표시됩니다. 색만 보고 “몇 명일까” 추측할 필요가 없어, 8명 이상 모임에서 **모두 가능**한 슬롯을 빠르게 골라낼 수 있습니다.',
   },
   {
     title: '색깔별 가능 인원수 범례 명시',
-    body: '결과 화면 옆에 “이 색 = 몇 명 가능” 범례가 항상 노출됩니다. 단톡방에 결과를 캡처해서 던졌을 때 받은 사람이 색 의미를 즉시 이해할 수 있습니다.',
+    body: '결과 화면 옆에 **이 색이 몇 명 가능**을 알려주는 범례가 항상 노출됩니다. 단톡방에 결과를 캡처해서 던졌을 때 받은 사람이 색 의미를 즉시 이해할 수 있습니다.',
   },
   {
-    title: '시간 없는 "날짜만" 모드',
-    body: '명절 연휴, 종일 모임, 여행처럼 시간 단위가 의미 없는 경우 시간 슬랏 자체를 빼고 가능한 날짜만 받을 수 있습니다. 응답 화면이 캘린더 그리드로 바뀌므로 손가락 한 번에 한 날짜 응답이 끝납니다. Timeful과 When2meet은 모두 시간 슬랏이 필수입니다.',
+    title: '시간 없는 날짜만 모드',
+    body: '명절 연휴, 종일 모임, 여행처럼 시간 단위가 의미 없는 경우 시간 슬롯 자체를 빼고 가능한 날짜만 받을 수 있습니다. 응답 화면이 캘린더 그리드로 바뀌므로 손가락 한 번에 한 날짜 응답이 끝납니다. Timeful과 When2meet은 모두 시간 슬롯이 필수입니다.',
   },
   {
     title: '비밀번호로 응답 보호',
@@ -66,7 +67,7 @@ export default function GuidePage() {
         </h1>
         <p className="mt-4 text-base text-gray-600 leading-relaxed max-w-2xl">
           WhenMeets는 회원가입 없이 누구나 쓸 수 있는 한국어 기반 그룹 일정 조율 도구입니다.
-          이 페이지에서는 기본 사용법, 두 가지 모드(시간 슬랏, 날짜만), 결과 해석, 보안 옵션,
+          이 페이지에서는 기본 사용법, 두 가지 모드(시간 슬롯, 날짜만), 결과 해석, 보안 옵션,
           그리고 Timeful과 When2meet 같은 비슷한 도구와의 차이까지 한 번에 정리합니다.
         </p>
       </header>
@@ -92,7 +93,7 @@ export default function GuidePage() {
         <ol className="flex flex-col gap-3 text-base text-gray-700 leading-relaxed">
           <li><span className="font-semibold">① 이벤트 만들기.</span> 홈에서 <strong className="font-semibold text-gray-900">이벤트 만들기</strong> 버튼을 누르고 제목, 후보 날짜, 시간대를 입력합니다. 가능 시간 표시 방식(가능한 시간 표시 vs 안 되는 시간 표시)도 이때 선택할 수 있습니다.</li>
           <li><span className="font-semibold">② 링크 공유.</span> 만들기 직후 표시되는 링크를 카카오톡, 슬랙, 메신저, 이메일 어디든 복사해서 공유합니다. 응답자는 가입 없이 바로 들어옵니다.</li>
-          <li><span className="font-semibold">③ 응답.</span> 각자 이름만 입력하고 가능한 시간을 드래그합니다. 모바일에서는 길게 눌러 드래그하면 한 번에 여러 슬랏을 표시할 수 있습니다.</li>
+          <li><span className="font-semibold">③ 응답.</span> 각자 이름만 입력하고 가능한 시간을 드래그합니다. 모바일에서는 길게 눌러 드래그하면 한 번에 여러 슬롯을 표시할 수 있습니다.</li>
           <li><span className="font-semibold">④ 결과 확인.</span> 호스트와 응답자 모두 같은 페이지에서 실시간으로 결과 히트맵을 봅니다. 가장 진한 셀이 모두에게 가능한 시간입니다.</li>
         </ol>
       </section>
@@ -123,7 +124,7 @@ export default function GuidePage() {
       <section id="date-only" className="mb-14">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">3. 시간 없는 <span className="text-teal-700">날짜만</span> 모드</h2>
         <p className="text-base text-gray-700 leading-relaxed mb-3">
-          명절 연휴, 여행 일정, 종일 행사처럼 시간 단위가 의미 없는 경우엔 시간 슬랏 자체를 빼고
+          명절 연휴, 여행 일정, 종일 행사처럼 시간 단위가 의미 없는 경우엔 시간 슬롯 자체를 빼고
           <strong className="font-semibold text-gray-900"> 가능한 날짜</strong>만 받을 수 있습니다. 이벤트 만들 때 <strong className="font-semibold text-gray-900">시간 없이 날짜만</strong> 옵션을 켜면 됩니다.
         </p>
         <p className="text-base text-gray-700 leading-relaxed">
@@ -142,10 +143,10 @@ export default function GuidePage() {
           결과 화면은 가능 인원에 따라 색의 진하기가 달라지는 히트맵입니다.
         </p>
         <ul className="flex flex-col gap-2 text-base text-gray-700 leading-relaxed pl-1">
-          <li><span className="font-semibold">진한 청록색.</span> 모든 응답자가 가능한 시간. 약속 잡기에 가장 좋은 슬랏입니다.</li>
+          <li><span className="font-semibold">진한 청록색.</span> 모든 응답자가 가능한 시간. 약속 잡기에 가장 좋은 슬롯입니다.</li>
           <li><span className="font-semibold">옅은 청록색.</span> 한 명, 두 명이 안 되는 시간. 차선책으로 검토할 수 있습니다.</li>
-          <li><span className="font-semibold">호박색 (If Needed).</span> <strong className="font-semibold text-gray-900">꼭 필요하면 가능</strong>으로 표시한 사람이 포함된 슬랏. 필요할 때 켜고 끌 수 있습니다.</li>
-          <li><span className="font-semibold">회색.</span> 표시가 한 명도 없는 슬랏. 모임 후보에서 제외합니다.</li>
+          <li><span className="font-semibold">호박색 (If Needed).</span> <strong className="font-semibold text-gray-900">꼭 필요하면 가능</strong>으로 표시한 사람이 포함된 슬롯. 필요할 때 켜고 끌 수 있습니다.</li>
+          <li><span className="font-semibold">회색.</span> 표시가 한 명도 없는 슬롯. 모임 후보에서 제외합니다.</li>
         </ul>
         <p className="mt-3 text-base text-gray-700 leading-relaxed">
           오른쪽 사이드바에서 응답자를 한 명씩 끄고 켜면, "이 사람만 빠지면 가능한 시간은?"을 즉시 확인할 수 있습니다.
@@ -209,7 +210,7 @@ export default function GuidePage() {
             {WHENMEETS_ONLY.map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-teal-200 bg-teal-50">
                 <h4 className="text-base font-bold text-teal-700 mb-2">{item.title}</h4>
-                <p className="text-sm text-gray-700 leading-relaxed">{item.body}</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{renderEmphasis(item.body)}</p>
               </div>
             ))}
           </div>

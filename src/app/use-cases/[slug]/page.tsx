@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { USE_CASE_FIXTURES, USE_CASE_SLUGS, getUseCaseFixture } from '@/lib/demo-data';
+import { renderEmphasis, stripEmphasis } from '@/lib/render-emphasis';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -18,16 +19,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!fixture) {
     return { title: '사용 사례 | WhenMeets' };
   }
+  const plainHeadline = stripEmphasis(fixture.scenarioHeadline);
   return {
     title: `${fixture.title} | WhenMeets 사용 사례`,
-    description: fixture.scenarioHeadline,
+    description: plainHeadline,
     keywords: fixture.keywords,
     alternates: {
       canonical: `/use-cases/${fixture.slug}`,
     },
     openGraph: {
       title: `${fixture.title} | WhenMeets`,
-      description: fixture.scenarioHeadline,
+      description: plainHeadline,
       type: 'article',
     },
   };
@@ -59,13 +61,13 @@ export default async function UseCasePage({ params }: PageProps) {
           {fixture.title}
         </h1>
         <p className="mt-4 text-lg text-gray-600 leading-relaxed">
-          {fixture.scenarioHeadline}
+          {renderEmphasis(fixture.scenarioHeadline)}
         </p>
       </header>
 
       <section className="mb-12 flex flex-col gap-5 text-base text-gray-700 leading-relaxed">
         {fixture.scenarioBody.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
+          <p key={index}>{renderEmphasis(paragraph)}</p>
         ))}
       </section>
 
@@ -84,7 +86,7 @@ export default async function UseCasePage({ params }: PageProps) {
           {fixture.takeaways.map((takeaway, index) => (
             <li key={index} className="flex items-start gap-3 text-sm sm:text-base text-gray-700 leading-relaxed">
               <span className="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-teal-600 shrink-0" />
-              <span>{takeaway}</span>
+              <span>{renderEmphasis(takeaway)}</span>
             </li>
           ))}
         </ul>
@@ -117,7 +119,7 @@ export default async function UseCasePage({ params }: PageProps) {
                 className="block p-4 rounded-lg border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all"
               >
                 <h3 className="text-sm font-bold text-gray-900">{other.title}</h3>
-                <p className="mt-1 text-xs text-gray-500 leading-relaxed line-clamp-2">{other.scenarioHeadline}</p>
+                <p className="mt-1 text-xs text-gray-500 leading-relaxed line-clamp-2">{stripEmphasis(other.scenarioHeadline)}</p>
               </Link>
             );
           })}

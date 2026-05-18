@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
+import { renderEmphasis } from '@/lib/render-emphasis';
 
 export const metadata: Metadata = {
   title: '사용 사례 | WhenMeets',
@@ -44,7 +45,7 @@ export default function UseCasesIndexPage() {
                 {fixture.title}
               </h2>
               <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-                {fixture.scenarioHeadline}
+                {renderEmphasis(fixture.scenarioHeadline)}
               </p>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {fixture.keywords.map((keyword) => (

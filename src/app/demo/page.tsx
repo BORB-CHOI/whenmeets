@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
+import { stripEmphasis } from '@/lib/render-emphasis';
 
 export const metadata: Metadata = {
   title: '실제 사용 화면 데모 | WhenMeets',
@@ -89,7 +90,7 @@ export default function DemoPage() {
                 className="block p-4 rounded-lg border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all"
               >
                 <h3 className="text-sm font-bold text-gray-900">{fixture.title}</h3>
-                <p className="mt-1 text-xs text-gray-500 leading-relaxed">{fixture.scenarioHeadline}</p>
+                <p className="mt-1 text-xs text-gray-500 leading-relaxed">{stripEmphasis(fixture.scenarioHeadline)}</p>
               </Link>
             );
           })}
