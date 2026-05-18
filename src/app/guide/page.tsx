@@ -14,62 +14,96 @@ export const metadata: Metadata = {
   },
 };
 
+interface CellValue {
+  value: string;
+  positive: boolean;
+}
+
 interface ComparisonRow {
   label: string;
-  whenmeets: { value: string; positive: boolean };
-  timeful: { value: string; positive: boolean };
+  whenmeets: CellValue;
+  timeful: CellValue;
+  when2meet: CellValue;
 }
+
+const COMMON_BASELINE = [
+  '회원가입 없이 응답할 수 있음 (호스트도 가입 선택)',
+  '한 화면에서 후보 날짜·시간을 입력하는 단일 폼 (step-by-step 위저드 없음)',
+  '기본 사용 무료',
+];
 
 const COMPARISON_TABLE: ComparisonRow[] = [
   {
     label: '한국어 UI · 한글 요일/날짜 표기',
     whenmeets: { value: '기본', positive: true },
     timeful: { value: '영어 중심', positive: false },
+    when2meet: { value: '영어 전용', positive: false },
   },
   {
-    label: '회원가입 없이 응답 가능',
-    whenmeets: { value: '가능', positive: true },
-    timeful: { value: '회원가입 권장', positive: false },
-  },
-  {
-    label: '카카오톡 인앱 브라우저 호환',
+    label: '모바일 친화 UI · 터치 드래그',
     whenmeets: { value: '최적화', positive: true },
+    timeful: { value: '최적화', positive: true },
+    when2meet: { value: '데스크탑 전용', positive: false },
+  },
+  {
+    label: '현대적 UI 디자인',
+    whenmeets: { value: '2026 디자인', positive: true },
+    timeful: { value: '2024 디자인', positive: true },
+    when2meet: { value: '10년+ 전 UI', positive: false },
+  },
+  {
+    label: '카카오톡 인앱 브라우저 동작',
+    whenmeets: { value: '동작 (입력 포커스 등 일부 개선 진행)', positive: true },
     timeful: { value: '제한적', positive: false },
+    when2meet: { value: '제한적', positive: false },
+  },
+  {
+    label: '그리드 셀별 가능 인원수 숫자 표시',
+    whenmeets: { value: '표시', positive: true },
+    timeful: { value: '미표시', positive: false },
+    when2meet: { value: '미표시', positive: false },
+  },
+  {
+    label: '색깔별 가능 인원수 범례',
+    whenmeets: { value: '명시', positive: true },
+    timeful: { value: '미제공', positive: false },
+    when2meet: { value: '미제공', positive: false },
   },
   {
     label: '시간 없는 “날짜만” 모드',
     whenmeets: { value: '지원', positive: true },
     timeful: { value: '미지원', positive: false },
-  },
-  {
-    label: '요일 반복 모드 (매주 X요일)',
-    whenmeets: { value: '지원', positive: true },
-    timeful: { value: '미지원', positive: false },
+    when2meet: { value: '미지원', positive: false },
   },
   {
     label: '비밀번호로 응답 보호',
     whenmeets: { value: '지원', positive: true },
     timeful: { value: '미지원', positive: false },
+    when2meet: { value: '미지원', positive: false },
   },
   {
     label: 'Google Calendar 양방향 동기화',
     whenmeets: { value: '미지원 (가져오기만)', positive: false },
     timeful: { value: '지원', positive: true },
+    when2meet: { value: '미지원', positive: false },
   },
   {
     label: '대시보드 · 폴더로 이벤트 관리',
     whenmeets: { value: '지원', positive: true },
     timeful: { value: '제한적', positive: false },
+    when2meet: { value: '미지원', positive: false },
   },
   {
-    label: '오픈소스',
+    label: '오픈소스 라이선스',
     whenmeets: { value: 'MIT', positive: true },
     timeful: { value: 'AGPL', positive: true },
+    when2meet: { value: '비공개', positive: false },
   },
   {
     label: '광고 노출',
     whenmeets: { value: '없음', positive: true },
     timeful: { value: '있음', positive: false },
+    when2meet: { value: '있음', positive: false },
   },
 ];
 
@@ -188,16 +222,34 @@ export default function GuidePage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Timeful · When2meet과의 차이</h2>
         <p className="text-base text-gray-700 leading-relaxed mb-5">
           비슷한 그룹 일정 도구로 Timeful(구 Schej)과 When2meet이 잘 알려져 있습니다.
-          둘 다 훌륭한 도구지만 영어권에서 만들어졌고, 한국 메신저 환경과 명절·요일 문화에는 빈틈이 있습니다.
-          정직하게 비교한 표는 아래와 같습니다.
+          셋 다 같은 “단톡방 일정 조율” 문제를 풀지만 접근법과 강조점이 다릅니다.
+          광고 마케팅이 아니라 사실 기반으로 정직하게 비교한 표는 아래와 같습니다.
         </p>
+
+        <div className="mb-6 p-5 rounded-xl border border-gray-200 bg-gray-50">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">셋 다 공통 — 기본 베이스라인</h3>
+          <ul className="flex flex-col gap-1.5 text-sm text-gray-600 leading-relaxed">
+            {COMMON_BASELINE.map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 inline-block w-1 h-1 rounded-full bg-gray-400 shrink-0" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+            아래 표에는 “차이가 있는 항목”만 정리합니다. 다른 일정 조율 도구들 중 상당수가
+            여러 단계 위저드로 시간 입력을 나눠 받지만, 위 세 도구는 모두 한 화면에서 단번에 끝납니다.
+          </p>
+        </div>
+
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-160">
             <thead className="bg-gray-50 text-left">
               <tr>
                 <th className="px-4 py-3 font-semibold text-gray-700">항목</th>
                 <th className="px-4 py-3 font-semibold text-teal-700">WhenMeets</th>
                 <th className="px-4 py-3 font-semibold text-gray-700">Timeful</th>
+                <th className="px-4 py-3 font-semibold text-gray-700">When2meet</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -214,16 +266,31 @@ export default function GuidePage() {
                       {row.timeful.value}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <span className={row.when2meet.positive ? 'text-teal-700 font-medium' : 'text-gray-500'}>
+                      {row.when2meet.value}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-5 text-sm text-gray-600 leading-relaxed">
-          요약하면, Timeful은 Google Calendar와 깊게 묶인 직장인 개인 일정 도구에 가깝고,
-          WhenMeets는 가입 없이 카카오톡으로 던지는 한국식 그룹 일정 조율에 초점을 맞춥니다.
-          “캘린더 통합이 가장 중요하다”면 Timeful, “단톡방에서 빠르게 결정 내고 싶다”면 WhenMeets입니다.
-        </p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3 text-sm text-gray-700 leading-relaxed">
+          <div className="p-4 rounded-lg border border-teal-200 bg-teal-50">
+            <p className="font-semibold text-teal-700 mb-1">WhenMeets가 빛나는 순간</p>
+            <p>단톡방에서 빠르게 결정 내고 싶을 때. 모바일에서 그리드 셀별 인원수 숫자까지 보고 싶을 때. 명절 같은 날짜만 받으면 되는 모임에서.</p>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <p className="font-semibold text-gray-700 mb-1">Timeful이 빛나는 순간</p>
+            <p>직장인 개인 일정 도구로 Google Calendar와 깊게 묶고 싶을 때. 영어 사용 그룹과 외국 동료들과의 일정 조율.</p>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <p className="font-semibold text-gray-700 mb-1">When2meet이 빛나는 순간</p>
+            <p>“익숙한 도구” 그대로가 좋고, 데스크탑에서만 쓰는 그룹. 단순 시간 그리드 외 기능이 필요 없을 때.</p>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-xl border border-teal-200 bg-teal-50 p-6 sm:p-8 text-center">
