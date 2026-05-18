@@ -54,7 +54,7 @@ export default function DemoEventViewer({ fixture, enableEdit = true }: DemoEven
             <span className="inline-block w-2 h-2 rounded-full bg-teal-600" />
             응답자 {fixture.participants.length}명
           </span>
-          <span className="text-gray-300">,</span>
+          <span className="h-3 w-px bg-gray-300" />
           <span>{fixture.dateOnly ? `${fixture.dates.length}개 후보 날짜` : `${fixture.dates.length}일 × 시간대`}</span>
         </div>
 
