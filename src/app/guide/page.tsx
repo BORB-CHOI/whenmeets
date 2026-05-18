@@ -90,7 +90,7 @@ export default function GuidePage() {
           호스트는 1분, 응답자는 30초면 끝나도록 설계되어 있습니다.
         </p>
         <ol className="flex flex-col gap-3 text-base text-gray-700 leading-relaxed">
-          <li><span className="font-semibold">① 이벤트 만들기.</span> 홈에서 "이벤트 만들기"를 누르고 제목, 후보 날짜, 시간대를 입력합니다. 가능 시간 표시 방식(가능한 시간 표시 vs 안 되는 시간 표시)도 이때 선택할 수 있습니다.</li>
+          <li><span className="font-semibold">① 이벤트 만들기.</span> 홈에서 <strong className="font-semibold text-gray-900">이벤트 만들기</strong> 버튼을 누르고 제목, 후보 날짜, 시간대를 입력합니다. 가능 시간 표시 방식(가능한 시간 표시 vs 안 되는 시간 표시)도 이때 선택할 수 있습니다.</li>
           <li><span className="font-semibold">② 링크 공유.</span> 만들기 직후 표시되는 링크를 카카오톡, 슬랙, 메신저, 이메일 어디든 복사해서 공유합니다. 응답자는 가입 없이 바로 들어옵니다.</li>
           <li><span className="font-semibold">③ 응답.</span> 각자 이름만 입력하고 가능한 시간을 드래그합니다. 모바일에서는 길게 눌러 드래그하면 한 번에 여러 슬랏을 표시할 수 있습니다.</li>
           <li><span className="font-semibold">④ 결과 확인.</span> 호스트와 응답자 모두 같은 페이지에서 실시간으로 결과 히트맵을 봅니다. 가장 진한 셀이 모두에게 가능한 시간입니다.</li>
@@ -113,7 +113,7 @@ export default function GuidePage() {
           <div className="p-5 rounded-xl border border-gray-200 bg-white">
             <h3 className="text-base font-bold text-gray-900 mb-2">요일 모드 (반복 가능 시간)</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              월, 화, 수, 목, 금, 토, 일 중에서 후보 요일만 표시합니다. "매주 가능한 요일과 시간"을 묻는 방식이라
+              월, 화, 수, 목, 금, 토, 일 중에서 후보 요일만 표시합니다. <strong className="font-semibold text-gray-900">매주 가능한 요일과 시간</strong>을 묻는 방식이라
               스터디 그룹, 동호회 정기 모임, 운동 파트너처럼 반복되는 일정에 적합합니다.
             </p>
           </div>
@@ -121,10 +121,10 @@ export default function GuidePage() {
       </section>
 
       <section id="date-only" className="mb-14">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. 시간 없는 "날짜만" 모드</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. 시간 없는 <span className="text-teal-700">날짜만</span> 모드</h2>
         <p className="text-base text-gray-700 leading-relaxed mb-3">
           명절 연휴, 여행 일정, 종일 행사처럼 시간 단위가 의미 없는 경우엔 시간 슬랏 자체를 빼고
-          "가능한 날짜"만 받을 수 있습니다. 이벤트 만들 때 "시간 없이 날짜만" 옵션을 켜면 됩니다.
+          <strong className="font-semibold text-gray-900"> 가능한 날짜</strong>만 받을 수 있습니다. 이벤트 만들 때 <strong className="font-semibold text-gray-900">시간 없이 날짜만</strong> 옵션을 켜면 됩니다.
         </p>
         <p className="text-base text-gray-700 leading-relaxed">
           응답 화면도 시간 그리드가 아니라 캘린더 그리드로 바뀝니다. 손가락 한 번에 한 날짜만 탭하면 되므로
@@ -144,7 +144,7 @@ export default function GuidePage() {
         <ul className="flex flex-col gap-2 text-base text-gray-700 leading-relaxed pl-1">
           <li><span className="font-semibold">진한 청록색.</span> 모든 응답자가 가능한 시간. 약속 잡기에 가장 좋은 슬랏입니다.</li>
           <li><span className="font-semibold">옅은 청록색.</span> 한 명, 두 명이 안 되는 시간. 차선책으로 검토할 수 있습니다.</li>
-          <li><span className="font-semibold">호박색 (If Needed).</span> "꼭 필요하면 가능"으로 표시한 사람이 포함된 슬랏. 필요할 때 켜고 끌 수 있습니다.</li>
+          <li><span className="font-semibold">호박색 (If Needed).</span> <strong className="font-semibold text-gray-900">꼭 필요하면 가능</strong>으로 표시한 사람이 포함된 슬랏. 필요할 때 켜고 끌 수 있습니다.</li>
           <li><span className="font-semibold">회색.</span> 표시가 한 명도 없는 슬랏. 모임 후보에서 제외합니다.</li>
         </ul>
         <p className="mt-3 text-base text-gray-700 leading-relaxed">
@@ -155,11 +155,11 @@ export default function GuidePage() {
       <section id="security" className="mb-14">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">5. 비밀번호와 보안</h2>
         <p className="text-base text-gray-700 leading-relaxed mb-3">
-          이벤트는 기본적으로 "링크를 아는 사람만 접근"하는 비공개 페이지입니다.
+          이벤트는 기본적으로 <strong className="font-semibold text-gray-900">링크를 아는 사람만 접근</strong>하는 비공개 페이지입니다.
           검색엔진 크롤러는 차단되어 있고, 링크가 노출되지 않는 한 외부에서 찾을 수 없습니다.
         </p>
         <p className="text-base text-gray-700 leading-relaxed">
-          비밀번호 옵션을 켜면 "응답 수정" 단계에 인증을 추가할 수 있습니다.
+          비밀번호 옵션을 켜면 <strong className="font-semibold text-gray-900">응답 수정</strong> 단계에 인증을 추가할 수 있습니다.
           첫 응답 시 비밀번호를 설정하면 그 이후로는 같은 비밀번호로만 자기 응답을 수정할 수 있습니다.
           "누가 내 응답을 임의로 바꾸지 않을까" 걱정되는 공개 단톡방이나 동아리방에서 켜두면 좋습니다.
         </p>

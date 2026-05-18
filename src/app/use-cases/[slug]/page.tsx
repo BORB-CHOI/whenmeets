@@ -73,7 +73,7 @@ export default async function UseCasePage({ params }: PageProps) {
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">실제 화면 미리 보기</h2>
         <p className="text-sm text-gray-600 mb-5 leading-relaxed">
           아래는 {fixture.title.toLowerCase()} 상황을 가정한 데모입니다. 응답자 {fixture.participants.length}명이
-          이미 자신의 가능 시간을 표시한 결과 히트맵이며, “내 시간 입력해보기”를 눌러 직접 드래그할 수도 있습니다.
+          이미 자신의 가능 시간을 표시한 결과 히트맵이며, <strong className="font-semibold text-gray-900">내 시간 입력해보기</strong>를 눌러 직접 드래그할 수도 있습니다.
         </p>
         <DemoEventViewer fixture={fixture} />
       </section>

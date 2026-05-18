@@ -27,9 +27,9 @@ export default function DemoPage() {
           이렇게 동작합니다
         </h1>
         <p className="mt-4 text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          아래는 다섯 명의 친구가 “7월 주말 저녁 약속”을 잡은 실제와 동일한 화면입니다.
+          아래는 다섯 명의 친구가 <strong className="font-semibold text-gray-900">7월 주말 저녁 약속</strong>을 잡은 실제와 동일한 화면입니다.
           가장 진한 셀이 모두에게 가능한 시간이고, 색이 옅어질수록 가능한 인원이 줄어듭니다.
-          오른쪽 위의 “내 시간 입력해보기”를 누르면 직접 드래그해서 체험할 수 있습니다.
+          오른쪽 위의 <strong className="font-semibold text-gray-900">내 시간 입력해보기</strong>를 누르면 직접 드래그해서 체험할 수 있습니다.
         </p>
       </header>
 
@@ -42,7 +42,7 @@ export default function DemoPage() {
           <h2 className="text-base font-bold text-gray-900 mb-2">색의 의미</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
             기본 색은 짙은 청록(teal)입니다. 한 셀에 가능 표시를 한 사람이 많을수록 색이 진하고,
-            한 명이라도 “안 됨”이면 옅어집니다. “If Needed”(필요하면 가능)는 호박색으로 따로 구분됩니다.
+            한 명이라도 <strong className="font-semibold text-gray-900">안 됨</strong>이면 옅어집니다. <strong className="font-semibold text-gray-900">If Needed</strong>(필요하면 가능)는 호박색으로 따로 구분됩니다.
           </p>
         </article>
         <article className="p-5 rounded-xl border border-gray-200 bg-white">
