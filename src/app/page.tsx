@@ -114,8 +114,8 @@ export default function Home() {
             className="flex items-center justify-center"
             style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}
           >
-            <div className="relative w-full">
-              <div className="absolute -top-3 left-4 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
+            <div className="w-full">
+              <div className="mb-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 실제 결과 화면
               </div>
