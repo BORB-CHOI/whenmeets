@@ -50,11 +50,10 @@ interface GridCellProps {
 
 function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTotal, dateIdx, slotIdx, onCellHover, onCellLeave }: GridCellProps) {
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
-  // Border opacity: 0.2 ~ 0.8 based on how many others responded
-  const borderOpacity = hasOverlay
-    ? Math.min(0.8, 0.2 + (overlayCount! / overlayTotal!) * 0.6)
+  const borderOpacity = hasOverlay ? 0.2 : 0;
+  const numberOpacity = hasOverlay
+    ? Math.min(0.85, 0.45 + (overlayCount! / overlayTotal!) * 0.4)
     : 0;
-  // Fill opacity for wide (date-only) cells: lighter version of borderOpacity
   const overlayOpacity = hasOverlay
     ? Math.min(0.5, 0.1 + (overlayCount! / overlayTotal!) * 0.4)
     : 0;
@@ -98,7 +97,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
     >
       {hasOverlay && (
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none z-10"
           style={{
             outline: `1.5px dashed rgba(0,137,123,${borderOpacity})`,
             outlineOffset: '-1.5px',
@@ -107,8 +106,8 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
       )}
       {hasOverlay && overlayCount! > 0 && (
         <span
-          className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none"
-          style={{ color: `rgba(0,137,123,${Math.min(1, borderOpacity + 0.2)})` }}
+          className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none z-20"
+          style={{ color: `rgba(0,137,123,${numberOpacity})` }}
         >
           {overlayCount}
         </span>
