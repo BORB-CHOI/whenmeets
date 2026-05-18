@@ -1,16 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import InlineDeleteButton from '@/components/ui/InlineDeleteButton';
 import { getEventHistory, removeEventFromHistory, EventHistoryItem } from '@/lib/event-history';
 import HowItWorks from '@/components/home/HowItWorks';
 import Features from '@/components/home/Features';
 import Faq from '@/components/home/Faq';
+import DemoEventViewer from '@/components/demo/DemoEventViewer';
+import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
+import Step2Mockup from '@/components/home/mockups/Step2Mockup';
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [history, setHistory] = useState<EventHistoryItem[]>([]);
+
   useEffect(() => {
     const local = getEventHistory();
     if (local.length === 0) {
@@ -29,15 +34,16 @@ export default function Home() {
         const active = new Set<string>(data.activeIds);
         setHistory((prev) => prev.filter((h) => active.has(h.id)));
       })
-      .catch(() => { /* keep local list on network error */ });
+      .catch(() => undefined);
   }, []);
 
   return (
     <div className="flex flex-col flex-1 w-full">
-      {/* Hero */}
-      <section className="relative flex flex-col items-center px-4 py-20 sm:py-28 overflow-hidden w-full">
-        {/* CSS-only background — lightweight, KakaoTalk in-app browser compatible. */}
-        <div className="absolute inset-0 -z-10 bg-linear-to-b from-teal-50 to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <section
+        aria-label="히어로"
+        className="relative w-full overflow-hidden flex items-center min-h-[640px] sm:min-h-[720px] lg:min-h-[760px]"
+      >
+        <div className="absolute inset-0 -z-10 bg-linear-to-b from-teal-50 to-gray-50">
           <div
             className="absolute rounded-full"
             style={{
@@ -63,71 +69,219 @@ export default function Home() {
           />
         </div>
 
-        <h1
-          className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100"
-          style={{ animation: 'fadeInUp 0.6s ease-out both' }}
-        >
-          WhenMeets
-        </h1>
-        <p
-          className="mt-3 text-base sm:text-lg text-gray-500 dark:text-gray-400 text-center"
-          style={{ animation: 'fadeInUp 0.6s ease-out 0.1s both' }}
-        >
-          <span className="whitespace-nowrap">모바일에서도 편하게 쓰는 그룹 일정 조율.</span>{' '}
-          <span className="whitespace-nowrap">무료, 오픈소스.</span>
-        </p>
-        <button
-          onClick={() => setShowModal(true)}
-          className="mt-8 px-8 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) transition-all text-lg cursor-pointer"
-          style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
-        >
-          이벤트 만들기
-        </button>
-        <p
-          className="mt-12 text-xs text-gray-400 dark:text-gray-500"
-          style={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}
-        >
-          회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.
-        </p>
+        <div className="w-full max-w-6xl mx-auto px-4 py-16 sm:py-20 grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900"
+              style={{ animation: 'fadeInUp 0.6s ease-out both' }}
+            >
+              WhenMeets
+            </h1>
+            <p
+              className="mt-4 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-xl"
+              style={{ animation: 'fadeInUp 0.6s ease-out 0.1s both' }}
+            >
+              <span className="whitespace-nowrap">모바일에서도 편하게 쓰는</span>{' '}
+              <span className="whitespace-nowrap">그룹 일정 조율.</span>
+              <br />
+              회원가입 없이, 1분이면 끝납니다.
+            </p>
+            <div
+              className="mt-8 flex flex-wrap items-center gap-3 justify-center lg:justify-start"
+              style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
+            >
+              <button
+                onClick={() => setShowModal(true)}
+                className="px-7 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) transition-all text-lg cursor-pointer"
+              >
+                이벤트 만들기
+              </button>
+              <Link
+                href="/demo"
+                className="px-7 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-50 transition-colors text-lg"
+              >
+                데모 화면 보기
+              </Link>
+            </div>
+            <p
+              className="mt-6 text-xs sm:text-sm text-gray-500"
+              style={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}
+            >
+              무료 · 오픈소스 · 광고 없음 · 카카오톡에서 바로 동작
+            </p>
+          </div>
 
-        {history.length > 0 && (
-          <div className="mt-12 w-full max-w-lg" style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
-            <h2 className="text-sm font-semibold text-gray-400 dark:text-gray-500 mb-3">최근 기록</h2>
-            <div className="flex flex-col gap-2.5">
-              {history.slice(0, 5).map((item) => (
-                <a
-                  key={item.id}
-                  href={`/e/${item.id}`}
-                  className="flex items-center justify-between min-h-14 px-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{item.title}</div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {item.role === 'creator' ? '내가 만듦' : '참여함'} · {item.dates.length}일
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-3">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30">
-                      {item.role === 'creator' ? '관리' : '참여'}
-                    </span>
-                    <InlineDeleteButton
-                      title="기록에서 삭제"
-                      className="opacity-0 group-hover:opacity-100"
-                      onConfirm={() => {
-                        removeEventFromHistory(item.id);
-                        setHistory((h) => h.filter((x) => x.id !== item.id));
-                      }}
-                    />
-                  </div>
-                </a>
-              ))}
+          <div
+            className="flex items-center justify-center"
+            style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}
+          >
+            <div className="relative w-full max-w-md aspect-4/3 rounded-2xl bg-linear-to-br from-teal-50 via-white to-gray-50 border border-gray-200/60 shadow-xl flex items-center justify-center p-6 sm:p-8">
+              <Step2Mockup />
+              <div className="absolute -top-3 -left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                실제 이벤트 페이지 미리보기
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      </section>
+
+      {history.length > 0 && (
+        <section
+          aria-label="최근 기록"
+          className="w-full max-w-3xl mx-auto px-4 py-12 sm:py-14"
+          style={{ animation: 'fadeInUp 0.5s ease-out both' }}
+        >
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">
+            최근 기록
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {history.slice(0, 5).map((item) => (
+              <a
+                key={item.id}
+                href={`/e/${item.id}`}
+                className="flex items-center justify-between min-h-14 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-gray-900 truncate">{item.title}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {item.role === 'creator' ? '내가 만듦' : '참여함'} · {item.dates.length}일
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded text-teal-600 bg-teal-50">
+                    {item.role === 'creator' ? '관리' : '참여'}
+                  </span>
+                  <InlineDeleteButton
+                    title="기록에서 삭제"
+                    className="opacity-0 group-hover:opacity-100"
+                    onConfirm={() => {
+                      removeEventFromHistory(item.id);
+                      setHistory((h) => h.filter((x) => x.id !== item.id));
+                    }}
+                  />
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section
+        id="live-preview"
+        aria-label="실제 동작 미리보기"
+        className="w-full bg-white border-y border-gray-100"
+      >
+        <div className="w-full max-w-5xl mx-auto px-4 py-16 sm:py-20">
+          <header className="text-center mb-10">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
+              Live preview
+            </p>
+            <h2 className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
+              실제 화면을 그대로 미리 보세요
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              다섯 명의 친구가 “7월 주말 약속”을 잡은 결과입니다. 가장 진한 셀이 모두에게 가능한 시간이고,
+              오른쪽 위의 “내 시간 입력해보기”로 직접 드래그 체험할 수 있습니다.
+            </p>
+          </header>
+
+          <DemoEventViewer fixture={DEMO_FIXTURE} />
+
+          <div className="text-center mt-8">
+            <Link
+              href="/demo"
+              className="text-sm font-medium text-teal-600 hover:underline"
+            >
+              전체 데모 페이지에서 더 자세히 보기 →
+            </Link>
+          </div>
+        </div>
       </section>
 
       <HowItWorks />
+
+      <section
+        aria-label="상황별 사용 사례"
+        className="w-full max-w-6xl mx-auto px-4 py-16 sm:py-20"
+      >
+        <header className="text-center mb-12">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
+            Use cases
+          </p>
+          <h2 className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
+            이런 상황에서 쓰면 좋아요
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-xl mx-auto leading-relaxed">
+            결혼식 후 모임부터 명절 가족 모임, 팀 회의, 대학 스터디까지 — 실제 시나리오와 데모를 함께 정리했습니다.
+          </p>
+        </header>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          {USE_CASE_SLUGS.map((slug) => {
+            const fixture = USE_CASE_FIXTURES[slug];
+            return (
+              <Link
+                key={slug}
+                href={`/use-cases/${slug}`}
+                className="group flex flex-col p-6 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-md hover:-translate-y-0.5 transition-all"
+              >
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
+                  {fixture.title}
+                </h3>
+                <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+                  {fixture.scenarioHeadline}
+                </p>
+                <div className="mt-auto pt-4 text-xs font-semibold text-teal-600 group-hover:underline">
+                  데모와 함께 자세히 보기 →
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="text-center mt-8">
+          <Link
+            href="/use-cases"
+            className="text-sm font-medium text-teal-600 hover:underline"
+          >
+            전체 사용 사례 보기 →
+          </Link>
+        </div>
+      </section>
+
       <Features />
+
+      <section
+        aria-label="사용 가이드 안내"
+        className="w-full bg-gray-50/70 border-y border-gray-100"
+      >
+        <div className="w-full max-w-4xl mx-auto px-4 py-14 sm:py-16">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] items-center">
+            <div>
+              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
+                Guide
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+                더 자세히 알아보고 싶다면
+              </h2>
+              <p className="mt-4 text-sm sm:text-base text-gray-600 leading-relaxed">
+                캘린더 모드 vs 요일 모드의 차이, 시간 없는 “날짜만” 모드, 결과 히트맵 해석 방법, 비밀번호 옵션,
+                그리고 Timeful·When2meet 같은 비슷한 도구와의 정직한 비교까지 한 페이지에 정리했습니다.
+              </p>
+            </div>
+            <div className="flex lg:justify-end">
+              <Link
+                href="/guide"
+                className="inline-flex items-center justify-center px-6 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-sm hover:bg-teal-700 transition-colors"
+              >
+                사용 가이드 보기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Faq />
 
       <EventFormModal open={showModal} onClose={() => setShowModal(false)} />
