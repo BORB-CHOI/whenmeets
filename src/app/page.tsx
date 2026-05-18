@@ -40,7 +40,7 @@ export default function Home() {
     <div className="flex flex-col flex-1 w-full">
       <section
         aria-label="히어로"
-        className="relative w-full overflow-hidden flex items-center min-h-[640px] sm:min-h-[720px] lg:min-h-[760px]"
+        className="relative w-full overflow-hidden flex items-center lg:min-h-190"
       >
         <div className="absolute inset-0 -z-10 bg-linear-to-b from-teal-50 to-gray-50">
           <div
@@ -68,8 +68,8 @@ export default function Home() {
           />
         </div>
 
-        <div className="w-full max-w-6xl mx-auto px-4 py-16 sm:py-20 grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+        <div className="w-full max-w-6xl mx-auto px-4 py-12 sm:py-16 lg:py-20 grid lg:grid-cols-[1.05fr_1fr] gap-8 lg:gap-14 items-center">
+          <div className="min-w-0 flex flex-col items-center lg:items-start text-center lg:text-left">
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900"
               style={{ animation: 'fadeInUp 0.6s ease-out both' }}
@@ -111,10 +111,10 @@ export default function Home() {
           </div>
 
           <div
-            className="flex items-center justify-center"
+            className="min-w-0 flex items-center justify-center w-full"
             style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}
           >
-            <div className="w-full">
+            <div className="w-full max-w-full overflow-x-auto">
               <DemoEventViewer fixture={DEMO_FIXTURE} enableEdit={false} />
             </div>
           </div>
