@@ -115,10 +115,6 @@ export default function Home() {
             style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}
           >
             <div className="w-full">
-              <div className="mb-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                실제 결과 화면
-              </div>
               <DemoEventViewer fixture={DEMO_FIXTURE} enableEdit={false} />
             </div>
           </div>
