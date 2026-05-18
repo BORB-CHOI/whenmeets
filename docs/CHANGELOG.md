@@ -4,6 +4,22 @@ All notable changes to WhenMeets will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [Unreleased]
+
+### Added
+
+- **콘텐츠 페이지 풀세트 (AdSense 콘텐츠 가치 입증)** — AdSense 거부 사유 "가치 별로 없는 콘텐츠 + 콘텐츠 없는 화면에 광고"는 도구성 사이트의 구조적 약점. 비공개 이벤트 페이지는 크롤러가 못 봐서 도구 가치가 SEO에 노출되지 않음. 이를 보완하기 위해 다음 4종 신규 라우트 추가. 모두 SSG로 prerender되어 크롤러가 즉시 인덱싱 가능.
+  - **`/demo`** — 다섯 명 응답자의 가짜 데이터로 채운 인터랙티브 데모. 결과 히트맵 ↔ 드래그 입력 토글. 입력값은 새로고침 시 사라지는 체험 모드 (저장 X). `HeatmapGrid` / `CalendarHeatmapGrid` / `DragGrid` 기존 컴포넌트 그대로 재사용
+  - **`/use-cases`** + **`/use-cases/[slug]`** — 4개 시나리오(결혼식 후 동창회, 추석 가족 모임, 팀 회의, 스터디 그룹) 각각 800~1500자 시나리오 본문 + 데모 임베드 + 핵심 포인트 + CTA. `generateStaticParams`로 4개 슬러그 정적 생성
+  - **`/guide`** — 빠른 시작/모드 차이/날짜 전용 모드/결과 해석/비밀번호 + **Timeful · When2meet 비교 표** 10항목. 비교는 정직하게 작성(Google Calendar 동기화는 Timeful 우위로 명시)
+- **데모 시드 데이터 모듈** (`src/lib/demo-data.ts`) — DB 안 건드리는 fixture. 4개 use-case + 메인 demo. 응답자 5~8명의 availability를 시간/슬랏 함수로 자연스럽게 생성. `Availability` 타입과 호환되어 모든 그리드 컴포넌트가 그대로 받음
+- **데모 viewer 클라이언트 컴포넌트** (`src/components/demo/DemoEventViewer.tsx`) — fixture 받아 결과/편집 모드 토글. `framer-motion` AnimatePresence로 fade transition. `enableEdit` prop으로 편집 모드 비활성화 가능
+
+### Changed
+
+- **`sitemap.ts`** — `/demo` (priority 0.8), `/guide` (0.7), `/use-cases` (0.6), `/use-cases/[slug]` × 4 (0.5) 추가. 빌드 시 use-case 슬러그를 `USE_CASE_SLUGS`에서 자동 enumeration해서 신규 사용 사례 추가 시 sitemap 자동 반영
+- **`Footer`** — Links 컬럼을 "둘러보기"로 리네이밍 + 데모/사용 사례/가이드 링크 3개 추가. 수정 hunk 안의 `dark:` 클래스는 룰대로 제거 (다른 hunk의 기존 `dark:`는 별도 PR에서 일괄 처리)
+
 ## [0.5.4] - 2026-05-16
 
 ### Added

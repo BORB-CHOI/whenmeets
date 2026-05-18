@@ -23,13 +23,31 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Links</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">둘러보기</h3>
             <div className="flex flex-col gap-2">
+              <Link
+                href="/demo"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                데모 화면
+              </Link>
+              <Link
+                href="/use-cases"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                사용 사례
+              </Link>
+              <Link
+                href="/guide"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                사용 가이드
+              </Link>
               <a
                 href="https://github.com/BORB-CHOI/whenmeets"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
               >
                 GitHub
               </a>
@@ -37,7 +55,7 @@ export default function Footer() {
                 href="https://github.com/BORB-CHOI/whenmeets/issues"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
               >
                 피드백 / 문의
               </a>
