@@ -45,22 +45,22 @@ export default function HowItWorks() {
         </p>
       </header>
 
-      <div className="grid gap-8 sm:gap-10 lg:grid-cols-3">
+      <div className="grid gap-8 sm:gap-10 lg:grid-cols-3 items-stretch">
         {STEPS.map(({ n, title, body, Mockup }) => (
           <article
             key={n}
             className="flex flex-col items-center text-center"
           >
-            <div className="relative w-full max-w-80 aspect-4/3 rounded-2xl bg-linear-to-br from-teal-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border border-gray-200/60 dark:border-gray-700/60 shadow-sm flex items-center justify-center p-6">
+            <div className="relative w-full max-w-80 aspect-4/3 min-h-60 rounded-2xl bg-linear-to-br from-teal-50 via-white to-gray-50 border border-gray-200/60 shadow-sm flex items-center justify-center p-6">
               <Mockup />
               <span className="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-teal-600 text-white text-sm font-bold flex items-center justify-center shadow-md">
                 {n}
               </span>
             </div>
-            <h3 className="mt-6 text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h3 className="mt-6 text-lg sm:text-xl font-bold text-gray-900">
               {title}
             </h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+            <p className="mt-2 text-sm text-gray-500 leading-relaxed max-w-xs">
               {body}
             </p>
           </article>

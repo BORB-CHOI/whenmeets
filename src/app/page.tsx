@@ -10,7 +10,6 @@ import Features from '@/components/home/Features';
 import Faq from '@/components/home/Faq';
 import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
-import Step2Mockup from '@/components/home/mockups/Step2Mockup';
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
@@ -107,7 +106,7 @@ export default function Home() {
               className="mt-6 text-xs sm:text-sm text-gray-500"
               style={{ animation: 'fadeInUp 0.6s ease-out 0.3s both' }}
             >
-              무료 · 오픈소스 · 광고 없음 · 카카오톡에서 바로 동작
+              무료, 오픈소스, 광고 없음, 카카오톡에서 바로 동작
             </p>
           </div>
 
@@ -115,12 +114,12 @@ export default function Home() {
             className="flex items-center justify-center"
             style={{ animation: 'fadeInUp 0.6s ease-out 0.4s both' }}
           >
-            <div className="relative w-full max-w-md aspect-4/3 rounded-2xl bg-linear-to-br from-teal-50 via-white to-gray-50 border border-gray-200/60 shadow-xl flex items-center justify-center p-6 sm:p-8">
-              <Step2Mockup />
-              <div className="absolute -top-3 -left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
+            <div className="relative w-full">
+              <div className="absolute -top-3 left-4 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600 text-white text-[10px] font-bold shadow-md">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                실제 이벤트 페이지 미리보기
+                실제 결과 화면
               </div>
+              <DemoEventViewer fixture={DEMO_FIXTURE} enableEdit={false} />
             </div>
           </div>
         </div>
@@ -145,7 +144,7 @@ export default function Home() {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-gray-900 truncate">{item.title}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    {item.role === 'creator' ? '내가 만듦' : '참여함'} · {item.dates.length}일
+                    {item.role === 'creator' ? '내가 만듦' : '참여함'}, {item.dates.length}일
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
@@ -175,14 +174,14 @@ export default function Home() {
         <div className="w-full max-w-5xl mx-auto px-4 py-16 sm:py-20">
           <header className="text-center mb-10">
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
-              Live preview
+              Try it now
             </p>
             <h2 className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-              실제 화면을 그대로 미리 보세요
+              직접 드래그해서 체험해 보세요
             </h2>
             <p className="mt-4 text-sm sm:text-base text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              다섯 명의 친구가 “7월 주말 약속”을 잡은 결과입니다. 가장 진한 셀이 모두에게 가능한 시간이고,
-              오른쪽 위의 “내 시간 입력해보기”로 직접 드래그 체험할 수 있습니다.
+              위에서 본 결과 화면을 직접 조작할 수 있는 영역입니다. 오른쪽 위의 "내 시간 입력해보기"를 누르고
+              가능한 시간을 드래그해 보세요. 입력값은 새로고침 시 사라지므로 안심하고 시도할 수 있습니다.
             </p>
           </header>
 
@@ -213,7 +212,7 @@ export default function Home() {
             이런 상황에서 쓰면 좋아요
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-xl mx-auto leading-relaxed">
-            결혼식 후 모임부터 명절 가족 모임, 팀 회의, 대학 스터디까지 — 실제 시나리오와 데모를 함께 정리했습니다.
+            결혼식 후 모임부터 명절 가족 모임, 팀 회의, 대학 스터디까지. 실제 시나리오와 데모를 함께 정리했습니다.
           </p>
         </header>
 
@@ -267,7 +266,7 @@ export default function Home() {
               </h2>
               <p className="mt-4 text-sm sm:text-base text-gray-600 leading-relaxed">
                 캘린더 모드 vs 요일 모드의 차이, 시간 없는 “날짜만” 모드, 결과 히트맵 해석 방법, 비밀번호 옵션,
-                그리고 Timeful·When2meet 같은 비슷한 도구와의 정직한 비교까지 한 페이지에 정리했습니다.
+                그리고 Timeful, When2meet 같은 비슷한 도구와의 정직한 비교까지 한 페이지에 정리했습니다.
               </p>
             </div>
             <div className="flex lg:justify-end">

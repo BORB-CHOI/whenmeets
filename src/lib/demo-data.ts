@@ -93,7 +93,7 @@ const DEMO_TIME_END = 88;
 
 export const DEMO_FIXTURE: DemoFixture = {
   id: 'demo',
-  title: '7월 첫째·둘째 주말 저녁 약속',
+  title: '7월 첫째와 둘째 주말 저녁 약속',
   description: '다섯 명의 참여자가 시간을 표시한 예시입니다. 결과 히트맵에서 가장 진한 셀이 모두에게 가능한 시간입니다.',
   dates: DEMO_DATES,
   timeStart: DEMO_TIME_START,
@@ -174,7 +174,7 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     id: 'use-case-wedding',
     title: '결혼식 후 친구들 동창회',
     description: '결혼식에서 오랜만에 모인 친구들끼리 다시 만날 시간을 정해보세요.',
-    scenarioHeadline: '결혼식·돌잔치 뒤에 이어지는 단발 모임에 가장 적합한 방식',
+    scenarioHeadline: '결혼식과 돌잔치 뒤에 이어지는 단발 모임에 가장 적합한 방식',
     scenarioBody: [
       '경조사 직후에는 단톡방에서 “언제 또 보자”가 늘 나오지만, 한 명이 “언제 시간 돼?” 물어보면 8명에게 7번 답이 돌아오면서 한 주가 그냥 흘러갑니다.',
       'WhenMeets는 이 “시간 물어보기” 단계를 1분 안에 끝내는 도구입니다. 호스트가 후보 주말 2~3개와 11시부터 21시까지의 시간대를 정해서 링크 하나만 카톡방에 던지면, 친구들은 각자 가능한 시간을 드래그로 표시합니다.',
@@ -182,8 +182,8 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     ],
     keywords: ['결혼식 동창회', '단톡방 일정 조율', '오프라인 모임 시간 정하기'],
     takeaways: [
-      '주말 점심·저녁 모두 포함한 11~21시 시간대 추천',
-      '6~12인 단발성 모임에 최적 — 누가 “안 가능”인지 한눈에',
+      '주말 점심과 저녁 모두 포함한 11~21시 시간대 추천',
+      '6~12인 단발성 모임에 최적. 누가 "안 가능"인지 한눈에 보임',
       '비밀번호 없이 익명 참여 가능 → 결혼식 하객도 부담 없음',
     ],
     dates: WEDDING_DATES,
@@ -256,11 +256,11 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     id: 'use-case-family',
     title: '추석 연휴 가족 모임',
     description: '명절 연휴에 흩어진 가족이 다 같이 모일 날짜를 정해보세요.',
-    scenarioHeadline: '시간 단위가 의미 없을 때 — 날짜만 받는 “시간 없는 일정” 모드',
+    scenarioHeadline: '시간 단위가 의미 없을 때. 날짜만 받는 "시간 없는 일정" 모드',
     scenarioBody: [
       '명절 모임은 보통 “이 날 가능하냐 / 안 가능하냐”만 중요합니다. 09시부터 21시까지 시간 슬롯을 잡아봐야 의미가 없죠.',
       'WhenMeets는 시간 단위 없이 날짜만 받는 “날짜 전용 모드”를 지원합니다. 추석 연휴 4일을 후보로 띄우면, 어머니부터 사촌까지 “가능 / 불가능”만 탭으로 표시합니다. 손가락 한 번에 한 날짜.',
-      '결과 화면은 캘린더 그리드로 펼쳐지고, 가능 인원이 가장 많은 날에 색이 가장 진하게 들어옵니다. 시댁·처가 일정이 늦게 들어와도 새로 표시만 하면 자동으로 재계산됩니다.',
+      '결과 화면은 캘린더 그리드로 펼쳐지고, 가능 인원이 가장 많은 날에 색이 가장 진하게 들어옵니다. 시댁이나 처가 일정이 늦게 들어와도 새로 표시만 하면 자동으로 재계산됩니다.',
     ],
     keywords: ['추석 가족 모임', '명절 일정 조율', '날짜만 정하기'],
     takeaways: [
@@ -305,8 +305,8 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     slug: 'team-meeting',
     id: 'use-case-team',
     title: '팀 주간 회의 시간 조율',
-    description: '재택·출근 섞인 5인 팀이 매주 만날 회의 시간을 정해보세요.',
-    scenarioHeadline: '재택·출근 섞인 팀에서 “고정 회의 슬랏”을 찾는 가장 빠른 방법',
+    description: '재택과 출근이 섞인 5인 팀이 매주 만날 회의 시간을 정해보세요.',
+    scenarioHeadline: '재택과 출근이 섞인 팀에서 "고정 회의 슬랏"을 찾는 가장 빠른 방법',
     scenarioBody: [
       '재택과 출근이 섞인 팀에서는 “언제 다 같이 회의할 수 있느냐”가 매주 골치 아픈 문제입니다. 캘린더 초대를 5번 보내봐야 “그 시간엔 다른 회의가 있다”는 답만 5번 돌아오죠.',
       'WhenMeets로 다음 한 주의 평일 5일과 09~18시 시간대를 잡고 링크를 슬랙 채널에 던지면, 팀원은 30초 안에 가능한 슬랏을 드래그합니다. 결과 화면에서 “전원 가능 + 1명 if needed”까지 한눈에 구분됩니다.',
@@ -316,7 +316,7 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     takeaways: [
       '평일 09~18시 시간대에서 “전원 가능”과 “if needed” 분리 표시',
       '비밀번호 옵션으로 외부 공유 시 보안 강화',
-      '매주 새 이벤트 — 캘린더 통합 없이 슬랙·노션과 잘 어울림',
+      '매주 새 이벤트를 만들어 슬랙이나 노션과 함께 쓰기 좋음 (캘린더 통합 불필요)',
     ],
     dates: TEAM_DATES,
     timeStart: TEAM_TIME_START,
@@ -381,9 +381,9 @@ export const USE_CASE_FIXTURES: Record<DemoSlug, UseCaseFixture> = {
     id: 'use-case-study',
     title: '대학 스터디 그룹 주간 일정',
     description: '8명의 스터디 그룹이 매주 만날 시간을 정해보세요.',
-    scenarioHeadline: '8인 이상 스터디·동아리에서 “모두에게 맞는 시간”을 찾는 절차',
+    scenarioHeadline: '8인 이상 스터디나 동아리에서 "모두에게 맞는 시간"을 찾는 절차',
     scenarioBody: [
-      '대학 스터디는 보통 8~15명 규모이고, 강의·알바·동아리 일정이 사람마다 다 다릅니다. 단톡방에서 “이 시간 어때?” 한 줄로 절대 안 정해집니다.',
+      '대학 스터디는 보통 8~15명 규모이고, 강의와 알바와 동아리 일정이 사람마다 다 다릅니다. 단톡방에서 "이 시간 어때?" 한 줄로 절대 안 정해집니다.',
       'WhenMeets로 다음 한 주의 평일 저녁과 주말을 후보 시간대로 잡고 링크를 카톡 단톡방에 공유하면, 스터디원은 회원가입 없이 바로 들어와 가능한 시간을 드래그합니다. 처음 들어온 사람이 비밀번호를 정하면 그 다음부터는 동일한 비밀번호로 자기 응답만 수정 가능합니다.',
       '결과 히트맵은 “가능 인원 비율”로 색을 입혀줍니다. 8명 중 7명 가능한 시간을 한눈에 찾고, 빠진 1명을 클릭하면 그 시간에 그 사람이 왜 불가능한지 즉시 확인할 수 있습니다.',
     ],

@@ -4,13 +4,13 @@ import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
 
 export const metadata: Metadata = {
-  title: '실제 사용 화면 데모 — WhenMeets',
+  title: '실제 사용 화면 데모 | WhenMeets',
   description: 'WhenMeets가 실제로 어떻게 동작하는지 미리 보세요. 5명의 응답자가 시간을 표시한 결과 히트맵과, 드래그로 직접 입력해 보는 체험 모드를 한 페이지에서 제공합니다.',
   alternates: {
     canonical: '/demo',
   },
   openGraph: {
-    title: '실제 사용 화면 데모 — WhenMeets',
+    title: '실제 사용 화면 데모 | WhenMeets',
     description: '결과 히트맵 + 인터랙티브 체험. 회원가입 없이 도구가 어떻게 동작하는지 확인하세요.',
     type: 'website',
   },
@@ -67,7 +67,7 @@ export default function DemoPage() {
           위 화면이 마음에 들면 1분 만에 같은 이벤트를 만들 수 있습니다
         </h2>
         <p className="text-sm sm:text-base text-gray-600 mb-5">
-          후보 날짜와 시간대만 입력하면 끝. 링크를 복사해서 단톡방·슬랙·메신저 어디든 공유하세요.
+          후보 날짜와 시간대만 입력하면 끝. 링크를 복사해서 단톡방, 슬랙, 메신저 어디든 공유하세요.
         </p>
         <Link
           href="/new"

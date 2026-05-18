@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
 
 export const metadata: Metadata = {
-  title: '사용 사례 — WhenMeets',
-  description: '결혼식 후 동창회, 가족 명절 일정, 팀 회의, 스터디 그룹 — 실제 상황별로 WhenMeets가 어떻게 도움이 되는지 데모와 함께 살펴보세요.',
+  title: '사용 사례 | WhenMeets',
+  description: '결혼식 후 동창회, 가족 명절 일정, 팀 회의, 스터디 그룹. 실제 상황별로 WhenMeets가 어떻게 도움이 되는지 데모와 함께 살펴보세요.',
   alternates: {
     canonical: '/use-cases',
   },
   openGraph: {
-    title: '사용 사례 — WhenMeets',
+    title: '사용 사례 | WhenMeets',
     description: '상황별 데모와 함께 보는 그룹 일정 조율 시나리오 네 가지.',
     type: 'website',
   },

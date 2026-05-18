@@ -16,17 +16,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const fixture = getUseCaseFixture(slug);
   if (!fixture) {
-    return { title: '사용 사례 — WhenMeets' };
+    return { title: '사용 사례 | WhenMeets' };
   }
   return {
-    title: `${fixture.title} — WhenMeets 사용 사례`,
+    title: `${fixture.title} | WhenMeets 사용 사례`,
     description: fixture.scenarioHeadline,
     keywords: fixture.keywords,
     alternates: {
       canonical: `/use-cases/${fixture.slug}`,
     },
     openGraph: {
-      title: `${fixture.title} — WhenMeets`,
+      title: `${fixture.title} | WhenMeets`,
       description: fixture.scenarioHeadline,
       type: 'article',
     },

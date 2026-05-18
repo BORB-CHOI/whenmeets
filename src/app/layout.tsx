@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
-    template: '%s · WhenMeets',
+    template: '%s | WhenMeets',
   },
-  description: '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. 회원가입 없이 링크 공유하고 시간만 고르면 끝나는 when2meet의 한국어·모바일 친화 대안.',
+  description: '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. 회원가입 없이 링크 공유하고 시간만 고르면 끝나는 when2meet의 한국어와 모바일 친화 대안.',
   keywords: ['일정 조율', '모임 시간', '그룹 일정', 'when2meet', '미팅 잡기', '약속 시간', '캘린더 공유'],
   alternates: {
     canonical: SITE_URL,

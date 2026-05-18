@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn';
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   ssr: false,
   loading: () => (
-    <div className="h-[480px] flex items-center justify-center text-sm text-gray-400">
+    <div className="h-120 flex items-center justify-center text-sm text-gray-400">
       결과 히트맵을 불러오는 중...
     </div>
   ),
@@ -21,7 +21,7 @@ const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
 const CalendarHeatmapGrid = dynamic(() => import('@/components/results/CalendarHeatmapGrid'), {
   ssr: false,
   loading: () => (
-    <div className="h-[480px] flex items-center justify-center text-sm text-gray-400">
+    <div className="h-120 flex items-center justify-center text-sm text-gray-400">
       결과 히트맵을 불러오는 중...
     </div>
   ),
@@ -54,7 +54,7 @@ export default function DemoEventViewer({ fixture, enableEdit = true }: DemoEven
             <span className="inline-block w-2 h-2 rounded-full bg-teal-600" />
             응답자 {fixture.participants.length}명
           </span>
-          <span className="text-gray-300">·</span>
+          <span className="text-gray-300">,</span>
           <span>{fixture.dateOnly ? `${fixture.dates.length}개 후보 날짜` : `${fixture.dates.length}일 × 시간대`}</span>
         </div>
 
@@ -126,7 +126,7 @@ export default function DemoEventViewer({ fixture, enableEdit = true }: DemoEven
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="mb-3 py-2.5 px-3 rounded-md text-center text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-                {fixture.dateOnly ? '✅ 되는 날짜를 드래그하세요 — 저장되지 않는 체험 모드입니다' : '✅ 되는 시간을 드래그하세요 — 저장되지 않는 체험 모드입니다'}
+                {fixture.dateOnly ? '✅ 되는 날짜를 드래그하세요. 저장되지 않는 체험 모드입니다' : '✅ 되는 시간을 드래그하세요. 저장되지 않는 체험 모드입니다'}
               </div>
               <DragGrid
                 dates={fixture.dates}
@@ -143,7 +143,7 @@ export default function DemoEventViewer({ fixture, enableEdit = true }: DemoEven
               />
               {hasInput && (
                 <div className="mt-3 flex items-center justify-between gap-3 text-xs text-gray-500">
-                  <span>입력값은 새로고침 시 사라집니다 · 실제 이벤트를 만들면 자동 저장됩니다.</span>
+                  <span>입력값은 새로고침 시 사라집니다. 실제 이벤트를 만들면 자동 저장됩니다.</span>
                   <button
                     type="button"
                     onClick={() => setMyAvailability({})}
