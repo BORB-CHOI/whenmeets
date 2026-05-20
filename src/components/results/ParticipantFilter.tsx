@@ -120,7 +120,7 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
               className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors
                 ${isDimmed ? 'opacity-50' : ''}
                 ${stateClass}
-                ${!hasSlotHover ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : ''}`}
+                ${!hasSlotHover ? 'hover:bg-gray-50' : ''}`}
             >
               {showCheckbox ? (
                 <div className="p-icon w-6 h-6 rounded-md bg-teal-600 flex items-center justify-center shrink-0 transition-colors">
@@ -139,16 +139,16 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
                       className="p-icon w-6 h-6 rounded-full object-cover shrink-0 group-hover:hidden"
                     />
                   ) : (
-                    <div className="p-icon w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 shrink-0 group-hover:hidden">
+                    <div className="p-icon w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0 group-hover:hidden">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                       </svg>
                     </div>
                   )}
-                  <div className="p-icon w-6 h-6 rounded-md bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 shrink-0 hidden group-hover:flex" aria-hidden="true" />
+                  <div className="p-icon w-6 h-6 rounded-md bg-white border-2 border-gray-300 shrink-0 hidden group-hover:flex" aria-hidden="true" />
                 </>
               )}
-              <span className="p-name text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">
+              <span className="p-name text-sm font-medium text-gray-900 flex-1">
                 {p.name}
                 <span
                   ref={(el) => {

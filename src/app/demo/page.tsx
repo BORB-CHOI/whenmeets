@@ -5,13 +5,13 @@ import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data
 import { stripEmphasis } from '@/lib/render-emphasis';
 
 export const metadata: Metadata = {
-  title: '실제 사용 화면 데모 | WhenMeets',
-  description: 'WhenMeets가 실제로 어떻게 동작하는지 미리 보세요. 5명의 응답자가 시간을 표시한 결과 히트맵과, 드래그로 직접 입력해 보는 체험 모드를 한 페이지에서 제공합니다.',
+  title: '실제 사용 화면 데모 | DayMeet',
+  description: 'DayMeet가 실제로 어떻게 동작하는지 미리 보세요. 5명의 응답자가 시간을 표시한 결과 히트맵과, 드래그로 직접 입력해 보는 체험 모드를 한 페이지에서 제공합니다.',
   alternates: {
     canonical: '/demo',
   },
   openGraph: {
-    title: '실제 사용 화면 데모 | WhenMeets',
+    title: '실제 사용 화면 데모 | DayMeet',
     description: '결과 히트맵 + 인터랙티브 체험. 회원가입 없이 도구가 어떻게 동작하는지 확인하세요.',
     type: 'website',
   },
@@ -49,7 +49,7 @@ export default function DemoPage() {
         <article className="p-5 rounded-xl border border-gray-200 bg-white">
           <h2 className="text-base font-bold text-gray-900 mb-2">왜 단톡방보다 빠른가</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
-            단톡방에서 8명에게 시간을 묻는 데 보통 한 주가 걸립니다. WhenMeets는 호스트가 1분 안에
+            단톡방에서 8명에게 시간을 묻는 데 보통 한 주가 걸립니다. DayMeet는 호스트가 1분 안에
             링크를 만들고, 응답자가 30초 안에 가능한 시간을 드래그합니다. 결과는 자동 계산되므로
             “언제가 좋아?” 질문이 다시 돌지 않습니다.
           </p>

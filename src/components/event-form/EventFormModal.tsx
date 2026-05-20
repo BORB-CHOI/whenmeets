@@ -220,18 +220,18 @@ export default function EventFormModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col"
             style={{ height: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Fixed header */}
             <div className="flex items-center justify-between px-6 pt-4 pb-2 shrink-0">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">
                 {editEvent ? "이벤트 수정" : "이벤트 만들기"}
               </h2>
               <button
                 onClick={onClose}
-                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 <svg
                   className="w-5 h-5"
@@ -269,10 +269,10 @@ export default function EventFormModal({
                   if (titleError) setTitleError(false);
                 }}
                 placeholder="이벤트 제목"
-                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100 ${
+                className={`w-full px-4 py-2.5 border rounded-md transition-all focus:border-teal-600 ${
                   titleError
                     ? "border-red-500 ring ring-red-500/10"
-                    : "border-gray-200 dark:border-gray-600"
+                    : "border-gray-200"
                 }`}
                 maxLength={100}
               />
@@ -294,7 +294,7 @@ export default function EventFormModal({
               {/* Date selection */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  <label className="text-sm font-medium text-gray-600">
                     날짜 {dates.length > 0 && `(${dates.length}개 선택)`}
                   </label>
                   <div className="shrink-0">
@@ -330,7 +330,7 @@ export default function EventFormModal({
                     onChange={(e) => setShowTimeRange(e.target.checked)}
                     className="rounded border-gray-300 text-teal-600 cursor-pointer"
                   />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-600">
                     특정 시간대 지정
                   </span>
                 </label>
@@ -364,8 +364,8 @@ export default function EventFormModal({
                   onClick={() => setShowPassword(!showPassword)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
                     showPassword
-                      ? "text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50"
-                      : "text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-900/50 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50"
+                      ? "text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
+                      : "text-teal-700 border-teal-200 bg-teal-50 hover:bg-teal-100"
                   }`}
                 >
                   <svg
@@ -397,7 +397,7 @@ export default function EventFormModal({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="비밀번호"
-                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100"
+                        className="mt-1.5 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:border-teal-600"
                       />
                     </motion.div>
                   )}

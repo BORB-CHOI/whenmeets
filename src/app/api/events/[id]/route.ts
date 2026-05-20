@@ -35,7 +35,7 @@ export async function GET(
 
   const hasPassword = !!event.password_hash;
   if (hasPassword) {
-    const cookie = request.cookies.get(`whenmeets_auth_${id}`);
+    const cookie = request.cookies.get(`daymeet_auth_${id}`);
     if (!cookie || !verifyEventToken(id, cookie.value)) {
       return NextResponse.json({
         id: event.id,

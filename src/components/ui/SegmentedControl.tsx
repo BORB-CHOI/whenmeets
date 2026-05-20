@@ -11,7 +11,7 @@ interface SegmentedControlProps<T extends string> {
 }
 
 const GLOW: Record<SegmentedVariant, string> = {
-  default: '0 0 0 1.5px rgba(0, 137, 123, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0, 137, 123, 0.1)',
+  default: '0 0 0 1.5px rgba(0, 172, 193, 0.25), 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0, 172, 193, 0.1)',
   danger: '0 0 0 1.5px rgba(220, 38, 38, 0.18), 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(220, 38, 38, 0.08)',
   warning: '0 0 0 1.5px rgba(217, 119, 6, 0.18), 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(252, 211, 77, 0.12)',
 };
@@ -68,7 +68,7 @@ export default function SegmentedControl<T extends string>({
               onChange(option.value);
             }}
             className={`relative z-10 flex-1 text-center px-4 py-2 text-sm whitespace-nowrap rounded-md transition-colors duration-150 cursor-pointer
-              ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              ${isActive ? `${TEXT[v]} font-semibold` : 'text-gray-400 hover:text-gray-600'}`}
           >
             {option.label}
           </button>

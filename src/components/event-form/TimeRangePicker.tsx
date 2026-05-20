@@ -80,7 +80,7 @@ export default function TimeRangePicker({
           label="시작 시간"
         />
       </div>
-      <span className="text-gray-400 dark:text-gray-500 text-sm font-medium shrink-0">~</span>
+      <span className="text-gray-400 text-sm font-medium shrink-0">~</span>
       <div className="flex-1">
         <TimeSelect
           value={timeEnd}

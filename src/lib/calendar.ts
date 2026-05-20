@@ -57,7 +57,7 @@ export async function fetchCalendarEvents(
 }
 
 /**
- * Convert Google Calendar events to WhenMeets availability format.
+ * Convert Google Calendar events to DayMeet availability format.
  * Busy times (calendar events) become unavailable (0), free times become available (2).
  */
 export function calendarEventsToAvailability(

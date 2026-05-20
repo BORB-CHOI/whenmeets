@@ -43,19 +43,19 @@ export default function Features() {
     <section
       id="features"
       aria-labelledby="features-heading"
-      className="w-full max-w-5xl mx-auto px-4 py-20 sm:py-24 border-t border-gray-200/60 dark:border-gray-700/60"
+      className="w-full max-w-5xl mx-auto px-4 py-20 sm:py-24 border-t border-gray-200/60"
     >
       <header className="text-center mb-12 sm:mb-16">
-        <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600 dark:text-teal-400">
+        <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
           Features
         </p>
         <h2
           id="features-heading"
-          className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100"
+          className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900"
         >
-          왜 WhenMeets인가요?
+          왜 DayMeet인가요?
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+        <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-xl mx-auto">
           when2meet의 한국어, 모바일 친화 대안. 필요한 것만 빠르게.
         </p>
       </header>
@@ -64,15 +64,15 @@ export default function Features() {
         {FEATURES.map(({ title, body, icon }) => (
           <article
             key={title}
-            className="rounded-xl bg-white dark:bg-gray-800 p-6 border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-shadow"
+            className="rounded-xl bg-white p-6 border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               {icon}
             </div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-base font-bold text-gray-900 mb-2">
               {title}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            <p className="text-sm text-gray-500 leading-relaxed">
               {body}
             </p>
           </article>

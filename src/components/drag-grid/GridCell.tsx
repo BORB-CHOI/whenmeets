@@ -24,13 +24,13 @@ export function getCellCssColor(
   eventMode: EventMode,
 ): string {
   if (eventMode === 'unavailable') {
-    if (value === -1) return 'rgba(0,137,123,0.47)';
+    if (value === -1) return 'rgba(0,172,193,0.47)';
     if (value === 0) return '#FAD3D3';
     return '';
   }
   if (value === -1 || value === 0) return '#FAD3D3';
   if (value === 1) return '#FFE8B8';
-  if (value === 2) return 'rgba(0,137,123,0.47)';
+  if (value === 2) return 'rgba(0,172,193,0.47)';
   return '';
 }
 
@@ -67,7 +67,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
         data-slot={slot}
         data-date-idx={dateIdx}
         data-slot-idx={slotIdx}
-        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 dark:border-gray-700 ${colorClass} select-none cursor-pointer flex items-center justify-between`}
+        className={`relative w-full min-w-[200px] h-[40px] px-3 rounded-lg border border-gray-200 ${colorClass} select-none cursor-pointer flex items-center justify-between`}
       >
         {hasOverlay && (
           <div
@@ -75,7 +75,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
             style={{ opacity: overlayOpacity }}
           />
         )}
-        <span className="text-sm text-gray-700 dark:text-gray-300 relative z-10">{formatDateCompact(date)}</span>
+        <span className="text-sm text-gray-700 relative z-10">{formatDateCompact(date)}</span>
         {hasOverlay && (
           <span className="text-[10px] text-teal-600 font-medium relative z-10">
             +{overlayCount}
@@ -99,7 +99,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
         <div
           className="absolute inset-0 pointer-events-none z-10"
           style={{
-            outline: `1.5px dashed rgba(0,137,123,${borderOpacity})`,
+            outline: `1.5px dashed rgba(0,172,193,${borderOpacity})`,
             outlineOffset: '-1.5px',
           }}
         />
@@ -107,7 +107,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
       {hasOverlay && overlayCount! > 0 && (
         <span
           className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none z-20"
-          style={{ color: `rgba(0,137,123,${numberOpacity})` }}
+          style={{ color: `rgba(0,172,193,${numberOpacity})` }}
         >
           {overlayCount}
         </span>

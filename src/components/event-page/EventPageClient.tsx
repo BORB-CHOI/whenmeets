@@ -28,16 +28,16 @@ import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
-    <div className="w-full h-64 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
-      <span className="text-xs text-gray-300 dark:text-gray-500">로딩 중...</span>
+    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300">로딩 중...</span>
     </div>
   ),
 });
 
 const CalendarHeatmapGrid = dynamic(() => import('@/components/results/CalendarHeatmapGrid'), {
   loading: () => (
-    <div className="w-full h-64 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
-      <span className="text-xs text-gray-300 dark:text-gray-500">로딩 중...</span>
+    <div className="w-full h-64 bg-gray-50 rounded-lg animate-pulse flex items-center justify-center">
+      <span className="text-xs text-gray-300">로딩 중...</span>
     </div>
   ),
 });
@@ -500,8 +500,8 @@ export default function EventPageClient({
       {/* Event header — timeful style */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h1>
-          <p className="mt-1 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
+          <p className="mt-1 flex items-center gap-3 text-sm text-gray-500">
             <span>{dateRange}</span>
             {event.is_owner && (
               <span
@@ -513,7 +513,7 @@ export default function EventPageClient({
               type="button"
               onClick={handleCopyLink}
               aria-label={copied ? '링크 복사됨' : '링크 복사'}
-              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 sm:hidden"
+              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 sm:hidden"
             >
               {copied ? (
                 <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
@@ -530,7 +530,7 @@ export default function EventPageClient({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyLink}
-            className="hidden sm:flex h-[38px] px-4 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer items-center gap-1.5"
+            className="hidden sm:flex h-[38px] px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer items-center gap-1.5"
           >
             {copied ? '복사됨!' : '링크 복사'}
             {!copied && (
@@ -575,7 +575,7 @@ export default function EventPageClient({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트 설명을 입력하세요"
-              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg focus:border-teal-600 resize-none dark:bg-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-teal-600 resize-none"
               rows={3}
               autoFocus
             />
@@ -599,14 +599,14 @@ export default function EventPageClient({
           </div>
         ) : description ? (
           <p
-            className={`mt-2 text-sm text-gray-500 dark:text-gray-400 transition-colors ${event.is_owner ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-300' : ''}`}
+            className={`mt-2 text-sm text-gray-500 transition-colors ${event.is_owner ? 'cursor-pointer hover:text-gray-700' : ''}`}
             onClick={() => event.is_owner && setEditingDescription(true)}
           >
             {description}
           </p>
         ) : event.is_owner ? (
           <p
-            className="mt-2 text-sm text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="mt-2 text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
             onClick={() => setEditingDescription(true)}
           >
             + 설명 추가
@@ -743,12 +743,12 @@ export default function EventPageClient({
 
               {/* Legend */}
               <div className="mb-5">
-                <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex flex-col gap-1.5 text-sm text-gray-600">
                   <div className="flex items-start gap-2">
                     <div className="w-4 h-4 rounded-sm bg-teal-400/60 mt-0.5 shrink-0" />
                     <div className="flex flex-col">
                       <span>Available</span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
+                      <span className="text-xs text-gray-400 leading-tight">
                         확실히 가능한 시간
                       </span>
                     </div>
@@ -758,7 +758,7 @@ export default function EventPageClient({
                       <div className="w-4 h-4 rounded-sm bg-amber-300/50 mt-0.5 shrink-0" />
                       <div className="flex flex-col">
                         <span>If Needed</span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
+                        <span className="text-xs text-gray-400 leading-tight">
                           가능은 하지만 우선순위 낮음
                         </span>
                       </div>
@@ -776,7 +776,7 @@ export default function EventPageClient({
               {/* Participant list in edit mode — same interaction as view mode */}
               {event.participants.length > 0 && (
                 <div className="mb-5">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     응답자 ({selectedIds.size}/{event.participants.length})
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
@@ -810,7 +810,7 @@ export default function EventPageClient({
           ) : (
             <>
               {/* View mode sidebar — responses + options */}
-              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
+              <h2 className="text-base font-bold text-gray-900 mb-3">
                 <SidebarCount
                   ref={sidebarCountRef}
                   selectedCount={selectedIds.size}
@@ -832,11 +832,11 @@ export default function EventPageClient({
 
               {/* Options */}
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">옵션</h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">옵션</h3>
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => setShowBestTimes(!showBestTimes)}
-                    className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 cursor-pointer min-h-11"
+                    className="flex items-center justify-between text-sm text-gray-600 cursor-pointer min-h-11"
                   >
                     <span>최적 시간만 보기</span>
                     <ToggleSwitch checked={showBestTimes} />
@@ -845,7 +845,7 @@ export default function EventPageClient({
                     <button
                       onClick={() => !isSingleSelection && setUserIncludeIfNeeded(!userIncludeIfNeeded)}
                       disabled={isSingleSelection}
-                      className={`flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 min-h-11 ${
+                      className={`flex items-center justify-between text-sm text-gray-600 min-h-11 ${
                         isSingleSelection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                       }`}
                     >
@@ -900,15 +900,15 @@ export default function EventPageClient({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-2">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">내 시간 입력하기</h2>
+                <h2 className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
                 <button
                   onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -918,7 +918,7 @@ export default function EventPageClient({
 
               {/* Body */}
               <div className="px-6 py-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
+                <p className="text-sm text-gray-500 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
 
                 <form onSubmit={handleNameSubmit}>
                   <input
@@ -926,7 +926,7 @@ export default function EventPageClient({
                     value={nameInput}
                     onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="이름 입력"
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-teal-600 transition-all"
                     autoFocus
                     maxLength={50}
                   />
@@ -949,17 +949,17 @@ export default function EventPageClient({
                       value={namePassword}
                       onChange={(e) => setNamePassword(e.target.value)}
                       placeholder="비밀번호 (선택사항)"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md focus:border-teal-600 transition-all dark:bg-gray-800 dark:text-gray-100"
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-teal-600 transition-all"
                     />
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
+                    <p className="text-xs text-gray-400 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
                   </div>
                   {nameError && <p className="text-sm text-red-500 mt-2">{nameError}</p>}
                 </form>
 
                 <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
-                  <span className="text-xs text-gray-400 dark:text-gray-500">또는</span>
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs text-gray-400">또는</span>
+                  <div className="flex-1 h-px bg-gray-200" />
                 </div>
 
                 {/* Google login button */}
@@ -977,7 +977,7 @@ export default function EventPageClient({
                       options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
                     });
                   }}
-                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-200 dark:bg-gray-800"
+                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-sm font-medium text-gray-700"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -994,7 +994,7 @@ export default function EventPageClient({
                 <button
                   type="button"
                   onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   취소
                 </button>
@@ -1063,25 +1063,25 @@ export default function EventPageClient({
             onDragEnd={(_, info) => {
               if (info.offset.y > 36 || info.velocity.y > 450) setMobileSlotSheet(null);
             }}
-            className="fixed inset-x-0 bottom-[72px] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 lg:hidden"
+            className="fixed inset-x-0 bottom-[72px] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white lg:hidden"
           >
             <div className="flex justify-center pt-2">
-              <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="h-1 w-10 rounded-full bg-gray-300" />
             </div>
             <div className="max-h-[48vh] overflow-y-auto px-5 pb-5 pt-3">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                  <h3 className="text-base font-bold text-gray-900">
                     응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded)).length}/{event.participants.length})
                   </h3>
-                  <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">
+                  <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500">
                     {formatDateCompact(mobileSlotSheet.date)} · {slotToTime(mobileSlotSheet.slot)} – {slotToTime(mobileSlotSheet.slot + 1)}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileSlotSheet(null)}
-                  className="rounded-md px-2 py-1 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  className="rounded-md px-2 py-1 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
                 >
                   닫기
                 </button>
@@ -1202,7 +1202,7 @@ function ToggleSwitch({ checked }: { checked: boolean }) {
   const knobTransition = mountedRef.current ? 'transition-transform duration-200' : '';
 
   return (
-    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-teal-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
+    <div className={`w-9 h-5 rounded-full relative ${transition} ${checked ? 'bg-teal-600' : 'bg-gray-200'}`}>
       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm ${knobTransition} ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
     </div>
   );

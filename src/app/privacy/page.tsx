@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 - WhenMeets',
-  description: 'WhenMeets 개인정보처리방침',
+  title: '개인정보처리방침 - DayMeet',
+  description: 'DayMeet 개인정보처리방침',
 };
 
 const LAST_UPDATED = '2026-05-07';
@@ -10,13 +10,13 @@ const LAST_UPDATED = '2026-05-07';
 export default function PrivacyPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">개인정보처리방침</h1>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-10">최종 업데이트: {LAST_UPDATED}</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">개인정보처리방침</h1>
+      <p className="text-sm text-gray-500 mb-10">최종 업데이트: {LAST_UPDATED}</p>
 
-      <div className="flex flex-col gap-8 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+      <div className="flex flex-col gap-8 text-sm leading-relaxed text-gray-700">
         <section>
           <p>
-            WhenMeets(이하 &ldquo;서비스&rdquo;)는 회원가입 없이 누구나 이용 가능한 그룹 일정 조율 도구이며,
+            DayMeet(이하 &ldquo;서비스&rdquo;)는 회원가입 없이 누구나 이용 가능한 그룹 일정 조율 도구이며,
             이용자의 개인정보를 소중히 다루기 위해 본 방침을 마련합니다. 본 서비스는 오픈소스 프로젝트로
             개인 운영자가 운영하며, 소스 코드는{' '}
             <a
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">1. 수집하는 개인정보 항목</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">1. 수집하는 개인정보 항목</h2>
           <p className="mb-2">서비스는 다음과 같은 정보를 수집할 수 있습니다.</p>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">2. 이용 목적</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">2. 이용 목적</h2>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>이벤트 생성·참여·결과 표시 등 서비스 제공</li>
             <li>참여자 식별 및 응답 충돌 방지</li>
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">3. 보유 및 파기</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">3. 보유 및 파기</h2>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>
               <strong>이벤트 데이터:</strong> 이벤트 생성자가 삭제하거나, 이벤트의 마지막 날짜로부터 일정 기간이
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">4. 처리 위탁 및 제3자 제공</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">4. 처리 위탁 및 제3자 제공</h2>
           <p className="mb-2">서비스 제공을 위해 다음 사업자에게 처리를 위탁합니다.</p>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">5. 쿠키 사용</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">5. 쿠키 사용</h2>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li><strong>필수 쿠키:</strong> 로그인 세션 유지, 비밀번호 보호 이벤트 접근 토큰.</li>
             <li>
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">6. 이용자의 권리</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">6. 이용자의 권리</h2>
           <p className="mb-2">이용자는 언제든지 다음의 권리를 행사할 수 있습니다.</p>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>본인의 개인정보 열람 요청</li>
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">7. 개인정보 보호를 위한 기술적·관리적 조치</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">7. 개인정보 보호를 위한 기술적·관리적 조치</h2>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>비밀번호는 평문 대신 bcrypt 해시로 저장합니다.</li>
             <li>전 통신 구간을 HTTPS로 암호화합니다.</li>
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">8. 광고 및 분석</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">8. 광고 및 분석</h2>
           <p>
             본 서비스에는 Google AdSense를 통한 광고가 표시될 수 있습니다. Google 및 그 파트너는 쿠키 등 표준
             웹 기술을 사용하여 광고 게재를 최적화합니다. 자세한 내용은{' '}
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">9. 연락처</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">9. 연락처</h2>
           <p className="mb-2">개인정보 관련 문의 및 권리 행사는 다음 채널로 보내주세요.</p>
           <ul className="list-disc pl-6 flex flex-col gap-1.5">
             <li>
@@ -176,7 +176,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">10. 방침 변경</h2>
+          <h2 className="text-base font-bold text-gray-900 mb-2">10. 방침 변경</h2>
           <p>본 방침은 법령·서비스 변경에 따라 개정될 수 있으며, 중요한 변경 시 서비스 내 공지 또는 GitHub
             저장소를 통해 사전 안내합니다. 변경 이력은 페이지 상단의 최종 업데이트 날짜로 확인할 수 있습니다.</p>
         </section>

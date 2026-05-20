@@ -82,10 +82,10 @@ export default function EventForm() {
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
-          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100 ${
+          className={`w-full px-4 py-3 text-lg border rounded-md transition-all focus:border-teal-600 ${
             titleError
               ? 'border-red-500 ring ring-red-500/10'
-              : 'border-gray-200 dark:border-gray-600'
+              : 'border-gray-200'
           }`}
           maxLength={100}
         />
@@ -93,7 +93,7 @@ export default function EventForm() {
 
       {/* Type toggle */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">유형</label>
+        <label className="block text-sm font-medium text-gray-600 mb-2">유형</label>
         <SegmentedControl
           options={[
             { value: 'datetime', label: '날짜 + 시간' },
@@ -106,7 +106,7 @@ export default function EventForm() {
 
       {/* Response mode */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">응답 방식</label>
+        <label className="block text-sm font-medium text-gray-600 mb-2">응답 방식</label>
         <SegmentedControl
           options={[
             { value: 'available', label: '되는 시간 수합' },
@@ -119,7 +119,7 @@ export default function EventForm() {
 
       {/* Date picker */}
       <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-600 mb-2">
           날짜 {dates.length > 0 && `(${dates.length}개 선택)`}
         </label>
         <DatePicker selectedDates={dates} onDatesChange={setDates} />
@@ -142,8 +142,8 @@ export default function EventForm() {
           onClick={() => setShowPassword(!showPassword)}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors cursor-pointer ${
             showPassword
-              ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50'
-              : 'text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-900/50 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50'
+              ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
+              : 'text-teal-700 border-teal-200 bg-teal-50 hover:bg-teal-100'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -157,7 +157,7 @@ export default function EventForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호"
-            className="mt-2 w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-teal-600 dark:bg-gray-800 dark:text-gray-100"
+            className="mt-2 w-full px-4 py-2 border border-gray-200 rounded-md transition-all focus:border-teal-600"
           />
         )}
       </div>

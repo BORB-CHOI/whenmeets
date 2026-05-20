@@ -115,7 +115,7 @@ export default function MonthCalendarGrid({
   const dayHeaders = (
     <div className="grid mb-1 mx-auto" style={headerRowStyle}>
       {DAY_HEADERS_KO.map((d) => (
-        <div key={d} className="text-center text-xs font-medium text-gray-400 dark:text-gray-500 py-1">{d}</div>
+        <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
       ))}
     </div>
   );
@@ -129,7 +129,7 @@ export default function MonthCalendarGrid({
     return (
       <div ref={setRefs} className="select-none" {...rootProps}>
         {dayHeaders}
-        <div className="grid bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mx-auto" style={gridStyle}>
+        <div className="grid bg-gray-200 border border-gray-200 rounded-lg overflow-hidden mx-auto" style={gridStyle}>
           {DOW_ORDER.map((dow) => (
             <Fragment key={dow}>{renderCell(dow, dateSet.has(dow))}</Fragment>
           ))}
@@ -142,11 +142,11 @@ export default function MonthCalendarGrid({
     <div ref={setRefs} className="select-none" {...rootProps}>
       {months.map((month) => (
         <div key={`${month.year}-${month.month}`} className="mb-6">
-          <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-center text-base font-bold text-gray-900 mb-3">
             {month.label}
           </h3>
           {dayHeaders}
-          <div className="grid bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mx-auto" style={gridStyle}>
+          <div className="grid bg-gray-200 border border-gray-200 rounded-lg overflow-hidden mx-auto" style={gridStyle}>
             {month.days.map((dateStr, idx) => (
               <Fragment key={dateStr ?? `empty-${idx}`}>
                 {renderCell(dateStr, dateStr ? dateSet.has(dateStr) : false)}

@@ -1,8 +1,9 @@
 import { ImageResponse } from 'next/og';
+import Logo from '@/components/brand/Logo';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'WhenMeets - 쉽고 빠른 그룹 일정 조율';
+export const alt = 'DayMeet - 쉽고 빠른 그룹 일정 조율';
 
 const PRETENDARD_BOLD =
   'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.otf';
@@ -25,7 +26,7 @@ export default async function OpengraphImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #00897B 0%, #00695C 60%, #004D40 100%)',
+          background: 'linear-gradient(135deg, #26C6DA 0%, #00ACC1 45%, #006064 100%)',
           fontFamily: 'Pretendard',
           padding: 80,
         }}
@@ -49,12 +50,7 @@ export default async function OpengraphImage() {
               boxShadow: '0 30px 60px -20px rgba(0,0,0,0.35)',
             }}
           >
-            <svg width="92" height="92" viewBox="0 0 32 32">
-              <path
-                d="M7 10h3l3.5 9.5L17 12l3.5 7.5L24 10h3l-5.5 14h-2.5L16 17l-3 7H10.5L7 10z"
-                fill="#00897B"
-              />
-            </svg>
+            <Logo size={104} />
           </div>
           <div
             style={{
@@ -65,7 +61,7 @@ export default async function OpengraphImage() {
               lineHeight: 1,
             }}
           >
-            WhenMeets
+            DayMeet
           </div>
         </div>
 

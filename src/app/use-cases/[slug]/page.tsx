@@ -17,18 +17,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const fixture = getUseCaseFixture(slug);
   if (!fixture) {
-    return { title: '사용 사례 | WhenMeets' };
+    return { title: '사용 사례 | DayMeet' };
   }
   const plainHeadline = stripEmphasis(fixture.scenarioHeadline);
   return {
-    title: `${fixture.title} | WhenMeets 사용 사례`,
+    title: `${fixture.title} | DayMeet 사용 사례`,
     description: plainHeadline,
     keywords: fixture.keywords,
     alternates: {
       canonical: `/use-cases/${fixture.slug}`,
     },
     openGraph: {
-      title: `${fixture.title} | WhenMeets`,
+      title: `${fixture.title} | DayMeet`,
       description: plainHeadline,
       type: 'article',
     },
@@ -81,7 +81,7 @@ export default async function UseCasePage({ params }: PageProps) {
       </section>
 
       <section className="mb-12 rounded-xl border border-gray-200 bg-gray-50 p-6 sm:p-8">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">이 상황에서 WhenMeets가 빛나는 이유</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">이 상황에서 DayMeet가 빛나는 이유</h2>
         <ul className="flex flex-col gap-3">
           {fixture.takeaways.map((takeaway, index) => (
             <li key={index} className="flex items-start gap-3 text-sm sm:text-base text-gray-700 leading-relaxed">

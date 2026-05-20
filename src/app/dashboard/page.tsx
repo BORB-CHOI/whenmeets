@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import DashboardClient from '@/components/dashboard/DashboardClient';
 
 export const metadata = {
-  title: '대시보드 - WhenMeets',
+  title: '대시보드 - DayMeet',
 };
 
 interface EventListItem {
@@ -149,7 +149,7 @@ function DashboardListsSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
       ))}
     </div>
   );

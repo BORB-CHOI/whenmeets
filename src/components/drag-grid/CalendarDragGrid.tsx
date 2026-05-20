@@ -156,11 +156,11 @@ export default function CalendarDragGrid({
       }}
       renderCell={(dateStr, isActive) => {
         if (!dateStr) {
-          return <div className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
+          return <div className="bg-gray-50 aspect-square" />;
         }
         if (!isActive) {
           return (
-            <div className="bg-gray-50 dark:bg-gray-800 aspect-square flex items-center justify-center text-sm text-gray-300 dark:text-gray-600">
+            <div className="bg-gray-50 aspect-square flex items-center justify-center text-sm text-gray-300">
               {cellLabel(dateStr)}
             </div>
           );
@@ -172,7 +172,7 @@ export default function CalendarDragGrid({
             data-cal-date={dateStr}
             onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
             onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-            className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}
+            className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}
           >
             {cellLabel(dateStr)}
             {hasOverlay && (

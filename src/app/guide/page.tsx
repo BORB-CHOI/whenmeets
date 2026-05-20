@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { renderEmphasis } from '@/lib/render-emphasis';
 
 export const metadata: Metadata = {
-  title: '사용 가이드 | WhenMeets',
-  description: 'WhenMeets 사용법, 시간 모드와 날짜 모드의 차이, 결과 히트맵 읽는 법, 비밀번호 옵션, 그리고 비슷한 도구(Timeful, When2meet)와의 차이까지 정리한 종합 가이드.',
+  title: '사용 가이드 | DayMeet',
+  description: 'DayMeet 사용법, 시간 모드와 날짜 모드의 차이, 결과 히트맵 읽는 법, 비밀번호 옵션, 그리고 비슷한 도구(Timeful, When2meet)와의 차이까지 정리한 종합 가이드.',
   alternates: {
     canonical: '/guide',
   },
   openGraph: {
-    title: '사용 가이드 | WhenMeets',
+    title: '사용 가이드 | DayMeet',
     description: '회원가입 없이 1분 만에 그룹 일정 조율. 모든 사용법과 비교를 한 페이지에.',
     type: 'article',
   },
@@ -32,7 +32,7 @@ const SHARED_WITH_TIMEFUL = [
   '대시보드와 폴더로 이벤트를 관리하는 화면',
 ];
 
-const WHENMEETS_ONLY: DifferentiatorPoint[] = [
+const DAYMEET_ONLY: DifferentiatorPoint[] = [
   {
     title: '한국어 UI와 한글 요일/날짜 표기',
     body: '캘린더 헤더가 일, 월, 화, 수, 목, 금, 토로 표기되고, 모든 라벨과 안내 문구가 한국어로 작성되어 있습니다. Timeful과 When2meet은 영어 중심이라 단톡방에 그대로 공유하면 일부 사용자가 적응에 시간이 듭니다.',
@@ -63,10 +63,10 @@ export default function GuidePage() {
           Guide
         </p>
         <h1 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-          WhenMeets 사용 가이드
+          DayMeet 사용 가이드
         </h1>
         <p className="mt-4 text-base text-gray-600 leading-relaxed max-w-2xl">
-          WhenMeets는 회원가입 없이 누구나 쓸 수 있는 한국어 기반 그룹 일정 조율 도구입니다.
+          DayMeet는 회원가입 없이 누구나 쓸 수 있는 한국어 기반 그룹 일정 조율 도구입니다.
           이 페이지에서는 기본 사용법, 두 가지 모드(시간 슬롯, 날짜만), 결과 해석, 보안 옵션,
           그리고 Timeful과 When2meet 같은 비슷한 도구와의 차이까지 한 번에 정리합니다.
         </p>
@@ -190,7 +190,7 @@ export default function GuidePage() {
         </div>
 
         <div className="mb-8 p-5 rounded-xl border border-gray-200 bg-white">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">WhenMeets와 Timeful이 공통으로 가지고 있는 것</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">DayMeet와 Timeful이 공통으로 가지고 있는 것</h3>
           <ul className="flex flex-col gap-1.5 text-sm text-gray-600 leading-relaxed">
             {SHARED_WITH_TIMEFUL.map((item) => (
               <li key={item} className="flex items-start gap-2">
@@ -200,14 +200,14 @@ export default function GuidePage() {
             ))}
           </ul>
           <p className="mt-3 text-xs text-gray-500 leading-relaxed">
-            모바일 친화 UI와 대시보드 화면은 WhenMeets와 Timeful 둘 다 갖춘 영역입니다. When2meet 대비 두 도구의 공통 우위입니다.
+            모바일 친화 UI와 대시보드 화면은 DayMeet와 Timeful 둘 다 갖춘 영역입니다. When2meet 대비 두 도구의 공통 우위입니다.
           </p>
         </div>
 
         <div className="mb-8">
-          <h3 className="text-base font-bold text-gray-900 mb-4">WhenMeets만 가지고 있는 것</h3>
+          <h3 className="text-base font-bold text-gray-900 mb-4">DayMeet만 가지고 있는 것</h3>
           <div className="flex flex-col gap-4">
-            {WHENMEETS_ONLY.map((item) => (
+            {DAYMEET_ONLY.map((item) => (
               <div key={item.title} className="p-5 rounded-xl border border-teal-200 bg-teal-50">
                 <h4 className="text-base font-bold text-teal-700 mb-2">{item.title}</h4>
                 <p className="text-sm text-gray-700 leading-relaxed">{renderEmphasis(item.body)}</p>
@@ -218,7 +218,7 @@ export default function GuidePage() {
 
         <div className="grid gap-3 sm:grid-cols-3 text-sm text-gray-700 leading-relaxed">
           <div className="p-4 rounded-lg border border-teal-200 bg-teal-50">
-            <p className="font-semibold text-teal-700 mb-1">WhenMeets가 빛나는 순간</p>
+            <p className="font-semibold text-teal-700 mb-1">DayMeet가 빛나는 순간</p>
             <p>단톡방에서 빠르게 결정 내고 싶을 때. 모바일에서 그리드 셀별 인원수 숫자까지 보고 싶을 때. 명절처럼 날짜만 받으면 되는 모임에서.</p>
           </div>
           <div className="p-4 rounded-lg border border-gray-200 bg-white">

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { USE_CASE_SLUGS } from '@/lib/demo-data';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://daymeet.org';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

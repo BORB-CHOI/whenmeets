@@ -9,13 +9,13 @@
  * - FAQPage: surfaces in featured snippets and AI answer engines
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://daymeet.org';
 
 const graph = [
   {
     '@type': 'WebApplication',
     '@id': `${SITE_URL}#webapp`,
-    name: 'WhenMeets',
+    name: 'DayMeet',
     description:
       '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. 회원가입 없이 링크 공유와 시간 선택만으로 끝나는 when2meet의 한국어·모바일 친화 대안.',
     url: SITE_URL,
@@ -41,7 +41,7 @@ const graph = [
   {
     '@type': 'Organization',
     '@id': `${SITE_URL}#org`,
-    name: 'WhenMeets',
+    name: 'DayMeet',
     url: SITE_URL,
     sameAs: ['https://github.com/BORB-CHOI/whenmeets'],
   },
@@ -49,7 +49,7 @@ const graph = [
     '@type': 'WebSite',
     '@id': `${SITE_URL}#site`,
     url: SITE_URL,
-    name: 'WhenMeets',
+    name: 'DayMeet',
     inLanguage: 'ko-KR',
     publisher: { '@id': `${SITE_URL}#org` },
   },
@@ -59,7 +59,7 @@ const graph = [
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'WhenMeets는 회원가입이 필요한가요?',
+        name: 'DayMeet는 회원가입이 필요한가요?',
         acceptedAnswer: {
           '@type': 'Answer',
           text:
@@ -68,7 +68,7 @@ const graph = [
       },
       {
         '@type': 'Question',
-        name: 'WhenMeets는 무료인가요?',
+        name: 'DayMeet는 무료인가요?',
         acceptedAnswer: {
           '@type': 'Answer',
           text:

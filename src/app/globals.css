@@ -6,23 +6,23 @@
   --background: #ffffff;
   --foreground: #171717;
   --font-pretendard: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --color-primary: #00897B;
-  --color-primary-hover: #00695C;
-  --shadow-primary: 0px 2px 8px rgba(0, 137, 123, 0.5);
-  --shadow-primary-hover: 0px 4px 12px rgba(0, 137, 123, 0.4);
+  --color-primary: #00ACC1;
+  --color-primary-hover: #00838F;
+  --shadow-primary: 0px 2px 8px rgba(0, 172, 193, 0.5);
+  --shadow-primary-hover: 0px 4px 12px rgba(0, 172, 193, 0.4);
 }
 
 @theme {
-  --color-teal-50:  #E0F2F1;
-  --color-teal-100: #B2DFDB;
-  --color-teal-200: #80CBC4;
-  --color-teal-300: #4DB6AC;
-  --color-teal-400: #26A69A;
-  --color-teal-500: #009688;
-  --color-teal-600: #00897B;
-  --color-teal-700: #00796B;
-  --color-teal-800: #00695C;
-  --color-teal-900: #004D40;
+  --color-teal-50:  #E0F7FA;
+  --color-teal-100: #B2EBF2;
+  --color-teal-200: #80DEEA;
+  --color-teal-300: #4DD0E1;
+  --color-teal-400: #26C6DA;
+  --color-teal-500: #00BCD4;
+  --color-teal-600: #00ACC1;
+  --color-teal-700: #0097A7;
+  --color-teal-800: #00838F;
+  --color-teal-900: #006064;
 }
 
 @theme inline {

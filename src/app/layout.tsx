@@ -11,13 +11,13 @@ import ClarityScript from '@/components/analytics/ClarityScript';
 import GoogleAnalyticsScript from '@/components/analytics/GoogleAnalyticsScript';
 import './globals.css';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://daymeet.org';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
-    template: '%s | WhenMeets',
+    default: 'DayMeet - 쉽고 빠른 그룹 일정 조율',
+    template: '%s | DayMeet',
   },
   description: '모바일에서도 편하게 쓰는 무료 그룹 일정 조율 서비스. 회원가입 없이 링크 공유하고 시간만 고르면 끝나는 when2meet의 한국어와 모바일 친화 대안.',
   keywords: ['일정 조율', '모임 시간', '그룹 일정', 'when2meet', '미팅 잡기', '약속 시간', '캘린더 공유'],
@@ -25,16 +25,16 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   openGraph: {
-    title: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
+    title: 'DayMeet - 쉽고 빠른 그룹 일정 조율',
     description: '회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.',
-    siteName: 'WhenMeets',
+    siteName: 'DayMeet',
     url: SITE_URL,
     type: 'website',
     locale: 'ko_KR',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WhenMeets - 쉽고 빠른 그룹 일정 조율',
+    title: 'DayMeet - 쉽고 빠른 그룹 일정 조율',
     description: '회원가입 필요 없음. 링크 공유하고, 시간 고르면 끝.',
   },
   robots: {
@@ -76,7 +76,7 @@ export default function RootLayout({
         <JsonLd />
       </head>
       <body
-        className="antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors flex flex-col min-h-screen"
+        className="antialiased bg-white text-gray-900 transition-colors flex flex-col min-h-screen"
         style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">

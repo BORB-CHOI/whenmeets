@@ -139,7 +139,7 @@ export default function DayOfWeekPicker({ selectedDays, onDaysChange }: DayOfWee
               className={`h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer
                 ${selected
                   ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                 }`}
             >
               {day}

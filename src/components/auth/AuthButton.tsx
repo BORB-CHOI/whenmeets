@@ -58,7 +58,7 @@ export default function AuthButton() {
   const handleSignOut = async () => {
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
-      if (key?.startsWith('whenmeets:')) localStorage.removeItem(key);
+      if (key?.startsWith('daymeet:')) localStorage.removeItem(key);
     }
     await supabase.auth.signOut();
     window.location.href = '/';

@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'whenmeets:event-history';
+const STORAGE_KEY = 'daymeet:event-history';
 
 export interface EventHistoryItem {
   id: string;

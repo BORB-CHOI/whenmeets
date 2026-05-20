@@ -19,7 +19,7 @@ export function createBrowserClient(): SupabaseClient {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       auth: {
-        storageKey: 'whenmeets-anon',
+        storageKey: 'daymeet-anon',
         persistSession: false,
         autoRefreshToken: false,
         detectSessionInUrl: false,
