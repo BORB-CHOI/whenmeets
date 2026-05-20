@@ -1,6 +1,23 @@
-# WhenMeets
+<div align="center">
+  <img src="assets/logo.svg" alt="DayMeet" width="112" height="112">
 
-when2meet 대안 그룹 스케줄링 서비스. Next.js 16 + TypeScript + Supabase.
+# DayMeet
+
+**회원가입 없이, 링크 하나로 끝내는 그룹 일정 조율**
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-00ACC1.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-0097A7.svg)](https://nextjs.org)
+[![Live](https://img.shields.io/badge/live-daymeet.org-00BCD4.svg)](https://daymeet.org)
+
+[데모](https://daymeet.org/demo) · [사용 가이드](https://daymeet.org/guide) · [개발 프로세스](#개발-프로세스)
+
+<br />
+<strong>마음에 드시나요?</strong> <a href="https://github.com/BORB-CHOI/whenmeets">GitHub에서 Star 눌러주세요</a>
+</div>
+
+---
+
+when2meet 대안 그룹 스케줄링 서비스. Next.js 16 + TypeScript + Supabase. 라이브: [daymeet.org](https://daymeet.org).
 
 ## 개발 환경
 

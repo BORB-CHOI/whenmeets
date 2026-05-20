@@ -31,16 +31,16 @@ export default function HowItWorks() {
       className="w-full max-w-5xl mx-auto px-4 py-20 sm:py-28"
     >
       <header className="text-center mb-12 sm:mb-16">
-        <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600 dark:text-teal-400">
+        <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-teal-600">
           How it works
         </p>
         <h2
           id="how-it-works-heading"
-          className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100"
+          className="mt-3 text-2xl sm:text-4xl font-extrabold tracking-tight text-gray-900"
         >
           이렇게 사용하세요
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+        <p className="mt-3 text-sm sm:text-base text-gray-500 max-w-xl mx-auto">
           복잡한 설정도 메신저 그룹채팅도 필요 없습니다. 세 단계면 끝.
         </p>
       </header>

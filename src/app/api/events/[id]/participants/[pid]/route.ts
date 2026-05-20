@@ -162,7 +162,7 @@ export async function DELETE(
   }
 
   if (!authorized && event.password_hash) {
-    const cookie = request.cookies.get(`whenmeets_auth_${id}`);
+    const cookie = request.cookies.get(`daymeet_auth_${id}`);
     if (cookie && verifyEventToken(id, cookie.value)) {
       authorized = true;
     }

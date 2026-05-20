@@ -77,7 +77,7 @@ export default function FloatingAds() {
         <>
           <aside
             aria-label="광고"
-            className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+            className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
           >
             <AdSlot

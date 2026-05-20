@@ -47,7 +47,7 @@ export default async function EventPage({ params }: Props) {
 
   if (hasPassword) {
     const cookieStore = await cookies();
-    const authCookie = cookieStore.get(`whenmeets_auth_${id}`);
+    const authCookie = cookieStore.get(`daymeet_auth_${id}`);
     if (!authCookie || !verifyEventToken(id, authCookie.value)) {
       requiresAuth = true;
     }

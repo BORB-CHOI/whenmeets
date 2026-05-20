@@ -58,26 +58,26 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
   const initial = (savedName?.[0] || email?.[0] || 'U').toUpperCase();
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-      <div className="flex items-center gap-4 pb-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
+    <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="flex items-center gap-4 pb-5 border-b border-gray-100">
+        <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-200 shrink-0">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <div className="w-full h-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center text-teal-700 dark:text-teal-300 text-lg font-bold">
+            <div className="w-full h-full bg-teal-100 flex items-center justify-center text-teal-700 text-lg font-bold">
               {initial}
             </div>
           )}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{savedName || '이름 없음'}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{email}</p>
+          <p className="text-sm font-semibold text-gray-900 truncate">{savedName || '이름 없음'}</p>
+          <p className="text-xs text-gray-500 truncate">{email}</p>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="pt-5 flex flex-col gap-3">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="text-sm font-medium text-gray-700">
           이름
         </label>
         <input
@@ -86,9 +86,9 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
           onChange={(e) => { setName(e.target.value); if (error) setError(''); }}
           placeholder="이름을 입력하세요"
           maxLength={50}
-          className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-md transition-all focus:border-teal-600 dark:bg-gray-900 dark:text-gray-100"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-md transition-all focus:border-teal-600"
         />
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-xs text-gray-400">
           이벤트 참여 시 다른 사용자에게 표시되는 이름입니다.
         </p>
 
@@ -121,7 +121,7 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="text-sm text-teal-600 dark:text-teal-400 font-medium"
+                className="text-sm text-teal-600 font-medium"
               >
                 저장되었습니다
                 {syncInfo && syncInfo.updated > 0 && ` · ${syncInfo.updated}개 이벤트에 반영`}

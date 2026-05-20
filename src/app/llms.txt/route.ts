@@ -10,9 +10,9 @@
 export const dynamic = 'force-static';
 
 export function GET() {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://whenmeets.com';
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://daymeet.org';
 
-  const body = `# WhenMeets
+  const body = `# DayMeet
 
 > 모바일에서도 편하게 쓰는 그룹 일정 조율 도구. when2meet의 한국어·모바일 친화 대안. 회원가입 없이 링크 공유 + 시간 선택만으로 일정 조율 완료.
 

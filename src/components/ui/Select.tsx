@@ -15,10 +15,10 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex items-center justify-between w-full rounded-lg border border-gray-200 dark:border-gray-700',
-      'bg-white dark:bg-gray-800 px-3 py-2.5',
-      'text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums',
-      'hover:bg-gray-50 dark:hover:bg-gray-750',
+      'flex items-center justify-between w-full rounded-lg border border-gray-200',
+      'bg-white px-3 py-2.5',
+      'text-sm font-medium text-gray-900 tabular-nums',
+      'hover:bg-gray-50',
       'focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500',
       'transition-colors duration-150 cursor-pointer',
       'disabled:cursor-not-allowed disabled:opacity-50',
@@ -55,7 +55,7 @@ const SelectScrollUpButton = React.forwardRef<
   <SelectPrimitive.ScrollUpButton
     ref={ref}
     className={cn(
-      'flex items-center justify-center h-6 bg-white dark:bg-gray-800 text-gray-400 cursor-default',
+      'flex items-center justify-center h-6 bg-white text-gray-400 cursor-default',
       className,
     )}
     {...props}
@@ -80,7 +80,7 @@ const SelectScrollDownButton = React.forwardRef<
   <SelectPrimitive.ScrollDownButton
     ref={ref}
     className={cn(
-      'flex items-center justify-center h-6 bg-white dark:bg-gray-800 text-gray-400 cursor-default',
+      'flex items-center justify-center h-6 bg-white text-gray-400 cursor-default',
       className,
     )}
     {...props}
@@ -106,8 +106,8 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-200 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700',
-        'bg-white dark:bg-gray-800 shadow-lg',
+        'relative z-200 overflow-hidden rounded-lg border border-gray-200',
+        'bg-white shadow-lg',
         // 애니메이션은 globals.css의 [data-radix-select-content] 규칙으로 처리
         position === 'popper' &&
           'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1',
@@ -143,11 +143,11 @@ const SelectItem = React.forwardRef<
     className={cn(
       'relative flex items-center px-3 py-1.5 text-sm tabular-nums rounded-md',
       'outline-none cursor-pointer select-none',
-      'text-gray-700 dark:text-gray-300',
-      'data-disabled:text-gray-300 data-disabled:dark:text-gray-600 data-disabled:pointer-events-none',
-      'data-highlighted:bg-teal-50 data-highlighted:dark:bg-teal-900/30',
-      'data-highlighted:text-teal-700 data-highlighted:dark:text-teal-400',
-      'data-[state=checked]:font-bold data-[state=checked]:text-teal-700 data-[state=checked]:dark:text-teal-400',
+      'text-gray-700',
+      'data-disabled:text-gray-300 data-disabled:data-disabled:pointer-events-none',
+      'data-highlighted:bg-teal-50 data-highlighted:',
+      'data-highlighted:text-teal-700 data-highlighted:',
+      'data-[state=checked]:font-bold data-[state=checked]:text-teal-700 data-[state=checked]:',
       'transition-colors duration-100',
       className,
     )}

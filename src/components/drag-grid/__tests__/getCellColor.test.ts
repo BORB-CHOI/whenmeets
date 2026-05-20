@@ -33,10 +33,10 @@ describe('getCellCssColor', () => {
     expect(getCellCssColor(1, 'available')).toBe('#FFE8B8');
   });
   it('available 2', () => {
-    expect(getCellCssColor(2, 'available')).toBe('rgba(0,137,123,0.47)');
+    expect(getCellCssColor(2, 'available')).toBe('rgba(0,172,193,0.47)');
   });
   it('unavailable -1', () => {
-    expect(getCellCssColor(-1, 'unavailable')).toBe('rgba(0,137,123,0.47)');
+    expect(getCellCssColor(-1, 'unavailable')).toBe('rgba(0,172,193,0.47)');
   });
   it('unavailable 0', () => {
     expect(getCellCssColor(0, 'unavailable')).toBe('#FAD3D3');

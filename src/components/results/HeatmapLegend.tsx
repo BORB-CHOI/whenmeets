@@ -1,6 +1,6 @@
 'use client';
 
-import { getStepColor, getStep, type HeatmapStep } from '@/lib/heatmap';
+import { getStepColor, getStep, getCellTextColor, type HeatmapStep } from '@/lib/heatmap';
 
 interface HeatmapLegendProps {
   total: number;
@@ -33,13 +33,12 @@ export default function HeatmapLegend({ total }: HeatmapLegendProps) {
       {items.map(({ step, label }) => {
         const s = step;
         const isEmpty = s === 0;
-        const isDarkBg = s >= 3;
         return (
           <div
             key={s}
             data-step={s}
             className={`flex items-center justify-center rounded-sm tabular-nums leading-none ${
-              isEmpty ? 'border border-gray-300 dark:border-gray-600' : ''
+              isEmpty ? 'border border-gray-300' : ''
             }`}
             style={{
               backgroundColor: isEmpty ? undefined : getStepColor(s),
@@ -50,7 +49,7 @@ export default function HeatmapLegend({ total }: HeatmapLegendProps) {
           >
             <span
               className="text-[11px] font-semibold"
-              style={{ color: isEmpty ? '#9CA3AF' : isDarkBg ? '#FFFFFF' : '#00695C' }}
+              style={{ color: isEmpty ? '#9CA3AF' : getCellTextColor(getStepColor(s)) }}
             >
               {label}
             </span>

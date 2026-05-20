@@ -74,7 +74,7 @@ const tabs = [
 type TabKey = (typeof tabs)[number]['key'];
 
 const NO_FOLDER_KEY = '__no_folder__';
-const COLLAPSED_STORAGE_KEY = 'whenmeets:dashboard:collapsedFolders';
+const COLLAPSED_STORAGE_KEY = 'daymeet:dashboard:collapsedFolders';
 const CARD_ID_PREFIX = 'event-';
 
 function cardId(eventId: string) {
@@ -145,12 +145,12 @@ function DraggableGroup({ groupKey, children }: DraggableGroupProps) {
   return (
     <div ref={setDraggableRef} className="relative">
       {topIsOver && !isDragging && (
-        <div className="absolute -top-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+        <div className="absolute -top-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(0,188,212,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
       {bottomIsOver && !isDragging && (
-        <div className="absolute -bottom-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+        <div className="absolute -bottom-2 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(0,188,212,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
@@ -205,12 +205,12 @@ function DraggableCard({ eventId, folderKey, children }: DraggableCardProps) {
   return (
     <div ref={setDraggableRef} className="relative">
       {topIsOver && !isDragging && (
-        <div className="absolute -top-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+        <div className="absolute -top-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(0,188,212,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}
       {bottomIsOver && !isDragging && (
-        <div className="absolute -bottom-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(20,184,166,0.5)]">
+        <div className="absolute -bottom-1.5 left-0 right-0 h-0.75 bg-teal-500 rounded-full z-10 pointer-events-none shadow-[0_0_6px_rgba(0,188,212,0.5)]">
           <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-teal-500" />
         </div>
       )}

@@ -11,19 +11,19 @@ const GRID: number[][] = [
 ];
 
 const LEVEL_CLASS = [
-  'bg-gray-100 dark:bg-gray-700/30',
-  'bg-teal-100 dark:bg-teal-900/40',
-  'bg-teal-400 dark:bg-teal-600',
-  'bg-teal-700 dark:bg-teal-500',
+  'bg-gray-100',
+  'bg-teal-100',
+  'bg-teal-400',
+  'bg-teal-700',
 ];
 
 const HOURS = ['10', '11', '12', '13', '14', '15', '16'];
 
 export default function Step3Mockup() {
   return (
-    <div className="w-full max-w-65 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200/60 dark:border-gray-700/60 p-3.5">
+    <div className="w-full max-w-65 bg-white rounded-xl shadow-md border border-gray-200/60 p-3.5">
       <div className="flex items-center justify-between mb-2.5">
-        <div className="text-[10px] font-bold text-gray-700 dark:text-gray-200">
+        <div className="text-[10px] font-bold text-gray-700">
           가능한 시간
         </div>
         <div className="text-[9px] text-gray-400">5명 응답</div>

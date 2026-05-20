@@ -3,7 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { generateSlots } from '@/lib/constants';
-import { resolveCellColor } from '@/lib/heatmap';
+import { resolveCellColor, getCellTextColor } from '@/lib/heatmap';
 import { getCellCssColor } from '@/components/drag-grid/GridCell';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
@@ -202,7 +202,7 @@ export default function HeatmapGrid({
           >
             {!singleParticipant && count > 0 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums pointer-events-none select-none leading-none"
-                style={{ color: (hasBestSlots && isBest) || count === total ? 'rgba(255,255,255,0.92)' : 'rgba(0,137,123,0.7)' }}
+                style={{ color: getCellTextColor(bgColor) }}
               >
                 {count}
               </span>

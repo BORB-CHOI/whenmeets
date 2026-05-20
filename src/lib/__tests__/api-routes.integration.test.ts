@@ -321,7 +321,7 @@ describe('POST /api/events/[id]/verify', () => {
     const res = await verifyPassword(req, { params: Promise.resolve({ id: 'evt-pw' }) });
     expect(res.status).toBe(200);
     const setCookie = res.headers.get('set-cookie');
-    expect(setCookie).toContain('whenmeets_auth_evt-pw');
+    expect(setCookie).toContain('daymeet_auth_evt-pw');
   });
 
   it('rejects wrong password', async () => {

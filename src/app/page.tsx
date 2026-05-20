@@ -48,7 +48,7 @@ export default function Home() {
             className="absolute rounded-full"
             style={{
               width: '60vmax', height: '60vmax',
-              background: 'radial-gradient(circle, rgba(0,137,123,0.08) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0,172,193,0.08) 0%, transparent 70%)',
               top: '-20vmax', left: '-10vmax',
             }}
           />
@@ -56,7 +56,7 @@ export default function Home() {
             className="absolute rounded-full"
             style={{
               width: '50vmax', height: '50vmax',
-              background: 'radial-gradient(circle, rgba(77,182,172,0.1) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(77,208,225,0.1) 0%, transparent 70%)',
               bottom: '-15vmax', right: '-10vmax',
             }}
           />
@@ -75,7 +75,7 @@ export default function Home() {
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900"
               style={{ animation: 'fadeInUp 0.6s ease-out both' }}
             >
-              WhenMeets
+              DayMeet
             </h1>
             <p
               className="mt-4 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-xl"

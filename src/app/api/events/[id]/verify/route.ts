@@ -32,7 +32,7 @@ export async function POST(
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(`whenmeets_auth_${id}`, signEventToken(id), {
+  response.cookies.set(`daymeet_auth_${id}`, signEventToken(id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',

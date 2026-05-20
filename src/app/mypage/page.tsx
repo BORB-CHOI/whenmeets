@@ -4,7 +4,7 @@ import { getProfileByUserId, pickAvatarUrl, pickDisplayName } from '@/lib/profil
 import MyPageClient from '@/components/mypage/MyPageClient';
 
 export const metadata = {
-  title: '마이페이지 - WhenMeets',
+  title: '마이페이지 - DayMeet',
 };
 
 export default async function MyPage() {
@@ -23,10 +23,10 @@ export default async function MyPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-      <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
+      <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
         마이페이지
       </h1>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <p className="mt-1 text-sm text-gray-500">
         프로필 정보를 관리하세요.
       </p>
       <div className="mt-8">

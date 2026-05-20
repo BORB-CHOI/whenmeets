@@ -1,8 +1,8 @@
 /**
  * Multi-session localStorage store for anonymous participants.
  *
- * New structure: whenmeets:<eventId> → { sessions: [...], activeId }
- * Old structure: whenmeets:<eventId> → { participantId, name, password }
+ * New structure: daymeet:<eventId> → { sessions: [...], activeId }
+ * Old structure: daymeet:<eventId> → { participantId, name, password }
  *
  * On read, the old structure is auto-migrated to the new format.
  */
@@ -19,7 +19,7 @@ interface SessionStore {
 }
 
 function storageKey(eventId: string) {
-  return `whenmeets:${eventId}`;
+  return `daymeet:${eventId}`;
 }
 
 /** Read the session store, auto-migrating from old format if needed. */

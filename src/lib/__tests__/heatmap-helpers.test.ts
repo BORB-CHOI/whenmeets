@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getStep, getStepColor, getStepLabels, resolveCellColor } from '@/lib/heatmap';
+import { getStep, getStepColor, getStepLabels, resolveCellColor, getCellTextColor } from '@/lib/heatmap';
 
 interface TestParticipant {
   id: string;
@@ -131,20 +131,20 @@ describe('getStepLabels', () => {
 });
 
 describe('getStepColor', () => {
-  it('단계별 Material teal hex 반환', () => {
+  it('단계별 Material cyan hex 반환', () => {
     expect(getStepColor(0)).toBe('');
-    expect(getStepColor(1)).toBe('#E0F2F1');
-    expect(getStepColor(2)).toBe('#B2DFDB');
-    expect(getStepColor(3)).toBe('#4DB6AC');
-    expect(getStepColor(4)).toBe('#00897B');
-    expect(getStepColor(5)).toBe('#00695C');
+    expect(getStepColor(1)).toBe('#E0F7FA');
+    expect(getStepColor(2)).toBe('#B2EBF2');
+    expect(getStepColor(3)).toBe('#4DD0E1');
+    expect(getStepColor(4)).toBe('#00ACC1');
+    expect(getStepColor(5)).toBe('#00838F');
   });
 });
 
 describe('resolveCellColor — best 우선순위', () => {
   it('hasBestSlots=true + isBest=true → step 5 색', () => {
     expect(resolveCellColor({ count: 3, total: 12, isBest: true, hasBestSlots: true }))
-      .toBe('#00695C');
+      .toBe('#00838F');
   });
   it('hasBestSlots=true + isBest=false → undefined (흰색)', () => {
     expect(resolveCellColor({ count: 12, total: 12, isBest: false, hasBestSlots: true }))
@@ -152,10 +152,30 @@ describe('resolveCellColor — best 우선순위', () => {
   });
   it('hasBestSlots=false → 단계별 색', () => {
     expect(resolveCellColor({ count: 3, total: 12, isBest: false, hasBestSlots: false }))
-      .toBe('#E0F2F1');
+      .toBe('#E0F7FA');
   });
   it('hasBestSlots=false + count=0 → undefined (빈 칸)', () => {
     expect(resolveCellColor({ count: 0, total: 12, isBest: false, hasBestSlots: false }))
       .toBe(undefined);
+  });
+});
+
+describe('getCellTextColor — 셀 배경 대비 텍스트 색', () => {
+  it('가장 진한 5단계만 흰색 텍스트', () => {
+    expect(getCellTextColor(getStepColor(5))).toBe('#FFFFFF');
+  });
+  it('1~4단계는 진한 텍스트', () => {
+    expect(getCellTextColor(getStepColor(1))).toBe('#111827');
+    expect(getCellTextColor(getStepColor(2))).toBe('#111827');
+    expect(getCellTextColor(getStepColor(3))).toBe('#111827');
+    expect(getCellTextColor(getStepColor(4))).toBe('#111827');
+  });
+  it('빈 셀(undefined)은 진한 텍스트', () => {
+    expect(getCellTextColor(undefined)).toBe('#111827');
+  });
+  it('모든 단계에서 텍스트 색이 셀 배경색과 다름 (셀에 묻힘 회귀 방지)', () => {
+    for (const step of [1, 2, 3, 4, 5] as const) {
+      expect(getCellTextColor(getStepColor(step))).not.toBe(getStepColor(step));
+    }
   });
 });
