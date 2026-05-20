@@ -3,7 +3,7 @@ paths:
   - "src/**/*.ts"
   - "src/**/*.tsx"
 ---
-# WhenMeets Component Relationship Map
+# DayMeet Component Relationship Map
 
 When modifying ANY component, you MUST check and update all related components listed here.
 Do NOT modify one side of a relationship without checking the other.

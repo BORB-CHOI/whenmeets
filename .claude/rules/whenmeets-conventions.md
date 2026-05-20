@@ -4,7 +4,7 @@ paths:
   - "src/**/*.tsx"
   - "*.md"
 ---
-# WhenMeets Project Conventions
+# DayMeet Project Conventions
 
 ## Design System Authority
 
