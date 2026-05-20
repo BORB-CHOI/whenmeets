@@ -1,10 +1,10 @@
 # Changelog
 
-All notable changes to WhenMeets will be documented in this file.
+All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
-## [Unreleased]
+## [0.6.0] - 2026-05-21
 
 ### Added
 
@@ -19,6 +19,21 @@ All notable changes to WhenMeets will be documented in this file.
 
 - **`sitemap.ts`** — `/demo` (priority 0.8), `/guide` (0.7), `/use-cases` (0.6), `/use-cases/[slug]` × 4 (0.5) 추가. 빌드 시 use-case 슬러그를 `USE_CASE_SLUGS`에서 자동 enumeration해서 신규 사용 사례 추가 시 sitemap 자동 반영
 - **`Footer`** — Links 컬럼을 "둘러보기"로 리네이밍 + 데모/사용 사례/가이드 링크 3개 추가. 수정 hunk 안의 `dark:` 클래스는 룰대로 제거 (다른 hunk의 기존 `dark:`는 별도 PR에서 일괄 처리)
+- **DayMeet 리브랜딩** — 제품명 WhenMeets → DayMeet, 도메인 whenmeets.com → daymeet.org. 사용자에게 보이는 브랜드 텍스트 전체 교체 (메타데이터·OG·JsonLd·llms.txt·푸터·약관·가이드 등). GitHub 저장소 경로(`BORB-CHOI/whenmeets`)와 npm 패키지명은 유지.
+- **브랜드 컬러 Material Teal → Material Cyan** — `globals.css`의 `@theme` `teal-*` 토큰 10단계를 Material Cyan hex(`#E0F7FA`~`#006064`, primary `#00ACC1`)로 재정의. `teal-*` 유틸 클래스 171곳이 자동 반영되어 클래스명 변경 없음. 테마를 우회하던 하드코딩 hex/rgba(로고 SVG, `heatmap.ts` 스텝 색, `GridCell` 셀 색, `SegmentedControl` glow, 히어로 그라데이션, favicon/apple-icon)도 동일 교체. OG 이미지 Cyan 그라데이션으로 리뉴얼.
+- **`NEXT_PUBLIC_SITE_URL` fallback 기본값** — 6개 파일(layout, e/[id]/layout, sitemap, robots, JsonLd, llms.txt)의 fallback을 `https://daymeet.org`로 변경.
+- **localStorage/쿠키 네임스페이스** — `whenmeets:*` → `daymeet:*`, 쿠키 `whenmeets_auth_*` → `daymeet_auth_*`, Supabase anon storageKey `whenmeets-anon` → `daymeet-anon`. 기존 사용자는 1회 재로그인 + 익명 이벤트 세션/방문 기록 초기화가 발생.
+- **로고 신규 제작** — 기존 "W" 자형(WhenMeets) 마크를 폐기하고 앱의 히트맵 그리드를 형상화한 3×3 셀 마크로 교체. 공용 `Logo` 컴포넌트(`src/components/brand/Logo.tsx`) 하나로 Header·Footer·favicon·apple-icon·OG 이미지 전부 사용 (기존 5곳 SVG 중복 제거). 순수 `<svg>`+`<rect>`라 DOM·Satori 양쪽 호환.
+
+### Removed
+
+- **`/ads.txt` 라우트 핸들러** (`app/ads.txt/route.ts`) — `NEXT_PUBLIC_ADSENSE_CLIENT` 미설정 시 404를 반환하던 동적 라우트를 제거하고 `public/ads.txt` 정적 파일로 교체. env 의존 없이 항상 200 응답 → AdSense ads.txt 크롤러 인식 안정화.
+- **`dark:` 클래스 전면 제거** — 비활성 상태로 남아 있던 `dark:` Tailwind 변형 클래스 295건(37파일)을 전부 제거. 라이트 모드 단일 적용을 코드에서도 확정. `globals.css`의 `@custom-variant dark` 무력화 가드는 재유입 방지용으로 유지.
+- **`ThemeToggle` 컴포넌트** — 다크 모드 비활성 이후 어디서도 import되지 않던 데드 코드 제거.
+
+### Fixed
+
+- **히트맵 진한 셀 숫자가 배경에 묻히던 버그** — 결과 히트맵에서 응답자가 많을 때(약 7명 이상) 나타나는 4단계 셀은 배경이 `#00ACC1`인데 그 위 카운트 숫자도 같은 cyan 계열이라 안 보였음. 텍스트 색을 셀 배경에서 직접 파생하는 `getCellTextColor()`로 통일 — 가장 진한 5단계만 흰색, 1~4단계는 `#111827`. 주간 그리드·캘린더 그리드·범례가 모두 같은 규칙을 따르도록 정리. Material teal 팔레트 시절부터 있던 기존 버그.
 
 ## [0.5.4] - 2026-05-16
 

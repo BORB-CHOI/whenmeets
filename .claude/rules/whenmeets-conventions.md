@@ -76,7 +76,9 @@ NEVER hardcode values that are defined in `src/lib/constants.ts`.
 
 ### Colors
 - Use Tailwind utility classes matching existing code patterns
-- Primary: `bg-emerald-600`, `text-emerald-700`, `border-emerald-500` (코드 기준)
+- 브랜드 컬러: `bg-teal-600`, `text-teal-700`, `border-teal-500` 등 `teal-*` 유틸 클래스 사용 (코드 기준)
+- `teal-*` 토큰은 `globals.css`의 `@theme`에서 **Material Cyan 팔레트**(`#E0F7FA`~`#006064`, primary `#00ACC1`)로 재정의됨 — 클래스명은 `teal`이지만 실제 렌더 색은 옥색(cyan)
+- 브랜드 색 변경 시 `globals.css`의 `@theme` `--color-teal-*` 10단계만 고치면 모든 `teal-*` 클래스에 반영. 단 테마를 우회하는 하드코딩 hex/rgba(로고 SVG, `heatmap.ts` 스텝 색, OG 이미지, `GridCell` 셀 색)는 별도 확인
 - Grays: Tailwind gray scale (`gray-50` through `gray-900`)
 - Availability: `AVAILABILITY_COLORS` from `src/lib/constants.ts`
 - NEVER write raw hex (`#4F46E5`) or `rgba()` inline in JSX

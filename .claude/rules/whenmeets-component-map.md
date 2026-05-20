@@ -98,9 +98,13 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 | Component | Role | File |
 |-----------|------|------|
+| `Logo` | DayMeet 브랜드 마크 (3×3 히트맵 그리드 SVG) — Header/Footer/favicon/apple-icon/OG 공용 | `src/components/brand/Logo.tsx` |
 | `Header` | Header | `src/components/layout/Header.tsx` |
 | `Footer` | Footer | `src/components/layout/Footer.tsx` |
 | `CreateEventButton` | Event creation button | `src/components/layout/CreateEventButton.tsx` |
+
+**Shared concerns:**
+- `Logo`는 DOM(Header/Footer)과 Satori(`app/icon.tsx`·`app/apple-icon.tsx`·`app/opengraph-image.tsx`) 양쪽에서 쓰임 — 둘 다 호환되도록 순수 `<svg>` + `<rect>`만 사용. 브랜드 색 변경 시 `Logo.tsx`의 `#00ACC1` 1곳 수정.
 
 ### Ads (global, env-gated)
 
@@ -119,6 +123,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `app/robots.ts` | `/robots.txt` 자동 생성 (Next.js 관습 파일) | `src/app/robots.ts` |
 | `app/sitemap.ts` | `/sitemap.xml` 자동 생성 (Next.js 관습 파일) | `src/app/sitemap.ts` |
 | `app/llms.txt/route.ts` | AI 답변 엔진(ChatGPT/Perplexity/Claude)용 `/llms.txt` | `src/app/llms.txt/route.ts` |
+| `public/ads.txt` | IAB ads.txt 정적 파일 — AdSense 게시자 ID 고정. env 비의존, 항상 200 (라우트 핸들러 아님) | `public/ads.txt` |
 
 ### Analytics (global, env-gated)
 
@@ -150,7 +155,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 - 폴더 그룹은 모든 탭(전체/만든/참여)에서 동일하게 적용. DnD도 모든 이벤트(소유·참여 무관) 가능 — 사용자 자기 뷰만 바뀜.
 - 소유자 뱃지는 `is_owner` flag로 분기 (서버에서 `events.created_by === userId` 비교).
 - 폴더 mutation 후 `router.refresh()`로 RSC 캐시 무효화 (뒤로 가기 시 stale UI 방지).
-- 폴더 접힘/펼침 상태는 `localStorage`(`whenmeets:dashboard:collapsedFolders`)에 영속화.
+- 폴더 접힘/펼침 상태는 `localStorage`(`daymeet:dashboard:collapsedFolders`)에 영속화.
 - 드래그앤드롭: **@dnd-kit** 기반 (`@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`).
   - **명시적 드래그 핸들 패턴**: 폴더 헤더 좌측 + 이벤트 카드 좌측에 grip 아이콘(테두리 + bg 있는 버튼). 카드/헤더 본체는 클릭 트랜지션(이벤트 페이지 이동, 폴더 접기). 드래그는 핸들에서만 시작 → 모바일 스크롤과 충돌 0.
   - 폴더 헤더 핸들 드래그 → 폴더 순서 재정렬 (외부 SortableContext + verticalListSortingStrategy)
