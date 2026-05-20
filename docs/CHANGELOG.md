@@ -4,6 +4,12 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.6.1] - 2026-05-21
+
+### Changed
+
+- **내부 룰 파일 헤더** — `.claude/rules/whenmeets-component-map.md`, `.claude/rules/whenmeets-conventions.md` H1 제목을 `WhenMeets` → `DayMeet`으로 업데이트 (DayMeet 리브랜딩 마무리)
+
 ## [0.6.0] - 2026-05-21
 
 ### Added
