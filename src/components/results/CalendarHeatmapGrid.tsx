@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from 'react';
 import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
-import { resolveCellColor, getStepColor } from '@/lib/heatmap';
+import { resolveCellColor, getStepColor, getCellTextColor } from '@/lib/heatmap';
 import { getCellCssColor } from '@/components/drag-grid/GridCell';
 import { isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
 import MonthCalendarGrid from '@/components/calendar-grid/MonthCalendarGrid';
@@ -118,11 +118,11 @@ export default function CalendarHeatmapGrid({
       }}
       renderCell={(dateStr, isActive) => {
         if (!dateStr) {
-          return <div className="bg-gray-50 dark:bg-gray-800 aspect-square" />;
+          return <div className="bg-gray-50 aspect-square" />;
         }
         if (!isActive) {
           return (
-            <div className="bg-gray-50 dark:bg-gray-800 aspect-square flex items-center justify-center text-sm text-gray-300 dark:text-gray-600">
+            <div className="bg-gray-50 aspect-square flex items-center justify-center text-sm text-gray-300">
               {cellLabel(dateStr)}
             </div>
           );
@@ -136,11 +136,11 @@ export default function CalendarHeatmapGrid({
             className="aspect-square flex items-center justify-center text-sm relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2"
             style={{ backgroundColor: bg || undefined }}
           >
-            <span className={isFullColor ? 'text-white font-semibold' : 'text-gray-700 dark:text-gray-300'}>
+            <span className={isFullColor ? 'text-white font-semibold' : 'text-gray-700'}>
               {cellLabel(dateStr)}
             </span>
             {!singleParticipant && count > 0 && (
-              <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${isFullColor ? 'text-white/70' : 'text-teal-500'}`}>
+              <span className="absolute bottom-0.5 right-1 text-[8px] font-medium" style={{ color: getCellTextColor(bg) }}>
                 {count}
               </span>
             )}

@@ -2,11 +2,11 @@ export type HeatmapStep = 0 | 1 | 2 | 3 | 4 | 5;
 
 const STEP_COLORS: Record<HeatmapStep, string> = {
   0: '',
-  1: '#E0F2F1',
-  2: '#B2DFDB',
-  3: '#4DB6AC',
-  4: '#00897B',
-  5: '#00695C',
+  1: '#E0F7FA',
+  2: '#B2EBF2',
+  3: '#4DD0E1',
+  4: '#00ACC1',
+  5: '#00838F',
 };
 
 export function getStep(count: number, total: number): HeatmapStep {
@@ -23,6 +23,10 @@ export function getStep(count: number, total: number): HeatmapStep {
 
 export function getStepColor(step: HeatmapStep): string {
   return STEP_COLORS[step];
+}
+
+export function getCellTextColor(cellColor: string | undefined | null): string {
+  return cellColor === STEP_COLORS[5] ? '#FFFFFF' : '#111827';
 }
 
 function formatRange(lo: number, hi: number): string {
