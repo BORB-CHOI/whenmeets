@@ -1,6 +1,6 @@
 # Security Posture
 
-This document captures the current security stance of WhenMeets and the gaps
+This document captures the current security stance of DayMeet and the gaps
 we know about. It is intentionally honest — anything not listed here as "in
 place" is something we have NOT shipped yet.
 
@@ -9,7 +9,7 @@ place" is something we have NOT shipped yet.
 ### Authentication & authorization
 - Supabase Auth (Google OAuth) for logged-in users.
 - Anonymous participant flow gated by event-level password + per-event signed
-  cookie (`whenmeets_auth_{eventId}`, HttpOnly + SameSite=strict + Secure in prod).
+  cookie (`daymeet_auth_{eventId}`, HttpOnly + SameSite=strict + Secure in prod).
 - All writes go through Next.js API routes that use the Supabase **service role
   key** server-side. The anon key is never used for writes.
 - Row Level Security enabled on `events`, `participants`, `folders`.
@@ -80,7 +80,7 @@ All write endpoints expect JSON. Combined with `SameSite` cookies, classic
 CSRF (HTML form auto-submit) is blocked. But a CORS-misconfigured `fetch`
 from a malicious origin could still attempt to ride the user's Supabase
 session. Mitigations to consider:
-- Require a custom header (e.g. `X-Requested-With: WhenMeets`) on write
+- Require a custom header (e.g. `X-Requested-With: DayMeet`) on write
   endpoints — modern browsers' CORS preflight blocks it from other origins.
 - Add an explicit allowlist `Access-Control-Allow-Origin` policy.
 
@@ -90,7 +90,7 @@ Next.js App Router defaults are reasonable, but we don't explicitly cap
 If we ever see DB pressure here, cap at the API layer.
 
 ### DDoS / volumetric attacks
-WhenMeets relies on the deployment platform (Vercel/Cloudflare) for L3/L4
+DayMeet relies on the deployment platform (Vercel/Cloudflare) for L3/L4
 DDoS mitigation. No origin-level WAF or bot filtering is configured.
 For aggressive abuse:
 - Enable Vercel Firewall rules (paid tier).
