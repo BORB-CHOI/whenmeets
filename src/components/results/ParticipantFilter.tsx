@@ -36,32 +36,22 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   onDelete,
 }, ref) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
-  const ifNeededRefs = useRef(new Map<string, HTMLSpanElement>());
-  const legendRef = useRef<HTMLParagraphElement | null>(null);
 
   useImperativeHandle(ref, () => ({
     previewSlot(nextSlotAvailability) {
-      let hasIfNeeded = false;
-
       for (const p of participants) {
         const row = rowRefs.current.get(p.id);
         if (!row) continue;
 
         row.classList.remove('bg-[#FFE8B8]', 'rounded', ...UNAVAILABLE_CLASSES);
-        const marker = ifNeededRefs.current.get(p.id);
-        if (marker) marker.hidden = true;
 
         const val = nextSlotAvailability?.get(p.id);
         if (val === 1) {
-          hasIfNeeded = true;
           row.classList.add('bg-[#FFE8B8]', 'rounded');
-          if (marker) marker.hidden = false;
         } else if (nextSlotAvailability && val !== 2) {
           row.classList.add(...UNAVAILABLE_CLASSES);
         }
       }
-
-      if (legendRef.current) legendRef.current.hidden = !hasIfNeeded;
     },
   }), [participants]);
 
@@ -84,10 +74,9 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   }, [participants, selectedIds, isAllSelected]);
 
   const hasSlotHover = slotAvailability && slotAvailability.size > 0;
-  const hasIfNeeded = hasSlotHover && Array.from(slotAvailability!.values()).some((v) => v === 1);
 
   return (
-    <div onMouseLeave={() => onHoverEnd?.()}>
+    <div onPointerLeave={(e) => { if (e.pointerType === 'mouse') onHoverEnd?.(); }}>
       <div className="flex flex-col gap-0.5">
         {sortedParticipants.map((p) => {
           const selected = selectedIds.has(p.id);
@@ -116,7 +105,7 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
                 else rowRefs.current.delete(p.id);
               }}
               onClick={() => toggle(p.id)}
-              onMouseEnter={() => onHover?.(p.id)}
+              onPointerEnter={(e) => { if (e.pointerType === 'mouse') onHover?.(p.id); }}
               className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors
                 ${isDimmed ? 'opacity-50' : ''}
                 ${stateClass}
@@ -150,14 +139,6 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
               )}
               <span className="p-name text-sm font-medium text-gray-900 flex-1">
                 {p.name}
-                <span
-                  ref={(el) => {
-                    if (el) ifNeededRefs.current.set(p.id, el);
-                    else ifNeededRefs.current.delete(p.id);
-                  }}
-                  className="inline-block ml-1.5 w-2 h-2 rounded-sm bg-amber-300 align-middle -translate-y-px"
-                  hidden={!hasSlotHover || slotAvailability!.get(p.id) !== 1}
-                />
               </span>
               {onDelete && (
                 <button
@@ -174,8 +155,6 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
           );
         })}
       </div>
-
-      <p ref={legendRef} className="text-xs text-gray-400 mt-2 px-2" hidden={!hasIfNeeded}>* if needed</p>
     </div>
   );
 });

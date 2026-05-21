@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { resolveCellColor, getStepColor, getCellTextColor } from '@/lib/heatmap';
 import { getCellCssColor } from '@/components/drag-grid/GridCell';
@@ -14,9 +14,12 @@ interface CalendarHeatmapGridProps {
   includeIfNeeded: boolean;
   hoveredParticipantId?: string | null;
   onCellHover?: (date: string | null) => void;
+  onCellSelect?: (date: string) => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
 }
+
+const TAP_MOVEMENT_THRESHOLD = 10;
 
 const FULL_COLOR = getStepColor(5);
 
@@ -36,10 +39,14 @@ export default function CalendarHeatmapGrid({
   includeIfNeeded,
   hoveredParticipantId,
   onCellHover,
+  onCellSelect,
   bestSlots,
   eventMode = 'available',
 }: CalendarHeatmapGridProps) {
   const lastHoveredDate = useRef<string | null>(null);
+  const touchStart = useRef<{ x: number; y: number; date: string; pid: number } | null>(null);
+  const touchMoved = useRef(false);
+  const [tappedDate, setTappedDate] = useState<string | null>(null);
   const filtered = useMemo(() => {
     if (hoveredParticipantId) {
       const hovered = participants.find((p) => p.id === hoveredParticipantId);
@@ -115,6 +122,37 @@ export default function CalendarHeatmapGrid({
           lastHoveredDate.current = null;
           onCellHover?.(null);
         },
+        onPointerDown: (e) => {
+          const cell = getDateCell(e.target);
+          const date = cell?.dataset.calDate;
+          if (!date) return;
+          if (e.pointerType === 'mouse') {
+            onCellSelect?.(date);
+            return;
+          }
+          setTappedDate(date);
+          touchStart.current = { x: e.clientX, y: e.clientY, date, pid: e.pointerId };
+          touchMoved.current = false;
+        },
+        onPointerMove: (e) => {
+          if (e.pointerType === 'mouse') return;
+          const ts = touchStart.current;
+          if (!ts || ts.pid !== e.pointerId || touchMoved.current) return;
+          const dx = e.clientX - ts.x;
+          const dy = e.clientY - ts.y;
+          if (dx * dx + dy * dy > TAP_MOVEMENT_THRESHOLD * TAP_MOVEMENT_THRESHOLD) {
+            touchMoved.current = true;
+          }
+        },
+        onPointerUp: (e) => {
+          if (e.pointerType === 'mouse') return;
+          const ts = touchStart.current;
+          touchStart.current = null;
+          if (ts && ts.pid === e.pointerId && !touchMoved.current) {
+            onCellSelect?.(ts.date);
+          }
+          touchMoved.current = false;
+        },
       }}
       renderCell={(dateStr, isActive) => {
         if (!dateStr) {
@@ -130,11 +168,15 @@ export default function CalendarHeatmapGrid({
         const bg = getCellBg(dateStr);
         const count = getCount(dateStr);
         const isFullColor = bg === FULL_COLOR;
+        const isTapped = tappedDate === dateStr;
         return (
           <div
             data-cal-date={dateStr}
-            className="aspect-square flex items-center justify-center text-sm relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2"
-            style={{ backgroundColor: bg || undefined }}
+            className="aspect-square flex items-center justify-center text-sm relative cursor-pointer hover:outline-2 hover:outline-dashed hover:outline-gray-900 hover:-outline-offset-2"
+            style={{
+              backgroundColor: bg || undefined,
+              ...(isTapped ? { outline: '2px dashed #111827', outlineOffset: '-2px' } : {}),
+            }}
           >
             <span className={isFullColor ? 'text-white font-semibold' : 'text-gray-700'}>
               {cellLabel(dateStr)}
