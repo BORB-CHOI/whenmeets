@@ -271,8 +271,9 @@ export default function EventPageClient({
 
   function getSlotAvailability(date: string, slot: number) {
     const map = new Map<string, 0 | 1 | 2>();
+    const slotKey = event.date_only ? 'all_day' : String(slot);
     for (const p of event.participants) {
-      const val = p.availability?.[date]?.[String(slot)];
+      const val = p.availability?.[date]?.[slotKey];
       map.set(p.id, (val as 0 | 1 | 2) ?? 0);
     }
     return map;
@@ -668,7 +669,9 @@ export default function EventPageClient({
                     sidebarCountRef.current?.updateForSlot(
                       slotAvail
                         ? Array.from(slotAvail.values()).filter(
-                            (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                            event.mode === 'unavailable'
+                              ? (v) => v !== 0
+                              : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
                           ).length
                         : null,
                     );
