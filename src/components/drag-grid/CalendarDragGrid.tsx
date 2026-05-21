@@ -3,7 +3,7 @@
 import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
 import { isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
-import { getCellColorClass } from './GridCell';
+import { getCellColorClass, getCellCssColor } from './GridCell';
 import MonthCalendarGrid from '@/components/calendar-grid/MonthCalendarGrid';
 
 interface CalendarDragGridProps {
@@ -43,6 +43,8 @@ export default function CalendarDragGrid({
   const isDragging = useRef(false);
   const erasing = useRef(false);
   const draftRef = useRef<Availability>({});
+  const lastTouchEndAt = useRef(0);
+  const [tappedDate, setTappedDate] = useState<string | null>(null);
   const dateSet = useMemo(() => new Set(dates), [dates]);
 
   function getCellValue(date: string): AvailabilityLevel | -1 {
@@ -112,14 +114,18 @@ export default function CalendarDragGrid({
   }, [onAvailabilityChange]);
 
   useEffect(() => {
-    function onEnd() { if (isDragging.current) handlePointerUp(); }
-    window.addEventListener('mouseup', onEnd);
-    window.addEventListener('touchend', onEnd);
-    window.addEventListener('touchcancel', onEnd);
+    function onMouseEnd() { if (isDragging.current) handlePointerUp(); }
+    function onTouchEnd() {
+      lastTouchEndAt.current = Date.now();
+      if (isDragging.current) handlePointerUp();
+    }
+    window.addEventListener('mouseup', onMouseEnd);
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchEnd);
     return () => {
-      window.removeEventListener('mouseup', onEnd);
-      window.removeEventListener('touchend', onEnd);
-      window.removeEventListener('touchcancel', onEnd);
+      window.removeEventListener('mouseup', onMouseEnd);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
     };
   }, [handlePointerUp]);
 
@@ -163,16 +169,30 @@ export default function CalendarDragGrid({
         }
         const value = getCellValue(dateStr);
         const hasOverlay = overlayTotal > 0 && (overlayCountMap[dateStr]?.['all_day'] ?? 0) > 0;
+        const isTealBg = getCellCssColor(value, eventMode).startsWith('rgba(0,172,193');
+        const isTapped = tappedDate === dateStr;
         return (
           <div
             data-cal-date={dateStr}
-            onMouseDown={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-            onTouchStart={(e) => { e.preventDefault(); handlePointerDown(dateStr); }}
-            className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}
+            onMouseDown={(e) => {
+              if (Date.now() - lastTouchEndAt.current < 500) return;
+              e.preventDefault();
+              handlePointerDown(dateStr);
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              setTappedDate(dateStr);
+              handlePointerDown(dateStr);
+            }}
+            className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-dashed hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}
+            style={isTapped ? { outline: '2px dashed #111827', outlineOffset: '-2px' } : undefined}
           >
             {cellLabel(dateStr)}
             {hasOverlay && (
-              <span className="absolute bottom-0.5 right-1 text-[8px] text-teal-500 font-medium">
+              <span
+                className="absolute bottom-0.5 right-1 text-[8px] font-medium"
+                style={{ color: isTealBg ? 'rgba(255,255,255,0.9)' : 'rgba(17,24,39,0.75)' }}
+              >
                 +{overlayCountMap[dateStr]?.['all_day'] ?? 0}
               </span>
             )}

@@ -52,13 +52,17 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
   const borderOpacity = hasOverlay ? 0.2 : 0;
   const numberOpacity = hasOverlay
-    ? Math.min(0.85, 0.45 + (overlayCount! / overlayTotal!) * 0.4)
+    ? Math.min(0.9, 0.6 + (overlayCount! / overlayTotal!) * 0.3)
     : 0;
   const overlayOpacity = hasOverlay
     ? Math.min(0.5, 0.1 + (overlayCount! / overlayTotal!) * 0.4)
     : 0;
 
   const colorClass = getCellColorClass(value, eventMode);
+  const isTealBg = getCellCssColor(value, eventMode).startsWith('rgba(0,172,193');
+  const numberColor = isTealBg
+    ? `rgba(255,255,255,${numberOpacity})`
+    : `rgba(17,24,39,${numberOpacity})`;
 
   if (wide) {
     return (
@@ -107,7 +111,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
       {hasOverlay && overlayCount! > 0 && (
         <span
           className="absolute inset-0 flex items-center justify-center text-[10px] font-bold pointer-events-none select-none z-20"
-          style={{ color: `rgba(0,172,193,${numberOpacity})` }}
+          style={{ color: numberColor }}
         >
           {overlayCount}
         </span>
