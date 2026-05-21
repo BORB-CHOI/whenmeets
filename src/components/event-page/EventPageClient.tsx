@@ -343,11 +343,15 @@ export default function EventPageClient({
     let rafId = 0;
     function refreshPopover() {
       const position = readCellRect(date, heldSlot);
-      if (!position) {
-        setMobileSlotSheet(null);
+      if (position) {
+        hoverPopoverRef.current?.update({ date, slot: heldSlot, position });
         return;
       }
-      hoverPopoverRef.current?.update({ date, slot: heldSlot, position });
+      rafId = requestAnimationFrame(() => {
+        const retry = readCellRect(date, heldSlot);
+        if (retry) hoverPopoverRef.current?.update({ date, slot: heldSlot, position: retry });
+        else setMobileSlotSheet(null);
+      });
     }
     function onScrollOrResize() {
       cancelAnimationFrame(rafId);
