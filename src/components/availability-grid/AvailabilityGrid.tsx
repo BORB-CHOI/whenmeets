@@ -13,6 +13,7 @@ interface AvailabilityGridProps {
   header?: ReactNode;
   footer?: ReactNode;
   maxColumns?: number;
+  onPageChange?: () => void;
 }
 
 const GRID_WIDTH = 770;
@@ -46,6 +47,7 @@ export default function AvailabilityGrid({
   header,
   footer,
   maxColumns = 7,
+  onPageChange,
 }: AvailabilityGridProps) {
   const slots = useMemo(() => generateSlots(timeStart, timeEnd), [timeStart, timeEnd]);
   const [page, setPage] = useState(0);
@@ -180,7 +182,7 @@ export default function AvailabilityGrid({
                   style={{ height: HEADER_HEIGHT }}
                 >
                   <button
-                    onClick={() => setPage((p) => p - 1)}
+                    onClick={() => { setPage((p) => p - 1); onPageChange?.(); }}
                     disabled={!canPrev}
                     aria-label="이전 페이지"
                     className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"
@@ -312,7 +314,7 @@ export default function AvailabilityGrid({
                 style={{ width: PAGINATION_BTN, height: HEADER_HEIGHT }}
               >
                 <button
-                  onClick={() => setPage((p) => p + 1)}
+                  onClick={() => { setPage((p) => p + 1); onPageChange?.(); }}
                   disabled={!canNext}
                   aria-label="다음 페이지"
                   className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors cursor-pointer"

@@ -21,6 +21,7 @@ interface HeatmapGridProps {
   onCellHover?: (date: string | null, slot?: number, position?: HoverInfoPosition) => void;
   onCellSelect?: (date: string, slot: number, byMouse?: boolean) => void;
   selectedCell?: { date: string; slot: number | null } | null;
+  onPageChange?: () => void;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
 }
@@ -41,6 +42,7 @@ export default function HeatmapGrid({
   onCellHover,
   onCellSelect,
   selectedCell,
+  onPageChange,
   bestSlots,
   eventMode = 'available',
 }: HeatmapGridProps) {
@@ -182,6 +184,7 @@ export default function HeatmapGrid({
       timeStart={timeStart}
       timeEnd={timeEnd}
       columnsProps={gridPointerProps}
+      onPageChange={onPageChange}
       renderCell={(date, slot) => {
         const slotKey = `${date}-${slot}`;
         const count = cellStats.counts.get(slotKey) ?? 0;

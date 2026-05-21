@@ -288,6 +288,7 @@ export default function EventPageClient({
 
   const handleCellSelect = useCallback(
     (date: string, slot: number | null, byMouse = false) => {
+      cancelAnimationFrame(hoverRafRef.current);
       heldByMouseRef.current = byMouse;
       setMobileSlotSheet((prev) => {
         if (prev && prev.date === date && prev.slot === slot) return null;
@@ -333,19 +334,31 @@ export default function EventPageClient({
   }, [isHeld, mobileSlotSheet, mobileSlotAvailability, event.mode, event.date_only, effectiveIncludeIfNeeded, readCellRect]);
 
   useEffect(() => {
-    if (!isHeld || !mobileSlotSheet || event.date_only || mobileSlotSheet.slot === null || !heldByMouseRef.current) {
+    if (!isHeld || !mobileSlotSheet || event.date_only || !heldByMouseRef.current) {
       return;
     }
     const { date, slot } = mobileSlotSheet;
+    if (slot === null) return;
+    const heldSlot: number = slot;
+    let rafId = 0;
     function refreshPopover() {
-      const position = readCellRect(date, slot as number);
-      hoverPopoverRef.current?.update(position ? { date, slot: slot as number, position } : null);
+      const position = readCellRect(date, heldSlot);
+      if (!position) {
+        setMobileSlotSheet(null);
+        return;
+      }
+      hoverPopoverRef.current?.update({ date, slot: heldSlot, position });
     }
-    window.addEventListener('scroll', refreshPopover, true);
-    window.addEventListener('resize', refreshPopover);
+    function onScrollOrResize() {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(refreshPopover);
+    }
+    window.addEventListener('scroll', onScrollOrResize, { capture: true, passive: true });
+    window.addEventListener('resize', onScrollOrResize, { passive: true });
     return () => {
-      window.removeEventListener('scroll', refreshPopover, true);
-      window.removeEventListener('resize', refreshPopover);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
     };
   }, [isHeld, mobileSlotSheet, event.date_only, readCellRect]);
 
@@ -790,7 +803,9 @@ export default function EventPageClient({
                   sidebarCountRef.current?.updateForSlot(
                     slotAvail
                       ? Array.from(slotAvail.values()).filter(
-                          (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                          event.mode === 'unavailable'
+                            ? (v) => v !== 0
+                            : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
                         ).length
                       : null,
                   );
@@ -804,6 +819,7 @@ export default function EventPageClient({
               }}
               onCellSelect={(date, slot, byMouse) => handleCellSelect(date, slot, byMouse)}
               selectedCell={mobileSlotSheet}
+              onPageChange={() => setMobileSlotSheet(null)}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
@@ -1205,7 +1221,16 @@ export default function EventPageClient({
       {viewMode === 'view' && !event.date_only && (
         <HoverPopoverPortal
           ref={hoverPopoverRef}
-          renderContent={(date, slot) => <SlotHoverInfo date={date} slot={slot} />}
+          renderContent={(date, slot) => (
+            <SlotHoverInfo
+              date={date}
+              slot={slot}
+              participants={event.participants}
+              selectedIds={selectedIds}
+              includeIfNeeded={effectiveIncludeIfNeeded}
+              mode={event.mode}
+            />
+          )}
         />
       )}
 
