@@ -4,6 +4,12 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.6.2] - 2026-05-22
+
+### Fixed
+
+- **CalendarDragGrid unavailable 모드 해제 불가 버그** — `handlePointerDown`의 `if (activeMode !== 0)` 가드로 인해 unavailable 모드(`activeMode=0`)에서 erase 결정 로직이 완전히 건너뛰어져, 이미 선택한 안 되는 날짜를 해제할 수 없었던 버그 수정. `erasing.current = availability[date]?.['all_day'] === activeMode`로 단순화.
+
 ## [0.6.1] - 2026-05-21
 
 ### Changed
