@@ -23,6 +23,8 @@ import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import HoverPopoverPortal, { type HoverPopoverHandle } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
+import MobileSlotSheet from './MobileSlotSheet';
+import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
 import InAppBrowserModal from '@/components/auth/InAppBrowserModal';
 import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
 
@@ -91,7 +93,7 @@ export default function EventPageClient({
   const [nameError, setNameError] = useState('');
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number } | null>(null);
+  const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number | null } | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [authUserName, setAuthUserName] = useState<string | null>(null);
@@ -99,6 +101,7 @@ export default function EventPageClient({
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
   const sidebarCountRef = useRef<SidebarCountHandle | null>(null);
   const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
+  const ifNeededLegendRef = useRef<IfNeededLegendHandle | null>(null);
   const hoverRafRef = useRef<number>(0);
   // Concurrent-call guard: rapid clicks (or auto-fired editing flows) must not
   // POST /participants twice. The second POST hits the race window where the
@@ -262,8 +265,9 @@ export default function EventPageClient({
   const mobileSlotAvailability = useMemo(() => {
     if (!mobileSlotSheet) return undefined;
     const map = new Map<string, 0 | 1 | 2>();
+    const slotKey = mobileSlotSheet.slot === null ? 'all_day' : String(mobileSlotSheet.slot);
     for (const p of event.participants) {
-      const val = p.availability?.[mobileSlotSheet.date]?.[String(mobileSlotSheet.slot)];
+      const val = p.availability?.[mobileSlotSheet.date]?.[slotKey];
       map.set(p.id, (val as 0 | 1 | 2) ?? 0);
     }
     return map;
@@ -675,8 +679,12 @@ export default function EventPageClient({
                           ).length
                         : null,
                     );
+                    ifNeededLegendRef.current?.setVisible(
+                      slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
+                    );
                   });
                 }}
+                onCellSelect={(date) => setMobileSlotSheet({ date, slot: null })}
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
@@ -704,6 +712,9 @@ export default function EventPageClient({
                           (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
                         ).length
                       : null,
+                  );
+                  ifNeededLegendRef.current?.setVisible(
+                    slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
                   );
                   hoverPopoverRef.current?.update(
                     date && rect ? { date, slot: slot!, position: rect } : null,
@@ -825,25 +836,30 @@ export default function EventPageClient({
             </>
           ) : (
             <>
-              {/* View mode sidebar — responses + options */}
-              <h2 className="text-base font-bold text-gray-900 mb-3">
-                <SidebarCount
-                  ref={sidebarCountRef}
-                  selectedCount={selectedIds.size}
-                  totalCount={event.participants.length}
-                />
-              </h2>
+              {/* View mode sidebar — responses + options.
+                  On mobile, hide the participant list while the slot sheet is open
+                  (the sheet has its own list) — desktop keeps it via lg:block. */}
+              <div className={mobileSlotSheet ? 'hidden lg:block' : ''}>
+                <h2 className="text-base font-bold text-gray-900 mb-3">
+                  <SidebarCount
+                    ref={sidebarCountRef}
+                    selectedCount={selectedIds.size}
+                    totalCount={event.participants.length}
+                  />
+                </h2>
 
-              <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                <ParticipantFilter
-                  ref={participantFilterRef}
-                  participants={event.participants}
-                  selectedIds={selectedIds}
-                  onSelectedChange={setSelectedIds}
-                  onHover={setHoveredParticipantId}
-                  onHoverEnd={() => setHoveredParticipantId(null)}
-                  onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
-                />
+                <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                  <ParticipantFilter
+                    ref={participantFilterRef}
+                    participants={event.participants}
+                    selectedIds={selectedIds}
+                    onSelectedChange={setSelectedIds}
+                    onHover={setHoveredParticipantId}
+                    onHoverEnd={() => setHoveredParticipantId(null)}
+                    onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
+                  />
+                </div>
+                <IfNeededLegend ref={ifNeededLegendRef} />
               </div>
 
               {/* Options */}
@@ -1067,50 +1083,20 @@ export default function EventPageClient({
       />
 
       <AnimatePresence>
-        {viewMode === 'view' && mobileSlotSheet && mobileSlotAvailability && !event.date_only && (
-          <motion.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.35 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 36 || info.velocity.y > 450) setMobileSlotSheet(null);
-            }}
-            className="fixed inset-x-0 bottom-[72px] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white lg:hidden"
-          >
-            <div className="flex justify-center pt-2">
-              <div className="h-1 w-10 rounded-full bg-gray-300" />
-            </div>
-            <div className="max-h-[48vh] overflow-y-auto px-5 pb-5 pt-3">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">
-                    응답자 ({Array.from(mobileSlotAvailability.values()).filter((v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded)).length}/{event.participants.length})
-                  </h3>
-                  <p className="mt-0.5 text-xs font-medium tabular-nums text-gray-500">
-                    {formatDateCompact(mobileSlotSheet.date)} · {slotToTime(mobileSlotSheet.slot)} – {slotToTime(mobileSlotSheet.slot + 1)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileSlotSheet(null)}
-                  className="rounded-md px-2 py-1 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
-                >
-                  닫기
-                </button>
-              </div>
-              <ParticipantFilter
-                participants={event.participants}
-                selectedIds={selectedIds}
-                onSelectedChange={setSelectedIds}
-                slotAvailability={mobileSlotAvailability}
-                onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
-              />
-            </div>
-          </motion.div>
+        {viewMode === 'view' && mobileSlotSheet && mobileSlotAvailability && (
+          <MobileSlotSheet
+            key="mobile-slot-sheet"
+            date={mobileSlotSheet.date}
+            slot={mobileSlotSheet.slot}
+            slotAvailability={mobileSlotAvailability}
+            participants={event.participants}
+            selectedIds={selectedIds}
+            onSelectedChange={setSelectedIds}
+            onClose={() => setMobileSlotSheet(null)}
+            onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
+            eventMode={event.mode}
+            includeIfNeeded={effectiveIncludeIfNeeded}
+          />
         )}
       </AnimatePresence>
 

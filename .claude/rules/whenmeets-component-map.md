@@ -47,13 +47,18 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | Component | Role | File |
 |-----------|------|------|
 | `EventPageClient` | Event participation + results viewing | `src/components/event-page/EventPageClient.tsx` |
-| `ParticipantFilter` | Participant filter (used inside EventPageClient) | `src/components/results/ParticipantFilter.tsx` |
+| `ParticipantFilter` | Participant filter (used inside EventPageClient + MobileSlotSheet) | `src/components/results/ParticipantFilter.tsx` |
+| `MobileSlotSheet` | 모바일 셀 탭 시 아래에서 올라오는 슬롯 상세 드로어 (시간 그리드·달력 그리드 공용) | `src/components/event-page/MobileSlotSheet.tsx` |
+| `IfNeededLegend` | `■ if needed` 범례. imperative `setVisible`로 호버/탭한 슬롯에 if-needed 응답이 있을 때만 표시 | `src/components/event-page/IfNeededLegend.tsx` |
 
 **Shared concerns:**
 - Event title/description display style
 - Participant count/list display format
 - Date formatting
 - Responsive breakpoints
+- `MobileSlotSheet`는 `HeatmapGrid.onCellSelect`(시간 슬롯)와 `CalendarHeatmapGrid.onCellSelect`(날짜) 양쪽에서 트리거됨. `mobileSlotSheet` 상태는 `{ date, slot: number | null }` — `slot===null`이면 날짜 전용(`all_day`). 시트가 열리면 본문 응답자 목록은 모바일에서 숨김(`hidden lg:block`), 응답자 목록 중복 방지.
+- `IfNeededLegend`는 항상 표시가 아니라 **호버/탭한 슬롯에 if-needed(값 1)가 있을 때만** 표시. 데스크탑 사이드바는 `onCellHover` 핸들러가 imperative `setVisible` 호출, `MobileSlotSheet`는 탭한 슬롯의 `slotAvailability`로 자체 계산. 스크롤 컨테이너(`max-h-48 overflow-y-auto`) **바깥**에 렌더해야 안 잘림.
+- `HoverInfoPopover`는 `position: absolute` + 페이지 좌표(viewport 좌표 + `scrollX/Y`)로 셀에 앵커됨 — 스크롤 시 셀과 함께 이동(`fixed` 아님).
 
 ### UI Primitives (shadcn 패턴)
 

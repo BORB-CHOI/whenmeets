@@ -53,7 +53,7 @@ export default function HoverInfoPopover({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed z-[200] pointer-events-none"
+          className="absolute z-[200] pointer-events-none"
           style={{
             ...getPopoverPosition(position, maxWidth, offset),
             maxWidth,
@@ -88,10 +88,13 @@ function getPopoverPosition(
   const left = hasRoomOnRight
     ? preferredLeft
     : Math.max(margin, position.x - popoverWidth - offset);
+  const top = Math.max(margin, Math.min(window.innerHeight - margin, fallback.top));
 
+  // Convert viewport coords to page coords so the popover (position: absolute,
+  // portaled to body) stays anchored to the cell when the page scrolls.
   return {
-    left,
-    top: Math.max(margin, Math.min(window.innerHeight - margin, fallback.top)),
+    left: left + window.scrollX,
+    top: top + window.scrollY,
     transform: 'translateY(-50%)',
   };
 }
