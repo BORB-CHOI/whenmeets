@@ -4,6 +4,12 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.6.4] - 2026-05-22
+
+### Changed
+
+- **사이드바 If Needed 표시 개선** — 응답자 목록 호버 시 `*` 회색 텍스트 대신 노랑 사각형(`■`) 인디케이터로 교체. 범례의 If Needed 색상과 동일하여 의미 즉시 연결.
+
 ## [0.6.3] - 2026-05-22
 
 ### Added
