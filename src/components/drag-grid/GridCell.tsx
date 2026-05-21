@@ -50,7 +50,7 @@ interface GridCellProps {
 
 function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTotal, dateIdx, slotIdx, onCellHover, onCellLeave }: GridCellProps) {
   const hasOverlay = overlayCount !== undefined && overlayTotal !== undefined && overlayCount > 0;
-  const borderOpacity = hasOverlay ? 0.2 : 0;
+  const borderOpacity = hasOverlay ? 0.32 : 0;
   const numberOpacity = hasOverlay
     ? Math.min(0.9, 0.6 + (overlayCount! / overlayTotal!) * 0.3)
     : 0;
@@ -62,7 +62,7 @@ function GridCell({ date, slot, value, eventMode, wide, overlayCount, overlayTot
   const isTealBg = getCellCssColor(value, eventMode).startsWith('rgba(0,172,193');
   const numberColor = isTealBg
     ? `rgba(255,255,255,${numberOpacity})`
-    : `rgba(17,24,39,${numberOpacity})`;
+    : `rgba(0,96,100,${numberOpacity})`;
 
   if (wide) {
     return (

@@ -48,7 +48,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 |-----------|------|------|
 | `EventPageClient` | Event participation + results viewing | `src/components/event-page/EventPageClient.tsx` |
 | `ParticipantFilter` | Participant filter (used inside EventPageClient + MobileSlotSheet) | `src/components/results/ParticipantFilter.tsx` |
-| `MobileSlotSheet` | 모바일 셀 탭 시 아래에서 올라오는 슬롯 상세 드로어 (시간 그리드·달력 그리드 공용) | `src/components/event-page/MobileSlotSheet.tsx` |
+| `MobileSlotSheet` | 모바일 셀 탭 시 아래에서 올라오는 슬롯 상세 드로어 (`mobileSlotSheet` 상태 기반, `lg:hidden`). 데스크탑은 같은 상태로 popover/사이드바 홀드 | `src/components/event-page/MobileSlotSheet.tsx` |
 | `IfNeededLegend` | `■ if needed` 범례. imperative `setVisible`로 호버/탭한 슬롯에 if-needed 응답이 있을 때만 표시 | `src/components/event-page/IfNeededLegend.tsx` |
 
 **Shared concerns:**
@@ -56,7 +56,10 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 - Participant count/list display format
 - Date formatting
 - Responsive breakpoints
-- `MobileSlotSheet`는 `HeatmapGrid.onCellSelect`(시간 슬롯)와 `CalendarHeatmapGrid.onCellSelect`(날짜) 양쪽에서 트리거됨. `mobileSlotSheet` 상태는 `{ date, slot: number | null }` — `slot===null`이면 날짜 전용(`all_day`). 시트가 열리면 본문 응답자 목록은 모바일에서 숨김(`hidden lg:block`), 응답자 목록 중복 방지.
+- `mobileSlotSheet` 상태(`{ date, slot: number | null }`, `slot===null`이면 날짜 전용 `all_day`)는 **셀 선택의 단일 진실 공급원**. 모바일·데스크탑 공용. `EventPageClient.handleCellSelect`가 토글 핸들러 — 같은 셀 재선택 시 `null`로 해제, 다른 셀이면 전환. 양 그리드의 `onCellSelect`가 이 핸들러를 받음.
+- 모바일: `mobileSlotSheet`가 있으면 `MobileSlotSheet`(셀 탭 시 아래에서 올라오는 드로어) 표시. 시트가 열리면 본문 응답자 목록은 모바일에서 숨김(`hidden lg:block`), 중복 방지. 시트 닫기는 같은 셀 재탭 / 드래그 / 닫기 버튼.
+- 데스크탑: `mobileSlotSheet`가 있으면 = "홀드". `HeatmapGrid.onCellSelect`가 셀 `getBoundingClientRect()`를 `position`으로 전달 → `heldPositionRef`에 저장 → `useEffect`가 `HoverPopoverPortal`(시간 그리드만) + 사이드바(`ParticipantFilter.previewSlot`/`SidebarCount.updateForSlot`/`IfNeededLegend.setVisible`)를 홀드 셀 기준으로 고정. 홀드 중에는 `onCellHover`가 early-return으로 hover 무시. 홀드 해제는 같은 셀 재클릭 / 메인 콘텐츠 2-column 래퍼(`mainContentRef`) 밖 마우스 클릭 / 편집 모드 진입(`handleEditClick`이 `setMobileSlotSheet(null)`). 사이드바 클릭은 래퍼 안이므로 홀드 유지.
+- 홀드/선택된 셀은 `selectedCell` prop으로 양 그리드에 전달되어 dashed outline(`outline-2 outline-dashed outline-gray-900 -outline-offset-2`)으로 표시.
 - `IfNeededLegend`는 항상 표시가 아니라 **호버/탭한 슬롯에 if-needed(값 1)가 있을 때만** 표시. 데스크탑 사이드바는 `onCellHover` 핸들러가 imperative `setVisible` 호출, `MobileSlotSheet`는 탭한 슬롯의 `slotAvailability`로 자체 계산. 스크롤 컨테이너(`max-h-48 overflow-y-auto`) **바깥**에 렌더해야 안 잘림.
 - `HoverInfoPopover`는 `position: absolute` + 페이지 좌표(viewport 좌표 + `scrollX/Y`)로 셀에 앵커됨 — 스크롤 시 셀과 함께 이동(`fixed` 아님).
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { resolveCellColor, getStepColor, getCellTextColor } from '@/lib/heatmap';
 import { getCellCssColor } from '@/components/drag-grid/GridCell';
@@ -15,6 +15,7 @@ interface CalendarHeatmapGridProps {
   hoveredParticipantId?: string | null;
   onCellHover?: (date: string | null) => void;
   onCellSelect?: (date: string) => void;
+  selectedCell?: { date: string; slot: number | null } | null;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
 }
@@ -40,13 +41,18 @@ export default function CalendarHeatmapGrid({
   hoveredParticipantId,
   onCellHover,
   onCellSelect,
+  selectedCell,
   bestSlots,
   eventMode = 'available',
 }: CalendarHeatmapGridProps) {
   const lastHoveredDate = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; date: string; pid: number } | null>(null);
   const touchMoved = useRef(false);
-  const [tappedDate, setTappedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    lastHoveredDate.current = null;
+  }, [selectedCell]);
+
   const filtered = useMemo(() => {
     if (hoveredParticipantId) {
       const hovered = participants.find((p) => p.id === hoveredParticipantId);
@@ -110,7 +116,7 @@ export default function CalendarHeatmapGrid({
       dates={dates}
       rootProps={{
         onMouseOver: (e) => {
-          if (!onCellHover) return;
+          if (!onCellHover || selectedCell) return;
           const cell = getDateCell(e.target);
           if (!cell) return;
           const date = cell.dataset.calDate!;
@@ -130,7 +136,6 @@ export default function CalendarHeatmapGrid({
             onCellSelect?.(date);
             return;
           }
-          setTappedDate(date);
           touchStart.current = { x: e.clientX, y: e.clientY, date, pid: e.pointerId };
           touchMoved.current = false;
         },
@@ -168,15 +173,16 @@ export default function CalendarHeatmapGrid({
         const bg = getCellBg(dateStr);
         const count = getCount(dateStr);
         const isFullColor = bg === FULL_COLOR;
-        const isTapped = tappedDate === dateStr;
+        const isSelected = selectedCell?.date === dateStr;
         return (
           <div
             data-cal-date={dateStr}
-            className="aspect-square flex items-center justify-center text-sm relative cursor-pointer hover:outline-2 hover:outline-dashed hover:outline-gray-900 hover:-outline-offset-2"
-            style={{
-              backgroundColor: bg || undefined,
-              ...(isTapped ? { outline: '2px dashed #111827', outlineOffset: '-2px' } : {}),
-            }}
+            className={`aspect-square flex items-center justify-center text-sm relative cursor-pointer hover:outline-2 hover:outline-dashed hover:outline-gray-900 hover:-outline-offset-2 ${
+              isSelected
+                ? 'z-1 outline-2 outline-dashed outline-gray-900 -outline-offset-2'
+                : ''
+            }`}
+            style={{ backgroundColor: bg || undefined }}
           >
             <span className={isFullColor ? 'text-white font-semibold' : 'text-gray-700'}>
               {cellLabel(dateStr)}

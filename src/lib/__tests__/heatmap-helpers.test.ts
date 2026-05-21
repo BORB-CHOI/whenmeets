@@ -164,14 +164,14 @@ describe('getCellTextColor — 셀 배경 대비 텍스트 색', () => {
   it('가장 진한 5단계만 흰색 텍스트', () => {
     expect(getCellTextColor(getStepColor(5))).toBe('#FFFFFF');
   });
-  it('1~4단계는 진한 텍스트', () => {
-    expect(getCellTextColor(getStepColor(1))).toBe('#111827');
-    expect(getCellTextColor(getStepColor(2))).toBe('#111827');
-    expect(getCellTextColor(getStepColor(3))).toBe('#111827');
-    expect(getCellTextColor(getStepColor(4))).toBe('#111827');
+  it('1~4단계는 진한 옥색 텍스트', () => {
+    expect(getCellTextColor(getStepColor(1))).toBe('#006064');
+    expect(getCellTextColor(getStepColor(2))).toBe('#006064');
+    expect(getCellTextColor(getStepColor(3))).toBe('#006064');
+    expect(getCellTextColor(getStepColor(4))).toBe('#006064');
   });
-  it('빈 셀(undefined)은 진한 텍스트', () => {
-    expect(getCellTextColor(undefined)).toBe('#111827');
+  it('빈 셀(undefined)은 진한 옥색 텍스트', () => {
+    expect(getCellTextColor(undefined)).toBe('#006064');
   });
   it('모든 단계에서 텍스트 색이 셀 배경색과 다름 (셀에 묻힘 회귀 방지)', () => {
     for (const step of [1, 2, 3, 4, 5] as const) {
