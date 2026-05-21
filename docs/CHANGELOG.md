@@ -4,6 +4,17 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.6.3] - 2026-05-22
+
+### Added
+
+- **Unavailable 범례 설명 문구** — 편집 모드 사이드바에서 Available·If Needed와 동일한 패턴으로 Unavailable 항목에 "참석 불가한 시간" 서브텍스트 추가.
+
+### Fixed
+
+- **날짜 전용 이벤트 "최적 시간만 보기" 전부 사라지는 버그** — `bestSlots`가 숫자 슬롯 키(`mon-36`)를 생성하지만 `CalendarHeatmapGrid`는 `mon-all_day` 키를 사용해 항상 불일치. `event.date_only` 분기 추가로 키 형식 통일.
+- **날짜 전용 이벤트 호버 시 참여자 사이드바 오표시** — `getSlotAvailability`에서 `'0'` 슬롯 키로 조회해 전원 0으로 잘못 읽히던 문제. `date_only` 이벤트는 `'all_day'` 키 사용. 사이드바 카운트도 unavailable 모드 분기 추가.
+
 ## [0.6.2] - 2026-05-22
 
 ### Fixed

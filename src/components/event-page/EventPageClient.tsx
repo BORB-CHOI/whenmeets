@@ -223,31 +223,39 @@ export default function EventPageClient({
     const filtered = event.participants.filter((p) => selectedIds.has(p.id));
     if (filtered.length === 0) return new Set<string>();
 
-    const slots = generateSlots(event.time_start, event.time_end);
+    const isUnavailableMode = event.mode === 'unavailable';
     let maxCount = 0;
     const slotCounts: { key: string; count: number }[] = [];
 
-    const isUnavailableMode = event.mode === 'unavailable';
-    for (const date of event.dates) {
-      for (const slot of slots) {
+    if (event.date_only) {
+      for (const date of event.dates) {
         let count = 0;
         for (const p of filtered) {
-          const val = p.availability?.[date]?.[String(slot)];
-          if (isUnavailableMode) {
-            if (val !== 0) count++;
-          } else {
-            if (val === 2) count++;
-            else if (val === 1 && effectiveIncludeIfNeeded) count++;
-          }
+          const val = p.availability?.[date]?.['all_day'];
+          if (isUnavailableMode ? val !== 0 : val === 2 || (val === 1 && effectiveIncludeIfNeeded)) count++;
         }
         if (count > 0) {
-          slotCounts.push({ key: `${date}-${slot}`, count });
+          slotCounts.push({ key: `${date}-all_day`, count });
           if (count > maxCount) maxCount = count;
+        }
+      }
+    } else {
+      const slots = generateSlots(event.time_start, event.time_end);
+      for (const date of event.dates) {
+        for (const slot of slots) {
+          let count = 0;
+          for (const p of filtered) {
+            const val = p.availability?.[date]?.[String(slot)];
+            if (isUnavailableMode ? val !== 0 : val === 2 || (val === 1 && effectiveIncludeIfNeeded)) count++;
+          }
+          if (count > 0) {
+            slotCounts.push({ key: `${date}-${slot}`, count });
+            if (count > maxCount) maxCount = count;
+          }
         }
       }
     }
 
-    // Only slots with the maximum count are "best"
     return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
   }, [event, selectedIds, effectiveIncludeIfNeeded]);
 
@@ -263,8 +271,9 @@ export default function EventPageClient({
 
   function getSlotAvailability(date: string, slot: number) {
     const map = new Map<string, 0 | 1 | 2>();
+    const slotKey = event.date_only ? 'all_day' : String(slot);
     for (const p of event.participants) {
-      const val = p.availability?.[date]?.[String(slot)];
+      const val = p.availability?.[date]?.[slotKey];
       map.set(p.id, (val as 0 | 1 | 2) ?? 0);
     }
     return map;
@@ -660,7 +669,9 @@ export default function EventPageClient({
                     sidebarCountRef.current?.updateForSlot(
                       slotAvail
                         ? Array.from(slotAvail.values()).filter(
-                            (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+                            event.mode === 'unavailable'
+                              ? (v) => v !== 0
+                              : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
                           ).length
                         : null,
                     );
@@ -765,9 +776,14 @@ export default function EventPageClient({
                     </div>
                   )}
                   {event.mode === 'unavailable' && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-red-400/50" />
-                      <span>Unavailable</span>
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-sm bg-red-400/50 mt-0.5 shrink-0" />
+                      <div className="flex flex-col">
+                        <span>Unavailable</span>
+                        <span className="text-xs text-gray-400 leading-tight">
+                          참석 불가한 시간
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
