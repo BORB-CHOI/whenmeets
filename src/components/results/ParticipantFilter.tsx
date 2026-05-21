@@ -155,9 +155,9 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
                     if (el) ifNeededRefs.current.set(p.id, el);
                     else ifNeededRefs.current.delete(p.id);
                   }}
-                  className="text-gray-500"
+                  className="inline-block ml-1.5 w-2 h-2 rounded-sm bg-amber-300 align-middle -translate-y-px"
                   hidden={!hasSlotHover || slotAvailability!.get(p.id) !== 1}
-                >*</span>
+                />
               </span>
               {onDelete && (
                 <button
