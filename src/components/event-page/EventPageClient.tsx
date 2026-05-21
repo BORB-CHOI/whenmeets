@@ -223,31 +223,39 @@ export default function EventPageClient({
     const filtered = event.participants.filter((p) => selectedIds.has(p.id));
     if (filtered.length === 0) return new Set<string>();
 
-    const slots = generateSlots(event.time_start, event.time_end);
+    const isUnavailableMode = event.mode === 'unavailable';
     let maxCount = 0;
     const slotCounts: { key: string; count: number }[] = [];
 
-    const isUnavailableMode = event.mode === 'unavailable';
-    for (const date of event.dates) {
-      for (const slot of slots) {
+    if (event.date_only) {
+      for (const date of event.dates) {
         let count = 0;
         for (const p of filtered) {
-          const val = p.availability?.[date]?.[String(slot)];
-          if (isUnavailableMode) {
-            if (val !== 0) count++;
-          } else {
-            if (val === 2) count++;
-            else if (val === 1 && effectiveIncludeIfNeeded) count++;
-          }
+          const val = p.availability?.[date]?.['all_day'];
+          if (isUnavailableMode ? val !== 0 : val === 2 || (val === 1 && effectiveIncludeIfNeeded)) count++;
         }
         if (count > 0) {
-          slotCounts.push({ key: `${date}-${slot}`, count });
+          slotCounts.push({ key: `${date}-all_day`, count });
           if (count > maxCount) maxCount = count;
+        }
+      }
+    } else {
+      const slots = generateSlots(event.time_start, event.time_end);
+      for (const date of event.dates) {
+        for (const slot of slots) {
+          let count = 0;
+          for (const p of filtered) {
+            const val = p.availability?.[date]?.[String(slot)];
+            if (isUnavailableMode ? val !== 0 : val === 2 || (val === 1 && effectiveIncludeIfNeeded)) count++;
+          }
+          if (count > 0) {
+            slotCounts.push({ key: `${date}-${slot}`, count });
+            if (count > maxCount) maxCount = count;
+          }
         }
       }
     }
 
-    // Only slots with the maximum count are "best"
     return new Set(slotCounts.filter((s) => s.count === maxCount).map((s) => s.key));
   }, [event, selectedIds, effectiveIncludeIfNeeded]);
 
