@@ -26,7 +26,7 @@ export function getStepColor(step: HeatmapStep): string {
 }
 
 export function getCellTextColor(cellColor: string | undefined | null): string {
-  return cellColor === STEP_COLORS[5] ? '#FFFFFF' : '#111827';
+  return cellColor === STEP_COLORS[5] ? '#FFFFFF' : '#006064';
 }
 
 function formatRange(lo: number, hi: number): string {
