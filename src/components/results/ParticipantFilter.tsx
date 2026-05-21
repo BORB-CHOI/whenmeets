@@ -18,6 +18,7 @@ interface ParticipantFilterProps {
   onHoverEnd?: () => void;
   slotAvailability?: Map<string, AvailabilityLevel>;
   onDelete?: (participantId: string) => void;
+  editMode?: boolean;
 }
 
 export interface ParticipantFilterHandle {
@@ -34,6 +35,7 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   onHoverEnd,
   slotAvailability,
   onDelete,
+  editMode = false,
 }, ref) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
 
@@ -125,16 +127,18 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
                       src={p.avatar_url}
                       alt=""
                       referrerPolicy="no-referrer"
-                      className="p-icon w-6 h-6 rounded-full object-cover shrink-0 group-hover:hidden"
+                      className={`p-icon w-6 h-6 rounded-full object-cover shrink-0 ${editMode ? '' : 'group-hover:hidden'}`}
                     />
                   ) : (
-                    <div className="p-icon w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0 group-hover:hidden">
+                    <div className={`p-icon w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0 ${editMode ? '' : 'group-hover:hidden'}`}>
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                       </svg>
                     </div>
                   )}
-                  <div className="p-icon w-6 h-6 rounded-md bg-white border-2 border-gray-300 shrink-0 hidden group-hover:flex" aria-hidden="true" />
+                  {!editMode && (
+                    <div className="p-icon w-6 h-6 rounded-md bg-white border-2 border-gray-300 shrink-0 hidden group-hover:flex" aria-hidden="true" />
+                  )}
                 </>
               )}
               <span className="p-name text-sm font-medium text-gray-900 flex-1">

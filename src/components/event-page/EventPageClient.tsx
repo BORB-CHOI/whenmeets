@@ -882,7 +882,6 @@ export default function EventPageClient({
                 </div>
               </div>
 
-              {/* Participant list in edit mode — same interaction as view mode */}
               {event.participants.length > 0 && (
                 <div className="mb-5">
                   <h3 className="text-sm font-semibold text-gray-900 mb-2">
@@ -893,6 +892,7 @@ export default function EventPageClient({
                       participants={event.participants}
                       selectedIds={new Set(event.participants.map(p => p.id))}
                       onSelectedChange={() => {}}
+                      editMode
                     />
                   </div>
                 </div>
