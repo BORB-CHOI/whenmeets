@@ -765,9 +765,14 @@ export default function EventPageClient({
                     </div>
                   )}
                   {event.mode === 'unavailable' && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-sm bg-red-400/50" />
-                      <span>Unavailable</span>
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-sm bg-red-400/50 mt-0.5 shrink-0" />
+                      <div className="flex flex-col">
+                        <span>Unavailable</span>
+                        <span className="text-xs text-gray-400 leading-tight">
+                          참석 불가한 시간
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
