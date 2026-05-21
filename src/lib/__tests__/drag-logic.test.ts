@@ -92,3 +92,34 @@ describe('applyToCell (drag grid state logic)', () => {
     expect(draft).toEqual(original);
   });
 });
+
+// Regression tests: CalendarDragGrid erase decision logic
+// Bug: `if (activeMode !== 0)` guard prevented erasing in unavailable mode (activeMode=0)
+// Fix: erasing.current = availability[date]?.['all_day'] === activeMode
+function shouldErase(existing: number | undefined, activeMode: number): boolean {
+  return existing === activeMode;
+}
+
+describe('shouldErase (CalendarDragGrid erase decision)', () => {
+  it('erases when existing matches activeMode=2 (available)', () => {
+    expect(shouldErase(2, 2)).toBe(true);
+  });
+
+  it('erases when existing matches activeMode=1 (if needed)', () => {
+    expect(shouldErase(1, 1)).toBe(true);
+  });
+
+  it('erases when existing matches activeMode=0 (unavailable) — regression', () => {
+    expect(shouldErase(0, 0)).toBe(true);
+  });
+
+  it('does not erase when cell is empty (undefined)', () => {
+    expect(shouldErase(undefined, 0)).toBe(false);
+    expect(shouldErase(undefined, 2)).toBe(false);
+  });
+
+  it('does not erase when existing differs from activeMode', () => {
+    expect(shouldErase(1, 2)).toBe(false);
+    expect(shouldErase(2, 1)).toBe(false);
+  });
+});

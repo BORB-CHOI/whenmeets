@@ -85,11 +85,7 @@ export default function CalendarDragGrid({
       clone[d] = { ...availability[d] };
     }
     draftRef.current = clone;
-    erasing.current = false;
-    if (activeMode !== 0) {
-      const existing = availability[date]?.['all_day'];
-      if (existing === activeMode) erasing.current = true;
-    }
+    erasing.current = availability[date]?.['all_day'] === activeMode;
     applyToDate(date);
   }
 
