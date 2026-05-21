@@ -21,7 +21,7 @@ import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
 import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import HoverPopoverPortal, { type HoverPopoverHandle } from './HoverPopoverPortal';
+import HoverPopoverPortal, { type HoverPopoverHandle, type HoverPopoverState } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
 import MobileSlotSheet from './MobileSlotSheet';
 import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
@@ -116,6 +116,9 @@ export default function EventPageClient({
   useEffect(() => {
     return () => cancelAnimationFrame(hoverRafRef.current);
   }, []);
+
+  const heldByMouseRef = useRef(false);
+  const mainContentRef = useRef<HTMLDivElement | null>(null);
 
   // Resolve current user's display name (profiles.display_name preferred, IdP claim as fallback)
   useEffect(() => {
@@ -282,6 +285,81 @@ export default function EventPageClient({
     }
     return map;
   }
+
+  const handleCellSelect = useCallback(
+    (date: string, slot: number | null, byMouse = false) => {
+      heldByMouseRef.current = byMouse;
+      setMobileSlotSheet((prev) => {
+        if (prev && prev.date === date && prev.slot === slot) return null;
+        return { date, slot };
+      });
+    },
+    [],
+  );
+
+  const readCellRect = useCallback((date: string, slot: number): HoverPopoverState['position'] | null => {
+    const cell = document.querySelector(
+      `[data-date="${CSS.escape(date)}"][data-slot="${slot}"]`,
+    );
+    if (!cell) return null;
+    const rect = cell.getBoundingClientRect();
+    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+  }, []);
+
+  const isHeld = viewMode === 'view' && mobileSlotSheet !== null && mobileSlotAvailability !== undefined;
+
+  useEffect(() => {
+    if (isHeld && mobileSlotSheet && mobileSlotAvailability) {
+      const values = Array.from(mobileSlotAvailability.values());
+      sidebarCountRef.current?.updateForSlot(
+        values.filter(
+          event.mode === 'unavailable'
+            ? (v) => v !== 0
+            : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+        ).length,
+      );
+      ifNeededLegendRef.current?.setVisible(values.some((v) => v === 1));
+      if (!event.date_only && mobileSlotSheet.slot !== null && heldByMouseRef.current) {
+        const position = readCellRect(mobileSlotSheet.date, mobileSlotSheet.slot);
+        hoverPopoverRef.current?.update(
+          position ? { date: mobileSlotSheet.date, slot: mobileSlotSheet.slot, position } : null,
+        );
+      }
+    } else {
+      sidebarCountRef.current?.updateForSlot(null);
+      ifNeededLegendRef.current?.setVisible(false);
+      hoverPopoverRef.current?.update(null);
+    }
+  }, [isHeld, mobileSlotSheet, mobileSlotAvailability, event.mode, event.date_only, effectiveIncludeIfNeeded, readCellRect]);
+
+  useEffect(() => {
+    if (!isHeld || !mobileSlotSheet || event.date_only || mobileSlotSheet.slot === null || !heldByMouseRef.current) {
+      return;
+    }
+    const { date, slot } = mobileSlotSheet;
+    function refreshPopover() {
+      const position = readCellRect(date, slot as number);
+      hoverPopoverRef.current?.update(position ? { date, slot: slot as number, position } : null);
+    }
+    window.addEventListener('scroll', refreshPopover, true);
+    window.addEventListener('resize', refreshPopover);
+    return () => {
+      window.removeEventListener('scroll', refreshPopover, true);
+      window.removeEventListener('resize', refreshPopover);
+    };
+  }, [isHeld, mobileSlotSheet, event.date_only, readCellRect]);
+
+  useEffect(() => {
+    if (!mobileSlotSheet) return;
+    function handleOutsidePointer(e: PointerEvent) {
+      if (e.pointerType !== 'mouse') return;
+      const target = e.target as Node | null;
+      if (!target || mainContentRef.current?.contains(target)) return;
+      setMobileSlotSheet(null);
+    }
+    document.addEventListener('pointerdown', handleOutsidePointer);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointer);
+  }, [mobileSlotSheet]);
 
   // Password state
   if (initialState.type === 'password' && !session && !passwordVerified) {
@@ -628,7 +706,7 @@ export default function EventPageClient({
       </div>
 
       {/* Main content: 2-column layout */}
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8" ref={mainContentRef}>
         {/* Left: Grid */}
         <div className="flex-1 min-w-0">
           {viewMode === 'edit' ? (
@@ -667,6 +745,7 @@ export default function EventPageClient({
                 includeIfNeeded={effectiveIncludeIfNeeded}
                 hoveredParticipantId={hoveredParticipantId}
                 onCellHover={(date) => {
+                  if (mobileSlotSheet) return;
                   scheduleHoverUpdate(() => {
                     const slotAvail = date ? getSlotAvailability(date, 0) : null;
                     participantFilterRef.current?.previewSlot(slotAvail);
@@ -684,7 +763,8 @@ export default function EventPageClient({
                     );
                   });
                 }}
-                onCellSelect={(date) => setMobileSlotSheet({ date, slot: null })}
+                onCellSelect={(date) => handleCellSelect(date, null)}
+                selectedCell={mobileSlotSheet}
                 bestSlots={showBestTimes ? bestSlots : undefined}
                 eventMode={event.mode}
               />
@@ -703,6 +783,7 @@ export default function EventPageClient({
               includeIfNeeded={effectiveIncludeIfNeeded}
               hoveredParticipantId={hoveredParticipantId}
               onCellHover={(date, slot, rect) => {
+                if (mobileSlotSheet) return;
                 scheduleHoverUpdate(() => {
                   const slotAvail = date ? getSlotAvailability(date, slot!) : null;
                   participantFilterRef.current?.previewSlot(slotAvail);
@@ -721,7 +802,8 @@ export default function EventPageClient({
                   );
                 });
               }}
-              onCellSelect={(date, slot) => setMobileSlotSheet({ date, slot })}
+              onCellSelect={(date, slot, byMouse) => handleCellSelect(date, slot, byMouse)}
+              selectedCell={mobileSlotSheet}
               bestSlots={showBestTimes ? bestSlots : undefined}
               eventMode={event.mode}
               />
@@ -857,6 +939,7 @@ export default function EventPageClient({
                     onHover={setHoveredParticipantId}
                     onHoverEnd={() => setHoveredParticipantId(null)}
                     onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
+                    slotAvailability={mobileSlotSheet ? mobileSlotAvailability : undefined}
                   />
                 </div>
                 <IfNeededLegend ref={ifNeededLegendRef} />

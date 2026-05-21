@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { EventMode, Participant, AvailabilityLevel } from '@/lib/types';
 import { generateSlots } from '@/lib/constants';
 import { resolveCellColor, getCellTextColor } from '@/lib/heatmap';
@@ -8,7 +8,6 @@ import { getCellCssColor } from '@/components/drag-grid/GridCell';
 import AvailabilityGrid from '@/components/availability-grid/AvailabilityGrid';
 import type { HoverInfoPosition } from '@/components/ui/HoverInfoPopover';
 
-// Touch movement threshold (px) — beyond this, treat as scroll instead of tap.
 const TAP_MOVEMENT_THRESHOLD = 8;
 
 interface HeatmapGridProps {
@@ -19,9 +18,9 @@ interface HeatmapGridProps {
   selectedIds: Set<string>;
   includeIfNeeded: boolean;
   hoveredParticipantId?: string | null;
-  /** Called on hover with the cursor position in viewport coords. */
   onCellHover?: (date: string | null, slot?: number, position?: HoverInfoPosition) => void;
-  onCellSelect?: (date: string, slot: number) => void;
+  onCellSelect?: (date: string, slot: number, byMouse?: boolean) => void;
+  selectedCell?: { date: string; slot: number | null } | null;
   bestSlots?: Set<string>;
   eventMode?: EventMode;
 }
@@ -41,6 +40,7 @@ export default function HeatmapGrid({
   hoveredParticipantId,
   onCellHover,
   onCellSelect,
+  selectedCell,
   bestSlots,
   eventMode = 'available',
 }: HeatmapGridProps) {
@@ -48,6 +48,11 @@ export default function HeatmapGrid({
   const touchStart = useRef<{ x: number; y: number; pid: number; date: string; slot: number } | null>(null);
   const touchMoved = useRef(false);
   const lastHoveredKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    lastHoveredKey.current = null;
+  }, [selectedCell]);
+
   const filtered = useMemo(() => {
     if (hoveredParticipantId) {
       const hovered = participants.find((p) => p.id === hoveredParticipantId);
@@ -110,7 +115,7 @@ export default function HeatmapGrid({
   const gridPointerProps = onCellHover || onCellSelect
     ? {
         onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
-          if (!onCellHover) return;
+          if (!onCellHover || selectedCell) return;
           const cell = getEventCell(e.target);
           if (cell) emitHover(cell, e);
         },
@@ -140,7 +145,7 @@ export default function HeatmapGrid({
           const date = cell.dataset.date!;
           const slot = Number(cell.dataset.slot);
           if (e.pointerType === 'mouse') {
-            onCellSelect?.(date, slot);
+            onCellSelect?.(date, slot, true);
             return;
           }
 
@@ -181,6 +186,7 @@ export default function HeatmapGrid({
         const slotKey = `${date}-${slot}`;
         const count = cellStats.counts.get(slotKey) ?? 0;
         const isBest = bestSlots?.has(slotKey) ?? false;
+        const isSelected = selectedCell?.date === date && selectedCell?.slot === slot;
 
         let bgColor: string | undefined;
         if (hasBestSlots) {
@@ -197,7 +203,11 @@ export default function HeatmapGrid({
           <div
             data-date={date}
             data-slot={slot}
-            className="w-full h-full relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-1"
+            className={`w-full h-full relative cursor-pointer hover:outline-2 hover:outline-gray-900 hover:-outline-offset-1 ${
+              isSelected
+                ? 'z-1 outline-2 outline-dashed outline-gray-900 -outline-offset-2'
+                : ''
+            }`}
             style={{ backgroundColor: bgColor }}
           >
             {!singleParticipant && count > 0 && (
