@@ -1,13 +1,39 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok, created } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { participantsService } from '@/server/services/participants.service';
+import {
+  participantParamsSchema,
+  joinParticipantSchema,
+} from '@/server/validators/participant.schema';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof participantParamsSchema>;
+type Body = z.infer<typeof joinParticipantSchema>;
+
+export const POST = withApiHandler<Params, Body>(
+  { paramsSchema: participantParamsSchema, bodySchema: joinParticipantSchema },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    const result = await participantsService.join(
+      params.id,
+      body.name,
+      body.password,
+      auth,
+    );
+    // Preserve legacy status: 200 when reusing an existing slot, 201 when a
+    // brand-new participant row was created (incl. numbered fallback).
+    return result.existing ? ok(result) : created(result);
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
 
-// Insert a new participant, falling back to "Name (2)", "Name (3)", ... on
-// unique-name conflicts. Used when a logged-in user's display name collides
-// with another participant they don't own — we never let them take over an
-// existing slot they didn't create.
 async function insertWithNumberedName(
   supabase: ReturnType<typeof createServerClient>,
   baseInsert: Record<string, unknown>,
@@ -220,3 +246,4 @@ export async function POST(
     existing: false,
   }, { status: 201 });
 }
+=== End legacy ===*/

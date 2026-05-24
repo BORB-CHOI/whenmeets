@@ -1,10 +1,70 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { participantsService } from '@/server/services/participants.service';
+import {
+  participantPidParamsSchema,
+  updateAvailabilitySchema,
+  deleteParticipantSchema,
+} from '@/server/validators/participant.schema';
+import type { NextRequest } from 'next/server';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof participantPidParamsSchema>;
+type PatchBody = z.infer<typeof updateAvailabilitySchema>;
+type DeleteBody = z.infer<typeof deleteParticipantSchema>;
+
+export const PATCH = withApiHandler<Params, PatchBody>(
+  {
+    paramsSchema: participantPidParamsSchema,
+    bodySchema: updateAvailabilitySchema,
+  },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    await participantsService.updateAvailability(
+      params.id,
+      params.pid,
+      body.availability,
+      body.password,
+      auth,
+    );
+    return ok({ ok: true });
+  },
+);
+
+export const DELETE = withApiHandler<Params, DeleteBody>(
+  {
+    paramsSchema: participantPidParamsSchema,
+    bodySchema: deleteParticipantSchema,
+  },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    await participantsService.remove(
+      params.id,
+      params.pid,
+      body?.password,
+      auth,
+    );
+    return ok({ ok: true });
+  },
+);
+
+// sendBeacon always sends POST — delegate to PATCH logic
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ id: string; pid: string }> },
+) {
+  return PATCH(req, context);
+}
+
+/* === Legacy implementation kept inline until removed in next commit ===
+import { NextRequest as _NR, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
 import { verifyEventToken } from '@/lib/auth';
 
-export async function PATCH(
+export async function _legacyPATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; pid: string }> }
 ) {
@@ -130,7 +190,8 @@ export async function DELETE(
     const authClient = await createAuthServerClient();
     const { data: { user } } = await authClient.auth.getUser();
     currentUserId = user?.id ?? null;
-  } catch { /* ignore */ }
+  } catch { // ignore — legacy
+  }
 
   let bodyPassword: string | undefined;
   async function readBodyPassword(): Promise<string | undefined> {
@@ -188,10 +249,5 @@ export async function DELETE(
   return NextResponse.json({ ok: true });
 }
 
-// sendBeacon always sends POST — delegate to PATCH logic
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string; pid: string }> }
-) {
-  return PATCH(request, context);
-}
+// (legacy POST alias removed; new POST is defined above and routes through withApiHandler)
+=== End legacy ===*/
