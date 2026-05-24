@@ -162,6 +162,24 @@ function resetTables() {
   mockTables.participants = [];
 }
 
+// Unwrap the new ApiResponse<T> envelope so existing assertions like
+// `json.id`, `json.title`, `json.ok` keep working against the layered
+// route handlers.
+async function readBody(res: Response): Promise<Record<string, unknown>> {
+  const raw = (await res.json()) as
+    | { success: true; data: unknown }
+    | { success: false; error: { code: string; message: string; details?: unknown } };
+  if (raw && typeof raw === 'object' && 'success' in raw) {
+    if (raw.success) {
+      const data = raw.data;
+      if (data && typeof data === 'object') return data as Record<string, unknown>;
+      return { value: data } as Record<string, unknown>;
+    }
+    return { error: raw.error.message, ...(raw.error.details ?? {}) } as Record<string, unknown>;
+  }
+  return raw as Record<string, unknown>;
+}
+
 // ==========================================
 // POST /api/events — Event creation
 // ==========================================
@@ -180,7 +198,7 @@ describe('POST /api/events', () => {
     });
     const res = await createEvent(req);
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.id).toBe('test-id-01');
     expect(mockTables.events).toHaveLength(1);
     expect(mockTables.events[0].title).toBe('Team Sync');
@@ -271,7 +289,7 @@ describe('GET /api/events/[id]', () => {
     const req = createMockRequest('/api/events/evt-1');
     const res = await getEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.title).toBe('Test Event');
     expect(json.participants).toHaveLength(1);
     expect(json.participants[0].name).toBe('Alice');
@@ -296,7 +314,7 @@ describe('GET /api/events/[id]', () => {
 
     const req = createMockRequest('/api/events/evt-pw');
     const res = await getEvent(req, { params: Promise.resolve({ id: 'evt-pw' }) });
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.requires_auth).toBe(true);
     expect(json.participants).toBeUndefined();
   });
@@ -366,7 +384,7 @@ describe('POST /api/events/[id]/participants', () => {
     });
     const res = await joinEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.id).toBeDefined();
     expect(json.existing).toBe(false);
   });
@@ -418,7 +436,7 @@ describe('POST /api/events/[id]/participants', () => {
     });
     const res = await joinEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.existing).toBe(true);
     expect(json.id).toBe('p-1');
   });
@@ -439,7 +457,7 @@ describe('POST /api/events/[id]/participants', () => {
     });
     const res = await joinEvent(req, { params: Promise.resolve({ id: 'evt-1' }) });
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.existing).toBe(true);
     expect(json.id).toBe('p-1');
   });
@@ -483,7 +501,7 @@ describe('PATCH /api/events/[id]/participants/[pid]', () => {
       params: Promise.resolve({ id: 'evt-1', pid: 'p-1' }),
     });
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await readBody(res);
     expect(json.ok).toBe(true);
   });
 
