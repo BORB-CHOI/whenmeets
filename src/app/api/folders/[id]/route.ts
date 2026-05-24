@@ -1,3 +1,35 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { foldersService } from '@/server/services/folders.service';
+import {
+  folderIdParamsSchema,
+  folderNameSchema,
+} from '@/server/validators/folder.schema';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof folderIdParamsSchema>;
+type RenameBody = z.infer<typeof folderNameSchema>;
+
+export const PATCH = withApiHandler<Params, RenameBody>(
+  { paramsSchema: folderIdParamsSchema, bodySchema: folderNameSchema },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    await foldersService.rename(auth, params.id, body.name);
+    return ok({ ok: true });
+  },
+);
+
+export const DELETE = withApiHandler<Params, unknown>(
+  { paramsSchema: folderIdParamsSchema },
+  async ({ req, params }) => {
+    const auth = await getAuthContext(req);
+    await foldersService.remove(auth, params.id);
+    return ok({ ok: true });
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
@@ -5,7 +37,7 @@ import { createAuthServerClient } from '@/lib/supabase/auth-server';
 const MAX_NAME_LENGTH = 40;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function PATCH(
+async function _legacyPATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -95,3 +127,4 @@ export async function DELETE(
   }
   return NextResponse.json({ ok: true });
 }
+=== End legacy ===*/
