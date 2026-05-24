@@ -1,8 +1,27 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { resultsService } from '@/server/services/results.service';
+import { eventIdParamsSchema } from '@/server/validators/event.schema';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof eventIdParamsSchema>;
+
+export const GET = withApiHandler<Params, unknown>(
+  { paramsSchema: eventIdParamsSchema },
+  async ({ req, params }) => {
+    const auth = await getAuthContext(req);
+    const result = await resultsService.getResults(params.id, auth);
+    return ok(result);
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { verifyEventToken } from '@/lib/auth';
 
-export async function GET(
+async function _legacyGET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -80,3 +99,4 @@ async function attachAvatars(
     avatar_url: r.user_id ? avatarMap.get(r.user_id) ?? null : null,
   }));
 }
+=== End legacy ===*/

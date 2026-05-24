@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import type { ComponentProps } from 'react';
-import type { EventMode } from '@/lib/types';
+import type { AvailabilityLevel, EventMode } from '@/lib/types';
 import { formatDateCompact, slotToTime } from '@/lib/constants';
 import ParticipantFilter from '@/components/results/ParticipantFilter';
 
@@ -12,7 +12,9 @@ interface MobileSlotSheetProps {
   date: string;
   /** null = date-only event (no time slot) */
   slot: number | null;
-  slotAvailability: Map<string, 0 | 1 | 2>;
+  /** undefined values represent participants who didn't respond.
+   *  Unavailable 모드에서 "응답 안 함"과 "안 됨 응답"(val===0)을 구분하기 위해 필요. */
+  slotAvailability: Map<string, AvailabilityLevel | undefined>;
   participants: Participants;
   selectedIds: Set<string>;
   onSelectedChange: (ids: Set<string>) => void;
@@ -86,6 +88,7 @@ export default function MobileSlotSheet({
           onSelectedChange={onSelectedChange}
           slotAvailability={slotAvailability}
           onDelete={onDelete}
+          eventMode={eventMode}
         />
         {slotHasIfNeeded && (
           <div className="mt-4 pt-3 border-t border-gray-100">

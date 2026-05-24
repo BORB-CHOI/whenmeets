@@ -25,6 +25,8 @@ import FolderHeader from './FolderHeader';
 import FolderNameModal from './FolderNameModal';
 import MoveToFolderModal from './MoveToFolderModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { eventsApi, foldersApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 interface EventItem {
   id: string;
@@ -386,11 +388,13 @@ export default function DashboardClient({
     if (!deleteTargetId || isDeleting) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/events/${deleteTargetId}`, { method: 'DELETE' });
-      if (res.ok) {
+      try {
+        await eventsApi.remove(deleteTargetId);
         setCreatedEvents((prev) => prev.filter((e) => e.id !== deleteTargetId));
         setParticipatedEvents((prev) => prev.filter((e) => e.id !== deleteTargetId));
         router.refresh();
+      } catch {
+        // ignore — UI stays as-is on failure
       }
     } finally {
       setIsDeleting(false);
@@ -404,38 +408,31 @@ export default function DashboardClient({
     setFolderSubmitting(true);
     try {
       if (folderModalState.type === 'create') {
-        const res = await fetch('/api/folders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setFolderError(data.error || '폴더를 만들 수 없습니다');
+        try {
+          const { folder } = await foldersApi.create(name);
+          setFolders((prev) => [...prev, folder]);
+          setFolderModalState(null);
+          router.refresh();
+        } catch (err) {
+          const message = err instanceof ApiClientError ? err.message : '폴더를 만들 수 없습니다';
+          setFolderError(message);
           return;
         }
-        const { folder } = await res.json();
-        setFolders((prev) => [...prev, folder]);
-        setFolderModalState(null);
-        router.refresh();
       } else {
-        const res = await fetch(`/api/folders/${folderModalState.folderId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setFolderError(data.error || '이름을 변경할 수 없습니다');
+        try {
+          await foldersApi.rename(folderModalState.folderId, name);
+          setFolders((prev) =>
+            prev.map((f) =>
+              f.id === folderModalState.folderId ? { ...f, name } : f,
+            ),
+          );
+          setFolderModalState(null);
+          router.refresh();
+        } catch (err) {
+          const message = err instanceof ApiClientError ? err.message : '이름을 변경할 수 없습니다';
+          setFolderError(message);
           return;
         }
-        setFolders((prev) =>
-          prev.map((f) =>
-            f.id === folderModalState.folderId ? { ...f, name } : f,
-          ),
-        );
-        setFolderModalState(null);
-        router.refresh();
       }
     } finally {
       setFolderSubmitting(false);
@@ -446,8 +443,8 @@ export default function DashboardClient({
     if (!deleteFolderId || deletingFolder) return;
     setDeletingFolder(true);
     try {
-      const res = await fetch(`/api/folders/${deleteFolderId}`, { method: 'DELETE' });
-      if (res.ok) {
+      try {
+        await foldersApi.remove(deleteFolderId);
         setFolders((prev) => prev.filter((f) => f.id !== deleteFolderId));
         setCreatedEvents((prev) =>
           prev.map((e) =>
@@ -460,6 +457,8 @@ export default function DashboardClient({
           ),
         );
         router.refresh();
+      } catch {
+        // ignore
       }
     } finally {
       setDeletingFolder(false);
@@ -480,13 +479,9 @@ export default function DashboardClient({
     setCreatedEvents(apply);
     setParticipatedEvents(apply);
 
-    const res = await fetch(`/api/events/${eventId}/folder`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folder_id: folderId }),
-    });
-
-    if (!res.ok) {
+    try {
+      await foldersApi.assignEvent(eventId, folderId);
+    } catch {
       const revert = (list: EventItem[]) =>
         list.map((e) => (e.id === eventId ? { ...e, folder_id: prevFolderId } : e));
       setCreatedEvents(revert);
@@ -515,12 +510,12 @@ export default function DashboardClient({
 
   async function persistGroupOrder(nextKeys: string[]) {
     const order = nextKeys.map((key, index) => ({ key, position: index }));
-    const res = await fetch('/api/folders/reorder', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order }),
-    });
-    return res.ok;
+    try {
+      await foldersApi.reorder(order);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   const collisionDetection: CollisionDetection = (args) => {
@@ -684,12 +679,12 @@ export default function DashboardClient({
 
     expand(destFolderKey);
 
-    const res = await fetch('/api/events/reorder', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates }),
-    });
-    if (res.ok) router.refresh();
+    try {
+      await foldersApi.reorderEvents(updates);
+      router.refresh();
+    } catch {
+      // ignore
+    }
   }
 
   const activeDragEvent = useMemo(() => {

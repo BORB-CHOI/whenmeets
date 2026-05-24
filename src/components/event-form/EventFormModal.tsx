@@ -9,6 +9,8 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import DatePicker from "./DatePicker";
 import TimeRangePicker from "./TimeRangePicker";
 import DayOfWeekPicker from "./DayOfWeekPicker";
+import { eventsApi } from "@/lib/api-client";
+import { ApiClientError } from "@/lib/api-client/client";
 
 interface EventFormModalProps {
   open: boolean;
@@ -131,21 +133,18 @@ export default function EventFormModal({
     setError("");
 
     if (editEvent) {
-      const res = await fetch(`/api/events/${editEvent.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await eventsApi.update(editEvent.id, {
           title: title.trim(),
           dates,
           time_start: dateOnly ? 0 : timeStart,
           time_end: dateOnly ? 48 : timeEnd,
           mode,
           date_only: dateOnly,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "이벤트 수정에 실패했습니다");
+        });
+      } catch (err) {
+        const message = err instanceof ApiClientError ? err.message : "이벤트 수정에 실패했습니다";
+        setError(message);
         setSubmitting(false);
         return;
       }
@@ -155,10 +154,9 @@ export default function EventFormModal({
       return;
     }
 
-    const res = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    let id: string;
+    try {
+      const result = await eventsApi.create({
         title: title.trim(),
         dates,
         time_start: dateOnly ? 0 : timeStart,
@@ -166,17 +164,14 @@ export default function EventFormModal({
         password: password || undefined,
         mode,
         date_only: dateOnly,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "이벤트 생성에 실패했습니다");
+      });
+      id = result.id;
+    } catch (err) {
+      const message = err instanceof ApiClientError ? err.message : "이벤트 생성에 실패했습니다";
+      setError(message);
       setSubmitting(false);
       return;
     }
-
-    const { id } = await res.json();
     addEventToHistory({
       id,
       title: title.trim(),

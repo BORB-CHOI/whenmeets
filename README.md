@@ -56,9 +56,53 @@
 
 - **Next.js 16** (App Router) · **React 19** · **TypeScript 5**
 - **Tailwind CSS 4** · **Framer Motion**
-- **Supabase** — Postgres · Auth · Realtime
+- **Supabase** — Postgres · Auth · Realtime · Row Level Security
+- **Zod** — 입력 검증
 - **Vitest** — 테스트
 - 호스팅: **Vercel**
+
+## 아키텍처
+
+DayMeet 의 백엔드는 다섯 개의 레이어로 분리되어 있고, 의존성은 한
+방향으로만 흐릅니다. 자세한 다이어그램과 디렉터리 구조는
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) 를 참고하세요.
+
+```text
+UI → Client API → Controller(route.ts) → Service → Repository → Supabase
+```
+
+- **Controller (`src/app/api/**/route.ts`)** — `withApiHandler()` 미들웨어로
+  zod 검증·예외 매핑·envelope 직렬화를 한 곳에서 처리합니다.
+- **Service (`src/server/services/`)** — 도메인 로직과 권한 체크. HTTP 비의존.
+- **Repository (`src/server/repositories/`)** — Supabase 쿼리 캡슐화.
+- **Validators (`src/server/validators/`)** — 도메인별 zod 스키마.
+- **Client API Layer (`src/lib/api-client/`)** — 타입 안전 fetch 래퍼.
+  `ApiResponse<T>` envelope 을 자동으로 벗기고 실패 시 `ApiClientError` 를
+  throw 합니다.
+
+모든 API 응답은 다음 envelope 을 따릅니다.
+
+```ts
+type ApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: { code; message; details? } };
+```
+
+도메인 예외는 `src/server/http/errors.ts` 에 정의되어 있고, HTTP status 와
+`code` 로 자동 매핑됩니다 (`NotFoundError` → 404 + `NOT_FOUND` 등).
+
+## 평가 항목 매핑
+
+학교 과제(AD 프로젝트, 자율주제) 평가 항목 5 개와 본 프로젝트의 구현
+지점을 매핑한 표입니다.
+
+| 평가 항목 | 본 프로젝트의 구현 |
+| --- | --- |
+| 1. 기능 완성도 | 라이브 사이트 [daymeet.org](https://daymeet.org), 13 개 REST API, 8 가지 그리드 모드 조합 |
+| 2. 주제 독창성·기획력 | when2meet 한국어·모바일 친화 대안, 캘린더+요일 모드 동시 지원, 폴더/순서 관리, 실시간 히트맵 |
+| 3. 기술 활용 적절성 | Supabase Auth (OAuth + RLS), 이벤트 비밀번호 HMAC 쿠키, zod 검증, 통일 예외/응답 envelope, withApiHandler 미들웨어 |
+| 4. UI/UX | 모바일 드래그 입력, 자체 스크롤바, 자동 픽셀 정렬 그리드, 한국어 라벨, 반응형 |
+| 5. 코드 구조·아키텍처 | 5-Layer Architecture (Controller→Service→Repository→DB) + 도메인별 Validator + Client API Layer. 단방향 의존성. 자세한 내용은 `docs/ARCHITECTURE.md` |
 
 ## 로컬 실행
 

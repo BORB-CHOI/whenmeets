@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EventData } from '@/lib/types';
+import { participantsApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 interface NameFormProps {
   event: EventData;
@@ -38,19 +40,11 @@ export default function NameForm({ event, eventId, onJoined }: NameFormProps) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/events/${eventId}/participants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        setError(errData.error || '참여에 실패했습니다');
-        return;
-      }
-
-      onJoined(await res.json());
+      const data = await participantsApi.join(eventId, name.trim());
+      onJoined(data);
+    } catch (err) {
+      const message = err instanceof ApiClientError ? err.message : '참여에 실패했습니다';
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -1,24 +1,34 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { foldersService } from '@/server/services/folders.service';
+import { eventIdParamsSchema } from '@/server/validators/event.schema';
+import { assignEventFolderSchema } from '@/server/validators/folder.schema';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof eventIdParamsSchema>;
+type Body = z.infer<typeof assignEventFolderSchema>;
+
+export const PATCH = withApiHandler<Params, Body>(
+  {
+    paramsSchema: eventIdParamsSchema,
+    bodySchema: assignEventFolderSchema,
+  },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    await foldersService.assignEvent(auth, params.id, body.folder_id);
+    return ok({ ok: true });
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * PATCH /api/events/[id]/folder
- *
- * Body: { folder_id: string | null }
- *
- * Assigns (or unassigns, when folder_id is null) THIS event into a folder
- * that the current user owns. Folder structure is per-user: this only
- * affects how the current user sees the event in their own dashboard.
- * Other users' folder views are unaffected.
- *
- * Authorization: the caller must be able to see the event — i.e. they
- * are the event creator OR a participant. This prevents random event-id
- * discovery via the folder API.
- */
-export async function PATCH(
+async function _legacyPATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -105,3 +115,4 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true });
 }
+=== End legacy ===*/

@@ -1,9 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { createAuthServerClient } from '@/lib/supabase/auth-server';
-import { verifyEventToken } from '@/lib/auth';
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { eventsService } from '@/server/services/events.service';
+import {
+  eventIdParamsSchema,
+  updateEventSchema,
+} from '@/server/validators/event.schema';
+import type { z } from 'zod';
 
-export async function GET(
+type Params = z.infer<typeof eventIdParamsSchema>;
+type UpdateBody = z.infer<typeof updateEventSchema>;
+
+export const GET = withApiHandler<Params, unknown>(
+  { paramsSchema: eventIdParamsSchema },
+  async ({ req, params }) => {
+    const auth = await getAuthContext(req);
+    const detail = await eventsService.getDetail(params.id, auth);
+    return ok(detail);
+  },
+);
+
+export const PATCH = withApiHandler<Params, UpdateBody>(
+  { paramsSchema: eventIdParamsSchema, bodySchema: updateEventSchema },
+  async ({ req, params, body }) => {
+    const auth = await getAuthContext(req);
+    await eventsService.update(params.id, body, auth);
+    return ok({ ok: true });
+  },
+);
+
+export const DELETE = withApiHandler<Params, unknown>(
+  { paramsSchema: eventIdParamsSchema },
+  async ({ req, params }) => {
+    const auth = await getAuthContext(req);
+    await eventsService.softDelete(params.id, auth);
+    return ok({ ok: true });
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
+async function _legacyGET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -185,3 +221,4 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+*/

@@ -1,3 +1,22 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { eventReorderService } from '@/server/services/folders.service';
+import { reorderEventsSchema } from '@/server/validators/folder.schema';
+import type { z } from 'zod';
+
+type Body = z.infer<typeof reorderEventsSchema>;
+
+export const PATCH = withApiHandler<unknown, Body>(
+  { bodySchema: reorderEventsSchema },
+  async ({ req, body }) => {
+    const auth = await getAuthContext(req);
+    await eventReorderService.reorder(auth, body.updates);
+    return ok({ ok: true });
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
@@ -11,7 +30,7 @@ interface UpdateEntry {
   position: number;
 }
 
-export async function PATCH(request: NextRequest) {
+async function _legacyPATCH(request: NextRequest) {
   const authClient = await createAuthServerClient();
   const {
     data: { user },
@@ -141,3 +160,4 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+=== End legacy ===*/

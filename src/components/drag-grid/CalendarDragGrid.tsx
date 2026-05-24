@@ -15,6 +15,9 @@ interface CalendarDragGridProps {
   overlayCountMap: Record<string, Record<string, number>>;
   overlayTotal: number;
   disabled?: boolean;
+  /** Hover preview: 셀에 진입 시 date, 떠날 때 null. date_only 그리드는 항상
+   *  slot 인자를 보내지 않는다 (호출처에서 'all_day' 로 lookup). */
+  onCellHover?: (date: string | null) => void;
 }
 
 const COLOR_CLASSES_TO_REMOVE = [
@@ -39,7 +42,15 @@ export default function CalendarDragGrid({
   overlayCountMap,
   overlayTotal,
   disabled,
+  onCellHover,
 }: CalendarDragGridProps) {
+  const lastHoveredDate = useRef<string | null>(null);
+
+  const getDateCell = useCallback((target: EventTarget | null): HTMLElement | null => {
+    if (!(target instanceof Element)) return null;
+    return (target.closest('[data-cal-date]') as HTMLElement | null) ?? null;
+  }, []);
+
   const isDragging = useRef(false);
   const erasing = useRef(false);
   const draftRef = useRef<Availability>({});
@@ -154,6 +165,19 @@ export default function CalendarDragGrid({
       rootRef={setRootEl}
       rootProps={{
         onMouseMove: (e) => handlePointerMoveAt(e.clientX, e.clientY),
+        onMouseOver: (e) => {
+          if (!onCellHover) return;
+          const cell = getDateCell(e.target);
+          const date = cell?.dataset.calDate ?? null;
+          if (!date || lastHoveredDate.current === date) return;
+          lastHoveredDate.current = date;
+          onCellHover(date);
+        },
+        onMouseLeave: () => {
+          if (!onCellHover) return;
+          lastHoveredDate.current = null;
+          onCellHover(null);
+        },
         style: { touchAction: 'pan-y' },
       }}
       renderCell={(dateStr, isActive) => {

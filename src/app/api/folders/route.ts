@@ -1,3 +1,31 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok, created } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { foldersService } from '@/server/services/folders.service';
+import { folderNameSchema } from '@/server/validators/folder.schema';
+import type { z } from 'zod';
+
+type CreateBody = z.infer<typeof folderNameSchema>;
+
+export const GET = withApiHandler<unknown, unknown>(
+  {},
+  async ({ req }) => {
+    const auth = await getAuthContext(req);
+    const result = await foldersService.list(auth);
+    return ok(result);
+  },
+);
+
+export const POST = withApiHandler<unknown, CreateBody>(
+  { bodySchema: folderNameSchema },
+  async ({ req, body }) => {
+    const auth = await getAuthContext(req);
+    const result = await foldersService.create(auth, body.name);
+    return created(result);
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
@@ -5,7 +33,7 @@ import { createAuthServerClient } from '@/lib/supabase/auth-server';
 const MAX_FOLDERS_PER_USER = 50;
 const MAX_NAME_LENGTH = 40;
 
-export async function GET() {
+async function _legacyGET() {
   const authClient = await createAuthServerClient();
   const {
     data: { user },
@@ -91,3 +119,4 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ folder: data }, { status: 201 });
 }
+=== End legacy ===*/

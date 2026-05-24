@@ -27,6 +27,8 @@ import MobileSlotSheet from './MobileSlotSheet';
 import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
 import InAppBrowserModal from '@/components/auth/InAppBrowserModal';
 import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
+import { eventsApi, participantsApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -208,18 +210,20 @@ export default function EventPageClient({
 
   // Realtime sync
   const handleRealtimeUpdate = useCallback(() => {
-    fetch(`/api/events/${eventId}`)
-      .then((res) => res.json())
-      .then((data: EventData) => {
-        if (!data.requires_auth) {
-          setEvent(data);
+    eventsApi
+      .getDetail(eventId)
+      .then((data) => {
+        const ev = data as unknown as EventData;
+        if (!ev.requires_auth) {
+          setEvent(ev);
           setSelectedIds((prev) => {
             const next = new Set(prev);
-            data.participants.forEach((p) => next.add(p.id));
+            ev.participants.forEach((p) => next.add(p.id));
             return next;
           });
         }
-      });
+      })
+      .catch(() => undefined);
   }, [eventId]);
 
   useRealtimeSync(eventId, viewMode === 'view', handleRealtimeUpdate);
@@ -267,21 +271,24 @@ export default function EventPageClient({
 
   const mobileSlotAvailability = useMemo(() => {
     if (!mobileSlotSheet) return undefined;
-    const map = new Map<string, 0 | 1 | 2>();
+    // Preserve undefined for participants who didn't respond — in unavailable
+    // mode "not responded" and "responded as unavailable (val === 0)" carry
+    // different meanings and must be distinguishable downstream.
+    const map = new Map<string, AvailabilityLevel | undefined>();
     const slotKey = mobileSlotSheet.slot === null ? 'all_day' : String(mobileSlotSheet.slot);
     for (const p of event.participants) {
       const val = p.availability?.[mobileSlotSheet.date]?.[slotKey];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+      map.set(p.id, val as AvailabilityLevel | undefined);
     }
     return map;
   }, [mobileSlotSheet, event.participants]);
 
   function getSlotAvailability(date: string, slot: number) {
-    const map = new Map<string, 0 | 1 | 2>();
+    const map = new Map<string, AvailabilityLevel | undefined>();
     const slotKey = event.date_only ? 'all_day' : String(slot);
     for (const p of event.participants) {
       const val = p.availability?.[date]?.[slotKey];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+      map.set(p.id, val as AvailabilityLevel | undefined);
     }
     return map;
   }
@@ -296,6 +303,44 @@ export default function EventPageClient({
       });
     },
     [],
+  );
+
+  // 셀 호버 시 사이드바·이름색·if-needed 범례·popover 를 일괄 갱신.
+  // 결과 모드/편집 모드 양쪽에서 동일하게 사용. slot===null 은 date_only
+  // 이벤트의 'all_day' 셀, 또는 호버 종료(date===null) 신호.
+  const applySlotPreview = useCallback(
+    (
+      date: string | null,
+      slot: number | null,
+      rect?: HoverPopoverState['position'] | null,
+    ) => {
+      scheduleHoverUpdate(() => {
+        if (mobileSlotSheet) return;
+        const slotAvail = date !== null ? getSlotAvailability(date, slot ?? 0) : null;
+        participantFilterRef.current?.previewSlot(slotAvail);
+        sidebarCountRef.current?.updateForSlot(
+          slotAvail
+            ? Array.from(slotAvail.values()).filter(
+                event.mode === 'unavailable'
+                  ? (v) => v !== 0
+                  : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+              ).length
+            : null,
+        );
+        ifNeededLegendRef.current?.setVisible(
+          slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
+        );
+        if (rect !== undefined) {
+          hoverPopoverRef.current?.update(
+            date !== null && slot !== null && rect
+              ? { date, slot, position: rect }
+              : null,
+          );
+        }
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [event.mode, event.participants, event.date_only, effectiveIncludeIfNeeded, mobileSlotSheet, scheduleHoverUpdate],
   );
 
   const readCellRect = useCallback((date: string, slot: number): HoverPopoverState['position'] | null => {
@@ -406,14 +451,12 @@ export default function EventPageClient({
   async function autoJoinWithName(name: string) {
     setNameLoading(true);
     try {
-      const res = await fetch(`/api/events/${eventId}/participants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) return false;
-
-      const data = await res.json();
+      let data: Awaited<ReturnType<typeof participantsApi.join>>;
+      try {
+        data = await participantsApi.join(eventId, name);
+      } catch {
+        return false;
+      }
       setParticipantId(data.id);
       setParticipantPassword(null);
       setSession({ participantId: data.id, name: data.name, password: null });
@@ -462,28 +505,30 @@ export default function EventPageClient({
     setNameLoading(true);
     setNameError('');
     try {
-      const res = await fetch(`/api/events/${eventId}/participants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameInput.trim(), password: namePassword || undefined }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          const errData = await res.json();
-          if (errData.requires_password) {
-            setNameError('이 이름은 비밀번호가 설정되어 있습니다. 비밀번호를 입력해주세요.');
+      let data: Awaited<ReturnType<typeof participantsApi.join>>;
+      try {
+        data = await participantsApi.join(
+          eventId,
+          nameInput.trim(),
+          namePassword || undefined,
+        );
+      } catch (err) {
+        if (err instanceof ApiClientError) {
+          if (err.status === 401) {
+            if ((err.details as { requires_password?: boolean } | undefined)?.requires_password) {
+              setNameError('이 이름은 비밀번호가 설정되어 있습니다. 비밀번호를 입력해주세요.');
+              return;
+            }
+            setNameError(err.message || '비밀번호가 일치하지 않습니다');
             return;
           }
-          setNameError(errData.error || '비밀번호가 일치하지 않습니다');
+          setNameError(err.message || '참여에 실패했습니다');
           return;
         }
-        const errData = await res.json();
-        setNameError(errData.error || '참여에 실패했습니다');
+        setNameError('참여에 실패했습니다');
         return;
       }
 
-      const data = await res.json();
       setParticipantId(data.id);
       setParticipantPassword(namePassword || null);
       setSession({ participantId: data.id, name: data.name, password: namePassword || null });
@@ -532,13 +577,12 @@ export default function EventPageClient({
     await saveNow(availability);
     // Refresh event data to show updated heatmap and participant list
     try {
-      const res = await fetch(`/api/events/${eventId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setEvent(data);
-        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
-      }
-    } catch { /* ignore */ }
+      const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
+      setEvent(data);
+      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+    } catch {
+      // ignore
+    }
     setViewMode('view');
   }
 
@@ -546,21 +590,19 @@ export default function EventPageClient({
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: participantPassword || undefined }),
-      });
-      if (!res.ok) {
+      try {
+        await participantsApi.remove(eventId, pid, participantPassword || undefined);
+      } catch {
         setDeleteTargetPid(null);
         return;
       }
       // Refresh event data
-      const refreshRes = await fetch(`/api/events/${eventId}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
+      try {
+        const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
         setEvent(data);
         setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      } catch {
+        // ignore
       }
     } finally {
       setIsDeleting(false);
@@ -578,11 +620,11 @@ export default function EventPageClient({
   }
 
   async function saveDescription() {
-    await fetch(`/api/events/${eventId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description }),
-    });
+    try {
+      await eventsApi.update(eventId, { description });
+    } catch {
+      // ignore — UI optimistically updates below
+    }
     setEvent((prev) => ({ ...prev, description }));
     setEditingDescription(false);
   }
@@ -750,6 +792,22 @@ export default function EventPageClient({
                 eventMode={event.mode}
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
+                onCellHover={(date, slot) => {
+                  if (date === null) {
+                    applySlotPreview(null, null);
+                    return;
+                  }
+                  // DragGrid 시간 그리드는 cell.dataset.slot 그대로 string으로 보낸다
+                  // ("36" 같은). date_only 일 때만 'all_day' 같은 비숫자 문자열.
+                  // applySlotPreview 는 slot===null 일 때 'all_day' 키로 lookup.
+                  let slotNum: number | null = null;
+                  if (typeof slot === 'number') slotNum = slot;
+                  else if (typeof slot === 'string') {
+                    const n = Number(slot);
+                    slotNum = Number.isFinite(n) ? n : null;
+                  }
+                  applySlotPreview(date, slotNum);
+                }}
                 disabled={saving}
               />
             </>
@@ -761,25 +819,7 @@ export default function EventPageClient({
                 selectedIds={selectedIds}
                 includeIfNeeded={effectiveIncludeIfNeeded}
                 hoveredParticipantId={hoveredParticipantId}
-                onCellHover={(date) => {
-                  if (mobileSlotSheet) return;
-                  scheduleHoverUpdate(() => {
-                    const slotAvail = date ? getSlotAvailability(date, 0) : null;
-                    participantFilterRef.current?.previewSlot(slotAvail);
-                    sidebarCountRef.current?.updateForSlot(
-                      slotAvail
-                        ? Array.from(slotAvail.values()).filter(
-                            event.mode === 'unavailable'
-                              ? (v) => v !== 0
-                              : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
-                          ).length
-                        : null,
-                    );
-                    ifNeededLegendRef.current?.setVisible(
-                      slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
-                    );
-                  });
-                }}
+                onCellHover={(date) => applySlotPreview(date ?? null, null)}
                 onCellSelect={(date) => handleCellSelect(date, null)}
                 selectedCell={mobileSlotSheet}
                 bestSlots={showBestTimes ? bestSlots : undefined}
@@ -799,28 +839,9 @@ export default function EventPageClient({
               selectedIds={selectedIds}
               includeIfNeeded={effectiveIncludeIfNeeded}
               hoveredParticipantId={hoveredParticipantId}
-              onCellHover={(date, slot, rect) => {
-                if (mobileSlotSheet) return;
-                scheduleHoverUpdate(() => {
-                  const slotAvail = date ? getSlotAvailability(date, slot!) : null;
-                  participantFilterRef.current?.previewSlot(slotAvail);
-                  sidebarCountRef.current?.updateForSlot(
-                    slotAvail
-                      ? Array.from(slotAvail.values()).filter(
-                          event.mode === 'unavailable'
-                            ? (v) => v !== 0
-                            : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
-                        ).length
-                      : null,
-                  );
-                  ifNeededLegendRef.current?.setVisible(
-                    slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
-                  );
-                  hoverPopoverRef.current?.update(
-                    date && rect ? { date, slot: slot!, position: rect } : null,
-                  );
-                });
-              }}
+              onCellHover={(date, slot, rect) =>
+                applySlotPreview(date ?? null, slot ?? null, rect ?? null)
+              }
               onCellSelect={(date, slot, byMouse) => handleCellSelect(date, slot, byMouse)}
               selectedCell={mobileSlotSheet}
               onPageChange={() => setMobileSlotSheet(null)}
@@ -909,10 +930,15 @@ export default function EventPageClient({
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
                     <ParticipantFilter
+                      ref={participantFilterRef}
                       participants={event.participants}
                       selectedIds={new Set(event.participants.map(p => p.id))}
                       onSelectedChange={() => {}}
+                      onHover={setHoveredParticipantId}
+                      onHoverEnd={() => setHoveredParticipantId(null)}
+                      slotAvailability={mobileSlotSheet ? mobileSlotAvailability : undefined}
                       editMode
+                      eventMode={event.mode}
                     />
                   </div>
                 </div>
@@ -960,6 +986,7 @@ export default function EventPageClient({
                     onHoverEnd={() => setHoveredParticipantId(null)}
                     onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                     slotAvailability={mobileSlotSheet ? mobileSlotAvailability : undefined}
+                    eventMode={event.mode}
                   />
                 </div>
                 <IfNeededLegend ref={ifNeededLegendRef} />
@@ -1012,9 +1039,10 @@ export default function EventPageClient({
         }}
         onEventUpdated={() => {
           setShowEditModal(false);
-          fetch(`/api/events/${eventId}`)
-            .then((r) => r.json())
-            .then((data) => setEvent(data));
+          eventsApi
+            .getDetail(eventId)
+            .then((data) => setEvent(data as unknown as EventData))
+            .catch(() => undefined);
         }}
       />
 
