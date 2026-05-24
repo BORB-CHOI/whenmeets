@@ -797,10 +797,15 @@ export default function EventPageClient({
                     applySlotPreview(null, null);
                     return;
                   }
-                  // date_only 그리드는 slot === 'all_day' 문자열을 보낸다.
+                  // DragGrid 시간 그리드는 cell.dataset.slot 그대로 string으로 보낸다
+                  // ("36" 같은). date_only 일 때만 'all_day' 같은 비숫자 문자열.
                   // applySlotPreview 는 slot===null 일 때 'all_day' 키로 lookup.
-                  const slotNum =
-                    typeof slot === 'number' ? slot : null;
+                  let slotNum: number | null = null;
+                  if (typeof slot === 'number') slotNum = slot;
+                  else if (typeof slot === 'string') {
+                    const n = Number(slot);
+                    slotNum = Number.isFinite(n) ? n : null;
+                  }
                   applySlotPreview(date, slotNum);
                 }}
                 disabled={saving}
