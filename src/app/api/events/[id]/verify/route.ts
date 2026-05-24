@@ -1,9 +1,42 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { eventAuthService } from '@/server/services/event-auth.service';
+import { eventIdParamsSchema } from '@/server/validators/event.schema';
+import { verifyPasswordSchema } from '@/server/validators/event-auth.schema';
+import type { z } from 'zod';
+
+type Params = z.infer<typeof eventIdParamsSchema>;
+type Body = z.infer<typeof verifyPasswordSchema>;
+
+export const POST = withApiHandler<Params, Body>(
+  {
+    paramsSchema: eventIdParamsSchema,
+    bodySchema: verifyPasswordSchema,
+  },
+  async ({ params, body }) => {
+    const { cookieValue } = await eventAuthService.verifyPassword(
+      params.id,
+      body.password,
+    );
+    const response = ok({ ok: true });
+    response.cookies.set(`daymeet_auth_${params.id}`, cookieValue, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 86400,
+      path: '/',
+    });
+    return response;
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServerClient } from '@/lib/supabase/server';
 import { signEventToken } from '@/lib/auth';
 
-export async function POST(
+async function _legacyPOST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -42,3 +75,4 @@ export async function POST(
 
   return response;
 }
+=== End legacy ===*/

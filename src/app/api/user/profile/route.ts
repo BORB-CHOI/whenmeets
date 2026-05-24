@@ -1,10 +1,38 @@
+import { withApiHandler } from '@/server/http/api-handler';
+import { ok } from '@/server/http/response';
+import { getAuthContext } from '@/server/http/auth-context';
+import { userService } from '@/server/services/user.service';
+import { updateProfileSchema } from '@/server/validators/user.schema';
+import type { z } from 'zod';
+
+type PatchBody = z.infer<typeof updateProfileSchema>;
+
+export const GET = withApiHandler<unknown, unknown>(
+  {},
+  async ({ req }) => {
+    const auth = await getAuthContext(req);
+    const profile = await userService.getProfile(auth);
+    return ok(profile);
+  },
+);
+
+export const PATCH = withApiHandler<unknown, PatchBody>(
+  { bodySchema: updateProfileSchema },
+  async ({ req, body }) => {
+    const auth = await getAuthContext(req);
+    const result = await userService.updateDisplayName(auth, body.display_name);
+    return ok(result);
+  },
+);
+
+/* === Legacy implementation kept inline until removed in next commit ===
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAuthServerClient } from '@/lib/supabase/auth-server';
 
 const MAX_NAME_LENGTH = 50;
 
-export async function GET() {
+async function _legacyGET() {
   const authClient = await createAuthServerClient();
   const {
     data: { user },
@@ -106,3 +134,4 @@ export async function PATCH(request: NextRequest) {
     participants: participantSync,
   });
 }
+=== End legacy ===*/
