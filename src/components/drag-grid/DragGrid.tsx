@@ -111,6 +111,7 @@ export default function DragGrid({
           overlayCountMap={overlayCountMap}
           overlayTotal={overlayTotal}
           disabled={disabled}
+          onCellHover={onCellHover ? (date) => onCellHover(date) : undefined}
         />
       </div>
     );

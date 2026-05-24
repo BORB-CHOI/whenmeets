@@ -122,9 +122,10 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
                 if (el) rowRefs.current.set(p.id, el);
                 else rowRefs.current.delete(p.id);
               }}
-              onClick={() => toggle(p.id)}
+              onClick={editMode ? undefined : () => toggle(p.id)}
               onPointerEnter={(e) => { if (e.pointerType === 'mouse') onHover?.(p.id); }}
-              className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors
+              className={`group flex items-center gap-2.5 py-1.5 px-2 rounded-md transition-colors
+                ${editMode ? 'cursor-default' : 'cursor-pointer'}
                 ${isDimmed ? 'opacity-50' : ''}
                 ${stateClass}
                 ${!hasSlotHover ? 'hover:bg-gray-50' : ''}`}

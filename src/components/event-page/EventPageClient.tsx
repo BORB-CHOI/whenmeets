@@ -305,6 +305,44 @@ export default function EventPageClient({
     [],
   );
 
+  // 셀 호버 시 사이드바·이름색·if-needed 범례·popover 를 일괄 갱신.
+  // 결과 모드/편집 모드 양쪽에서 동일하게 사용. slot===null 은 date_only
+  // 이벤트의 'all_day' 셀, 또는 호버 종료(date===null) 신호.
+  const applySlotPreview = useCallback(
+    (
+      date: string | null,
+      slot: number | null,
+      rect?: HoverPopoverState['position'] | null,
+    ) => {
+      scheduleHoverUpdate(() => {
+        if (mobileSlotSheet) return;
+        const slotAvail = date !== null ? getSlotAvailability(date, slot ?? 0) : null;
+        participantFilterRef.current?.previewSlot(slotAvail);
+        sidebarCountRef.current?.updateForSlot(
+          slotAvail
+            ? Array.from(slotAvail.values()).filter(
+                event.mode === 'unavailable'
+                  ? (v) => v !== 0
+                  : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
+              ).length
+            : null,
+        );
+        ifNeededLegendRef.current?.setVisible(
+          slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
+        );
+        if (rect !== undefined) {
+          hoverPopoverRef.current?.update(
+            date !== null && slot !== null && rect
+              ? { date, slot, position: rect }
+              : null,
+          );
+        }
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [event.mode, event.participants, event.date_only, effectiveIncludeIfNeeded, mobileSlotSheet, scheduleHoverUpdate],
+  );
+
   const readCellRect = useCallback((date: string, slot: number): HoverPopoverState['position'] | null => {
     const cell = document.querySelector(
       `[data-date="${CSS.escape(date)}"][data-slot="${slot}"]`,
@@ -754,6 +792,17 @@ export default function EventPageClient({
                 eventMode={event.mode}
                 activeMode={activeMode}
                 onActiveModeChange={setActiveMode}
+                onCellHover={(date, slot) => {
+                  if (date === null) {
+                    applySlotPreview(null, null);
+                    return;
+                  }
+                  // date_only 그리드는 slot === 'all_day' 문자열을 보낸다.
+                  // applySlotPreview 는 slot===null 일 때 'all_day' 키로 lookup.
+                  const slotNum =
+                    typeof slot === 'number' ? slot : null;
+                  applySlotPreview(date, slotNum);
+                }}
                 disabled={saving}
               />
             </>
@@ -765,25 +814,7 @@ export default function EventPageClient({
                 selectedIds={selectedIds}
                 includeIfNeeded={effectiveIncludeIfNeeded}
                 hoveredParticipantId={hoveredParticipantId}
-                onCellHover={(date) => {
-                  if (mobileSlotSheet) return;
-                  scheduleHoverUpdate(() => {
-                    const slotAvail = date ? getSlotAvailability(date, 0) : null;
-                    participantFilterRef.current?.previewSlot(slotAvail);
-                    sidebarCountRef.current?.updateForSlot(
-                      slotAvail
-                        ? Array.from(slotAvail.values()).filter(
-                            event.mode === 'unavailable'
-                              ? (v) => v !== 0
-                              : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
-                          ).length
-                        : null,
-                    );
-                    ifNeededLegendRef.current?.setVisible(
-                      slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
-                    );
-                  });
-                }}
+                onCellHover={(date) => applySlotPreview(date ?? null, null)}
                 onCellSelect={(date) => handleCellSelect(date, null)}
                 selectedCell={mobileSlotSheet}
                 bestSlots={showBestTimes ? bestSlots : undefined}
@@ -803,28 +834,9 @@ export default function EventPageClient({
               selectedIds={selectedIds}
               includeIfNeeded={effectiveIncludeIfNeeded}
               hoveredParticipantId={hoveredParticipantId}
-              onCellHover={(date, slot, rect) => {
-                if (mobileSlotSheet) return;
-                scheduleHoverUpdate(() => {
-                  const slotAvail = date ? getSlotAvailability(date, slot!) : null;
-                  participantFilterRef.current?.previewSlot(slotAvail);
-                  sidebarCountRef.current?.updateForSlot(
-                    slotAvail
-                      ? Array.from(slotAvail.values()).filter(
-                          event.mode === 'unavailable'
-                            ? (v) => v !== 0
-                            : (v) => v === 2 || (v === 1 && effectiveIncludeIfNeeded),
-                        ).length
-                      : null,
-                  );
-                  ifNeededLegendRef.current?.setVisible(
-                    slotAvail ? Array.from(slotAvail.values()).some((v) => v === 1) : false,
-                  );
-                  hoverPopoverRef.current?.update(
-                    date && rect ? { date, slot: slot!, position: rect } : null,
-                  );
-                });
-              }}
+              onCellHover={(date, slot, rect) =>
+                applySlotPreview(date ?? null, slot ?? null, rect ?? null)
+              }
               onCellSelect={(date, slot, byMouse) => handleCellSelect(date, slot, byMouse)}
               selectedCell={mobileSlotSheet}
               onPageChange={() => setMobileSlotSheet(null)}
@@ -913,9 +925,13 @@ export default function EventPageClient({
                   </h3>
                   <div className="max-h-48 overflow-y-auto custom-scrollbar">
                     <ParticipantFilter
+                      ref={participantFilterRef}
                       participants={event.participants}
                       selectedIds={new Set(event.participants.map(p => p.id))}
                       onSelectedChange={() => {}}
+                      onHover={setHoveredParticipantId}
+                      onHoverEnd={() => setHoveredParticipantId(null)}
+                      slotAvailability={mobileSlotSheet ? mobileSlotAvailability : undefined}
                       editMode
                       eventMode={event.mode}
                     />
