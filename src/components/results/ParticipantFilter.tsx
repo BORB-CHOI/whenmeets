@@ -2,8 +2,10 @@
 
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { AvailabilityLevel } from '@/lib/types';
+import { AvailabilityLevel, EventMode } from '@/lib/types';
 import { toggleParticipant } from './participantToggle';
+
+type SlotAvailabilityMap = Map<string, AvailabilityLevel | undefined>;
 
 interface ParticipantFilterProps {
   participants: {
@@ -16,16 +18,27 @@ interface ParticipantFilterProps {
   onSelectedChange: (ids: Set<string>) => void;
   onHover?: (participantId: string) => void;
   onHoverEnd?: () => void;
-  slotAvailability?: Map<string, AvailabilityLevel>;
+  slotAvailability?: SlotAvailabilityMap;
   onDelete?: (participantId: string) => void;
   editMode?: boolean;
+  /** Available 모드면 v===2가 "가능", v===1이 if-needed. Unavailable 모드면
+   *  v===0가 "안 됨 응답", 그 외(undefined 포함)는 "안 된다고 안 함 = 가능 가정". */
+  eventMode?: EventMode;
 }
 
 export interface ParticipantFilterHandle {
-  previewSlot: (slotAvailability: Map<string, AvailabilityLevel> | null) => void;
+  previewSlot: (slotAvailability: SlotAvailabilityMap | null) => void;
 }
 
 const UNAVAILABLE_CLASSES = ['[&_.p-name]:line-through', '[&_.p-name]:text-gray-400', '[&_.p-icon]:opacity-40'];
+
+function isAvailableForSlot(val: AvailabilityLevel | undefined, eventMode: EventMode): boolean {
+  return eventMode === 'unavailable' ? val !== 0 : val === 2;
+}
+
+function isIfNeededForSlot(val: AvailabilityLevel | undefined, eventMode: EventMode): boolean {
+  return eventMode === 'available' && val === 1;
+}
 
 const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterProps>(function ParticipantFilter({
   participants,
@@ -36,6 +49,7 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
   slotAvailability,
   onDelete,
   editMode = false,
+  eventMode = 'available',
 }, ref) {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
 
@@ -47,15 +61,17 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
 
         row.classList.remove('bg-[#FFE8B8]', 'rounded', ...UNAVAILABLE_CLASSES);
 
-        const val = nextSlotAvailability?.get(p.id);
-        if (val === 1) {
+        if (!nextSlotAvailability) continue;
+
+        const val = nextSlotAvailability.get(p.id);
+        if (isIfNeededForSlot(val, eventMode)) {
           row.classList.add('bg-[#FFE8B8]', 'rounded');
-        } else if (nextSlotAvailability && val !== 2) {
+        } else if (!isAvailableForSlot(val, eventMode)) {
           row.classList.add(...UNAVAILABLE_CLASSES);
         }
       }
     },
-  }), [participants]);
+  }), [participants, eventMode]);
 
   function toggle(id: string) {
     const allIds = participants.map((p) => p.id);
@@ -88,10 +104,10 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
           let stateClass = '';
           if (hasSlotHover) {
             const val = slotAvailability!.get(p.id);
-            if (val === 2) {
-              stateClass = '';
-            } else if (val === 1) {
+            if (isIfNeededForSlot(val, eventMode)) {
               stateClass = 'bg-[#FFE8B8] rounded';
+            } else if (isAvailableForSlot(val, eventMode)) {
+              stateClass = '';
             } else {
               stateClass = '[&_.p-name]:line-through [&_.p-name]:text-gray-400 [&_.p-icon]:opacity-40';
             }

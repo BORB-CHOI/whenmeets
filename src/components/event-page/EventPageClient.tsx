@@ -271,21 +271,24 @@ export default function EventPageClient({
 
   const mobileSlotAvailability = useMemo(() => {
     if (!mobileSlotSheet) return undefined;
-    const map = new Map<string, 0 | 1 | 2>();
+    // Preserve undefined for participants who didn't respond — in unavailable
+    // mode "not responded" and "responded as unavailable (val === 0)" carry
+    // different meanings and must be distinguishable downstream.
+    const map = new Map<string, AvailabilityLevel | undefined>();
     const slotKey = mobileSlotSheet.slot === null ? 'all_day' : String(mobileSlotSheet.slot);
     for (const p of event.participants) {
       const val = p.availability?.[mobileSlotSheet.date]?.[slotKey];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+      map.set(p.id, val as AvailabilityLevel | undefined);
     }
     return map;
   }, [mobileSlotSheet, event.participants]);
 
   function getSlotAvailability(date: string, slot: number) {
-    const map = new Map<string, 0 | 1 | 2>();
+    const map = new Map<string, AvailabilityLevel | undefined>();
     const slotKey = event.date_only ? 'all_day' : String(slot);
     for (const p of event.participants) {
       const val = p.availability?.[date]?.[slotKey];
-      map.set(p.id, (val as 0 | 1 | 2) ?? 0);
+      map.set(p.id, val as AvailabilityLevel | undefined);
     }
     return map;
   }
@@ -914,6 +917,7 @@ export default function EventPageClient({
                       selectedIds={new Set(event.participants.map(p => p.id))}
                       onSelectedChange={() => {}}
                       editMode
+                      eventMode={event.mode}
                     />
                   </div>
                 </div>
@@ -961,6 +965,7 @@ export default function EventPageClient({
                     onHoverEnd={() => setHoveredParticipantId(null)}
                     onDelete={event.is_owner ? (pid) => setDeleteTargetPid(pid) : undefined}
                     slotAvailability={mobileSlotSheet ? mobileSlotAvailability : undefined}
+                    eventMode={event.mode}
                   />
                 </div>
                 <IfNeededLegend ref={ifNeededLegendRef} />

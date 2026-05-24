@@ -291,8 +291,9 @@ describe('GET /api/events/[id]', () => {
     expect(res.status).toBe(200);
     const json = await readBody(res);
     expect(json.title).toBe('Test Event');
-    expect(json.participants).toHaveLength(1);
-    expect(json.participants[0].name).toBe('Alice');
+    const participants = json.participants as Array<{ name: string }>;
+    expect(participants).toHaveLength(1);
+    expect(participants[0].name).toBe('Alice');
   });
 
   it('returns 404 for non-existent event', async () => {
