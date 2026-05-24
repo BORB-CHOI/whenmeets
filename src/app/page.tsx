@@ -11,6 +11,7 @@ import Faq from '@/components/home/Faq';
 import DemoEventViewer from '@/components/demo/DemoEventViewer';
 import { DEMO_FIXTURE, USE_CASE_FIXTURES, USE_CASE_SLUGS } from '@/lib/demo-data';
 import { renderEmphasis } from '@/lib/render-emphasis';
+import { eventsApi } from '@/lib/api-client';
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
@@ -23,12 +24,8 @@ export default function Home() {
       return;
     }
     setHistory(local);
-    fetch('/api/events/active', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: local.map((h) => h.id) }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
+    eventsApi
+      .listActiveIds(local.map((h) => h.id))
       .then((data) => {
         if (!data?.activeIds) return;
         const active = new Set<string>(data.activeIds);

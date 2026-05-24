@@ -6,6 +6,8 @@ import type { EventMode } from '@/lib/types';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
+import { eventsApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 export default function EventForm() {
   const router = useRouter();
@@ -44,10 +46,9 @@ export default function EventForm() {
     setSubmitting(true);
     setError('');
 
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    let id: string;
+    try {
+      const result = await eventsApi.create({
         title: title.trim(),
         dates,
         time_start: dateOnly ? 0 : timeStart,
@@ -55,17 +56,14 @@ export default function EventForm() {
         password: password || undefined,
         mode,
         date_only: dateOnly,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || '이벤트 생성에 실패했습니다');
+      });
+      id = result.id;
+    } catch (err) {
+      const message = err instanceof ApiClientError ? err.message : '이벤트 생성에 실패했습니다';
+      setError(message);
       setSubmitting(false);
       return;
     }
-
-    const { id } = await res.json();
     window.scrollTo(0, 0);
     router.push(`/e/${id}`);
   }

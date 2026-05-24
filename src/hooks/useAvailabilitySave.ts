@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { Availability } from '@/lib/types';
+import { participantsApi } from '@/lib/api-client';
 
 interface UseAvailabilitySaveOptions {
   eventId: string;
@@ -16,13 +17,14 @@ export function useAvailabilitySave({ eventId, participantId, participantPasswor
     if (!participantId) return;
     setSaving(true);
     try {
-      await fetch(`/api/events/${eventId}/participants/${participantId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ availability, password: participantPassword }),
-      });
+      await participantsApi.updateAvailability(
+        eventId,
+        participantId,
+        availability,
+        participantPassword ?? undefined,
+      );
+    } catch {
+      // Best-effort save; UI surfaces errors elsewhere via fetch/useEvent invalidation.
     } finally {
       setSaving(false);
     }

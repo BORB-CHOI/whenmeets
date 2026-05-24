@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EventData } from '@/lib/types';
+import { eventsApi, resultsApi } from '@/lib/api-client';
 
 export const eventQueryKey = (eventId: string) => ['event', eventId] as const;
 export const resultsQueryKey = (eventId: string) => ['results', eventId] as const;
@@ -17,9 +18,8 @@ export function useEvent(eventId: string, opts: UseEventOptions = {}) {
   return useQuery({
     queryKey: eventQueryKey(eventId),
     queryFn: async (): Promise<EventData> => {
-      const res = await fetch(`/api/events/${eventId}`);
-      if (!res.ok) throw new Error(`Failed to load event: ${res.status}`);
-      return res.json();
+      const detail = await eventsApi.getDetail(eventId);
+      return detail as unknown as EventData;
     },
     initialData: opts.initialData,
     enabled: opts.enabled !== false,
@@ -47,9 +47,8 @@ export function useResults(eventId: string, initialData?: ResultsData) {
   return useQuery({
     queryKey: resultsQueryKey(eventId),
     queryFn: async (): Promise<ResultsData> => {
-      const res = await fetch(`/api/events/${eventId}/results`);
-      if (!res.ok) throw new Error(`Failed to load results: ${res.status}`);
-      return res.json();
+      const data = await resultsApi.getResults(eventId);
+      return data as unknown as ResultsData;
     },
     initialData,
   });

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { userApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 interface MyPageClientProps {
   email: string;
@@ -34,22 +36,15 @@ export default function MyPageClient({ email, initialName, avatarUrl }: MyPageCl
     setSyncInfo(null);
 
     try {
-      const res = await fetch('/api/user/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: trimmed }),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.error || '이름 변경에 실패했습니다');
-        return;
-      }
-      const data = await res.json();
+      const data = await userApi.updateDisplayName(trimmed);
       setSavedName(data.profile?.display_name ?? trimmed);
       setSyncInfo(data.participants ?? null);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       router.refresh();
+    } catch (err) {
+      const message = err instanceof ApiClientError ? err.message : '이름 변경에 실패했습니다';
+      setError(message);
     } finally {
       setSaving(false);
     }

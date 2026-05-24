@@ -27,6 +27,8 @@ import MobileSlotSheet from './MobileSlotSheet';
 import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
 import InAppBrowserModal from '@/components/auth/InAppBrowserModal';
 import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
+import { eventsApi, participantsApi } from '@/lib/api-client';
+import { ApiClientError } from '@/lib/api-client/client';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -208,18 +210,20 @@ export default function EventPageClient({
 
   // Realtime sync
   const handleRealtimeUpdate = useCallback(() => {
-    fetch(`/api/events/${eventId}`)
-      .then((res) => res.json())
-      .then((data: EventData) => {
-        if (!data.requires_auth) {
-          setEvent(data);
+    eventsApi
+      .getDetail(eventId)
+      .then((data) => {
+        const ev = data as unknown as EventData;
+        if (!ev.requires_auth) {
+          setEvent(ev);
           setSelectedIds((prev) => {
             const next = new Set(prev);
-            data.participants.forEach((p) => next.add(p.id));
+            ev.participants.forEach((p) => next.add(p.id));
             return next;
           });
         }
-      });
+      })
+      .catch(() => undefined);
   }, [eventId]);
 
   useRealtimeSync(eventId, viewMode === 'view', handleRealtimeUpdate);
@@ -406,14 +410,12 @@ export default function EventPageClient({
   async function autoJoinWithName(name: string) {
     setNameLoading(true);
     try {
-      const res = await fetch(`/api/events/${eventId}/participants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) return false;
-
-      const data = await res.json();
+      let data: Awaited<ReturnType<typeof participantsApi.join>>;
+      try {
+        data = await participantsApi.join(eventId, name);
+      } catch {
+        return false;
+      }
       setParticipantId(data.id);
       setParticipantPassword(null);
       setSession({ participantId: data.id, name: data.name, password: null });
@@ -462,28 +464,30 @@ export default function EventPageClient({
     setNameLoading(true);
     setNameError('');
     try {
-      const res = await fetch(`/api/events/${eventId}/participants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameInput.trim(), password: namePassword || undefined }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          const errData = await res.json();
-          if (errData.requires_password) {
-            setNameError('이 이름은 비밀번호가 설정되어 있습니다. 비밀번호를 입력해주세요.');
+      let data: Awaited<ReturnType<typeof participantsApi.join>>;
+      try {
+        data = await participantsApi.join(
+          eventId,
+          nameInput.trim(),
+          namePassword || undefined,
+        );
+      } catch (err) {
+        if (err instanceof ApiClientError) {
+          if (err.status === 401) {
+            if ((err.details as { requires_password?: boolean } | undefined)?.requires_password) {
+              setNameError('이 이름은 비밀번호가 설정되어 있습니다. 비밀번호를 입력해주세요.');
+              return;
+            }
+            setNameError(err.message || '비밀번호가 일치하지 않습니다');
             return;
           }
-          setNameError(errData.error || '비밀번호가 일치하지 않습니다');
+          setNameError(err.message || '참여에 실패했습니다');
           return;
         }
-        const errData = await res.json();
-        setNameError(errData.error || '참여에 실패했습니다');
+        setNameError('참여에 실패했습니다');
         return;
       }
 
-      const data = await res.json();
       setParticipantId(data.id);
       setParticipantPassword(namePassword || null);
       setSession({ participantId: data.id, name: data.name, password: namePassword || null });
@@ -532,13 +536,12 @@ export default function EventPageClient({
     await saveNow(availability);
     // Refresh event data to show updated heatmap and participant list
     try {
-      const res = await fetch(`/api/events/${eventId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setEvent(data);
-        setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
-      }
-    } catch { /* ignore */ }
+      const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
+      setEvent(data);
+      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+    } catch {
+      // ignore
+    }
     setViewMode('view');
   }
 
@@ -546,21 +549,19 @@ export default function EventPageClient({
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/events/${eventId}/participants/${pid}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: participantPassword || undefined }),
-      });
-      if (!res.ok) {
+      try {
+        await participantsApi.remove(eventId, pid, participantPassword || undefined);
+      } catch {
         setDeleteTargetPid(null);
         return;
       }
       // Refresh event data
-      const refreshRes = await fetch(`/api/events/${eventId}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
+      try {
+        const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
         setEvent(data);
         setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      } catch {
+        // ignore
       }
     } finally {
       setIsDeleting(false);
@@ -578,11 +579,11 @@ export default function EventPageClient({
   }
 
   async function saveDescription() {
-    await fetch(`/api/events/${eventId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description }),
-    });
+    try {
+      await eventsApi.update(eventId, { description });
+    } catch {
+      // ignore — UI optimistically updates below
+    }
     setEvent((prev) => ({ ...prev, description }));
     setEditingDescription(false);
   }
@@ -1012,9 +1013,10 @@ export default function EventPageClient({
         }}
         onEventUpdated={() => {
           setShowEditModal(false);
-          fetch(`/api/events/${eventId}`)
-            .then((r) => r.json())
-            .then((data) => setEvent(data));
+          eventsApi
+            .getDetail(eventId)
+            .then((data) => setEvent(data as unknown as EventData))
+            .catch(() => undefined);
         }}
       />
 

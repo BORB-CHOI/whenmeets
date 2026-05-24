@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { EventData } from '@/lib/types';
+import { eventsApi, eventAuthApi } from '@/lib/api-client';
 
 interface PasswordFormProps {
   event: EventData;
@@ -19,18 +20,11 @@ export default function PasswordForm({ event, eventId, onAuthenticated }: Passwo
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/events/${eventId}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      if (!res.ok) {
-        setError('비밀번호가 틀렸습니다');
-        return;
-      }
-      const eventRes = await fetch(`/api/events/${eventId}`);
-      const data: EventData = await eventRes.json();
+      await eventAuthApi.verifyPassword(eventId, password);
+      const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
       onAuthenticated(data);
+    } catch {
+      setError('비밀번호가 틀렸습니다');
     } finally {
       setLoading(false);
     }
