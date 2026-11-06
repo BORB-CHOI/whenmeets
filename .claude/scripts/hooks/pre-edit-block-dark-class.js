@@ -12,7 +12,7 @@ process.stdin.on('end', () => {
 
   let input;
   try {
-    input = JSON.parse(raw || '{}');
+    input = JSON.parse(raw || '{}') || {};
   } catch {
     process.exit(0);
   }
@@ -27,9 +27,9 @@ process.stdin.on('end', () => {
 
   let payload = '';
   if (tool === 'Edit') {
-    payload = ti.new_string || '';
+    payload = typeof ti.new_string === 'string' ? ti.new_string : '';
   } else if (tool === 'Write') {
-    payload = ti.content || '';
+    payload = typeof ti.content === 'string' ? ti.content : '';
   } else {
     process.exit(0);
   }
