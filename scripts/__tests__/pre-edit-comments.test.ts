@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HOOK_PATH = fileURLToPath(
@@ -72,6 +72,18 @@ describe('countComments', () => {
   });
 });
 
+describe('countComments: CSS', () => {
+  it.each([
+    ['.a{background:url(//cdn.x.com/a.png)}', 0],
+    ['@import url(//fonts.googleapis.com/css?family=Noto);', 0],
+    ['.a{width:calc(100% / 3); ' + block('c') + '}', 1],
+    ['.a{border-radius:50% / 10%; ' + block('c') + '}', 1],
+    [block('c') + ' .a{color:red}', 1],
+  ])('CSS 에서는 블록 주석만 센다: %j', (text, expected) => {
+    expect(countComments(text, true)).toBe(expected);
+  });
+});
+
 describe('findAddedComments', () => {
   const roots: string[] = [];
   const makeFile = (name: string, content: string) => {
@@ -93,11 +105,28 @@ describe('findAddedComments', () => {
     expect(findAddedComments('Edit', input)).toEqual({ file: 'src/a.ts', added: 1 });
   });
 
-  it('Edit 로 주석 개수가 같거나 줄면 통과시킨다', () => {
-    const base = { file_path: 'src/a.ts', old_string: line('하나'), new_string: line('고친 문장') };
+  it('Edit 로 같은 주석을 그대로 옮기거나 지우면 통과시킨다', () => {
+    const base = {
+      file_path: 'src/a.ts',
+      old_string: `${line('하나')}\nfoo();\nbar();`,
+      new_string: `foo();\n${line('하나')}\nbar();`,
+    };
 
     expect(findAddedComments('Edit', base)).toBeNull();
-    expect(findAddedComments('Edit', { ...base, new_string: 'const a = 1;' })).toBeNull();
+    expect(findAddedComments('Edit', { ...base, new_string: 'foo();\nbar();' })).toBeNull();
+  });
+
+  it('Edit 로 주석 내용을 바꾸면 새로 쓴 것으로 센다', () => {
+    const base = { file_path: 'src/a.ts', old_string: `const a = 1; ${line('legacy')}`, new_string: `const a = 1; ${line('brand new long explanation')}` };
+
+    expect(findAddedComments('Edit', base)).toEqual({ file: 'src/a.ts', added: 1 });
+  });
+
+  it('CSS 파일은 블록 주석만 센다', () => {
+    const url = { file_path: 'src/app/a.css', old_string: 'a', new_string: '.a{background:url(//cdn.x.com/a.png)}' };
+
+    expect(findAddedComments('Edit', url)).toBeNull();
+    expect(findAddedComments('Edit', { ...url, new_string: block('c') })).toMatchObject({ added: 1 });
   });
 
   it('Edit 로 주석 없는 코드를 넣으면 통과시킨다', () => {
@@ -118,11 +147,21 @@ describe('findAddedComments', () => {
     expect(findAddedComments('Write', input)).toBeNull();
   });
 
-  it('기존 파일을 Write 로 덮어쓸 때는 기존 주석 개수를 넘는 만큼만 센다', () => {
+  it('기존 파일을 Write 로 덮어쓸 때는 기존에 없던 주석만 센다', () => {
     const file = makeFile('old.ts', `${line('기존 하나')}\n${line('기존 둘')}\nconst a = 1;`);
+    const rewrite = (content: string) => findAddedComments('Write', { file_path: file, content });
 
-    expect(findAddedComments('Write', { file_path: file, content: `${line('기존 하나')}\n${line('기존 둘')}\nconst a = 2;` })).toBeNull();
-    expect(findAddedComments('Write', { file_path: file, content: `${line('a')}\n${line('b')}\n${line('c')}` })).toMatchObject({ added: 1 });
+    expect(rewrite(`${line('기존 하나')}\n${line('기존 둘')}\nconst a = 2;`)).toBeNull();
+    expect(rewrite(`${line('a')}\n${line('b')}\n${line('c')}`)).toMatchObject({ added: 3 });
+    expect(rewrite(`${line('기존 하나')}\n${line('셋')}`)).toMatchObject({ added: 1 });
+  });
+
+  it('상대경로 Write 는 입력의 cwd 를 기준으로 기존 파일을 읽는다', () => {
+    const root = dirname(dirname(makeFile('rel.ts', `${line('기존')}\nconst a = 1;`)));
+    const rewrite = (content: string) => findAddedComments('Write', { file_path: 'src/rel.ts', content }, root);
+
+    expect(rewrite(`${line('기존')}\nconst a = 2;`)).toBeNull();
+    expect(rewrite(`${line('새로')}\nconst a = 2;`)).toMatchObject({ added: 1 });
   });
 
   it.each([
@@ -132,6 +171,7 @@ describe('findAddedComments', () => {
     'public/ads.txt',
     'node_modules/pkg/src/a.ts',
     'docs/example.ts',
+    'src/../next.config.ts',
   ])('범위 밖 파일 %s 은 통과시킨다', (file_path) => {
     const input = { file_path, old_string: 'a', new_string: line('주석') };
 
@@ -141,10 +181,10 @@ describe('findAddedComments', () => {
   it.each([
     'src/components/ui/Select.tsx',
     'src/lib/constants.ts',
-    'src/app/globals.css',
     'scripts/check-component-map.mjs',
     '.claude/scripts/hooks/lib/command.js',
     'D:\\work\\whenmeets\\src\\lib\\a.ts',
+    'D:\\work\\whenmeets\\SRC\\lib\\a.ts',
   ])('범위 안 파일 %s 은 검사한다', (file_path) => {
     const input = { file_path, old_string: 'a', new_string: line('주석') };
 
