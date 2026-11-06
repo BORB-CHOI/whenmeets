@@ -100,7 +100,55 @@ describe('parseCommand: 따옴표와 이스케이프', () => {
   });
 });
 
+describe('parseCommand: 리다이렉션', () => {
+  it.each([
+    ['git reset --hard</dev/null', ['git', 'reset', '--hard']],
+    ['git push origin HEAD:main>/dev/null', ['git', 'push', 'origin', 'HEAD:main']],
+    ['git push origin main > push.log', ['git', 'push', 'origin', 'main']],
+    ['git push origin main >> push.log', ['git', 'push', 'origin', 'main']],
+    ['git push origin main 2>&1', ['git', 'push', 'origin', 'main']],
+    ['git push origin main 2> err.log', ['git', 'push', 'origin', 'main']],
+    ['git push origin main &> all.log', ['git', 'push', 'origin', 'main']],
+    ['git status >&2', ['git', 'status']],
+    ['git status 1>out 2>err', ['git', 'status']],
+  ])('%j 의 리다이렉션과 대상 파일은 단어에서 뺀다', (command, expected) => {
+    expect(parseCommand(command)).toContainEqual(expected);
+  });
+
+  it('따옴표 안의 < 와 > 는 그대로 둔다', () => {
+    expect(parseCommand('echo "a > b" ">"')).toEqual([['echo', 'a > b', '>']]);
+  });
+
+  it('리다이렉션에 붙은 숫자만 파일 기술자로 보고 뺀다', () => {
+    expect(parseCommand('echo 2>/dev/null')).toEqual([['echo']]);
+    expect(parseCommand('echo 2 >/dev/null')).toEqual([['echo', '2']]);
+  });
+});
+
+describe('parseCommand: env -S', () => {
+  it.each([
+    "env -S 'git reset --hard'",
+    'env -S "git push origin HEAD:main"',
+    "env -S'git reset --hard'",
+    "env --split-string 'git reset --hard'",
+  ])('%j 의 -S 문자열을 명령으로 푼다', (command) => {
+    const segments = parseCommand(command);
+
+    expect(segments.some((words: string[]) => words[0] === 'git')).toBe(true);
+  });
+});
+
 describe('parseCommand: 줄 이음, 주석, heredoc', () => {
+  it('역슬래시로 이스케이프한 heredoc 구분자도 종결자로 찾는다', () => {
+    const segments = parseCommand('cat <<\\EOF\nbody\nEOF\ngit status');
+
+    expect(has(segments, 'git', 'status')).toBe(true);
+  });
+
+  it('이스케이프한 구분자의 본문은 치환되지 않는다', () => {
+    expect(has(parseCommand('cat <<\\EOF\n$(git reset --hard)\nEOF'), 'git', 'reset')).toBe(false);
+  });
+
   it('줄 끝 역슬래시 이음을 공백으로 합친다', () => {
     expect(parseCommand('git push \\\n  origin main')).toEqual([['git', 'push', 'origin', 'main']]);
     expect(parseCommand('git push\\\n --force')).toEqual([['git', 'push', '--force']]);

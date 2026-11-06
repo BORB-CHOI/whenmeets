@@ -201,6 +201,56 @@ describe('디렉터리 이동 추적', () => {
   });
 });
 
+describe('리다이렉션', () => {
+  it.each([
+    'git push origin HEAD:main>/dev/null',
+    'git push origin main 2>&1',
+    'git push origin main > push.log',
+    'git push origin main >> push.log 2>&1',
+    'git commit -m x 2>/dev/null',
+  ])('%j 의 리다이렉션은 인자로 보지 않는다', (command) => {
+    expect(kinds(command, 'main').length).toBeGreaterThan(0);
+  });
+
+  it('리다이렉션 대상 파일 이름을 푸시 대상으로 오인하지 않는다', () => {
+    expect(kinds('git push origin feat/x > main', 'feat/a')).toEqual([]);
+    expect(kinds('git push origin feat/x 2> master.log', 'feat/a')).toEqual([]);
+  });
+});
+
+describe('서브셸과 치환의 범위', () => {
+  const resolveRef = () => null;
+  const run = (command: string, current: string, base = path.resolve('/work/repo')) =>
+    findViolations(
+      command,
+      { getBranch: (dir: string) => (path.basename(dir) === 'other' ? 'feat/a' : current), resolveRef },
+      base,
+    ).length;
+
+  it('서브셸 안의 브랜치 전환은 바깥으로 새지 않는다', () => {
+    expect(run('(git checkout feat/a); git commit -m x', 'main')).toBe(1);
+    expect(run('(git checkout feat/a && git commit -m x)', 'main')).toBe(0);
+  });
+
+  it('서브셸 안의 cd 는 바깥으로 새지 않는다', () => {
+    expect(run('(cd ../other && git status); git commit -m x', 'main')).toBe(1);
+    expect(run('(cd ../other && git commit -m x)', 'main')).toBe(0);
+  });
+
+  it('명령 치환 안의 cd 도 바깥으로 새지 않는다', () => {
+    expect(run('echo $(cd ../other && pwd); git commit -m x', 'main')).toBe(1);
+  });
+
+  it('서브셸이 아닌 곳의 cd 는 이어진다', () => {
+    expect(run('cd ../other && git commit -m x', 'main')).toBe(0);
+    expect(run('cd ../other; git status; git commit -m x', 'main')).toBe(0);
+  });
+
+  it('중첩된 서브셸도 바깥 상태를 되돌린다', () => {
+    expect(run('( (cd ../other) ; git commit -m x )', 'main')).toBe(1);
+  });
+});
+
 describe('훅 입력의 cwd', () => {
   it('payload 의 cwd 를 시작 디렉터리로 쓴다', () => {
     const seen: string[] = [];
@@ -349,7 +399,6 @@ describe('푸시 차단', () => {
     'git push origin $BRANCH',
     'git push -u origin "$(git branch --show-current)"',
     'git push origin "HEAD:refs/heads/$BR"',
-    'git push origin feat/x > $LOG',
   ])('변수나 치환으로 쓴 목적지 %j 는 현재 브랜치를 기준으로 판단한다', (command) => {
     expect(kinds(command, 'feat/a')).toEqual([]);
     expect(kinds(command, 'main')).toEqual(['push']);

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -32,9 +33,25 @@ function isCreating(args) {
   return args.some((arg) => /^-[bBcC]/.test(arg) || arg === '--create');
 }
 
-function namesExistingPath(args, cwd) {
+function defaultIsBranch(cwd, name) {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`], {
+      cwd,
+      stdio: 'ignore',
+      timeout: 5000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function namesExistingPath(args, ctx) {
   if (isCreating(args)) return false;
-  return positionalOf(args).some((arg) => fs.existsSync(path.resolve(cwd, toNativePath(arg))));
+  return positionalOf(args).some(
+    (arg) =>
+      fs.existsSync(path.resolve(ctx.cwd, toNativePath(arg))) && !ctx.isBranch(ctx.cwd, arg),
+  );
 }
 
 const RULES = new Map([
@@ -51,7 +68,7 @@ const RULES = new Map([
       ...(args.includes('--') ? ['git checkout [<커밋>] -- <경로> 는 파일을 되돌려 변경을 버린다'] : []),
       ...(isForce(args) ? ['git checkout -f 는 작업 트리의 변경을 버린다'] : []),
       ...(args.includes('.') ? ['git checkout . 은 작업 트리의 변경을 모두 버린다'] : []),
-      ...(namesExistingPath(args, ctx.cwd) && !args.includes('--') && !args.includes('.')
+      ...(namesExistingPath(args, ctx) && !args.includes('--') && !args.includes('.')
         ? ['git checkout <경로> 는 파일을 되돌려 변경을 버린다']
         : []),
     ],
@@ -128,11 +145,11 @@ const RULES = new Map([
   ],
 ]);
 
-function findReasons(command, baseCwd = process.cwd()) {
+function findReasons(command, baseCwd = process.cwd(), isBranch = defaultIsBranch) {
   return parseCommand(command).flatMap((words) => {
     const git = parseGit(words);
     const rule = git && RULES.get(git.subcommand);
-    return rule ? rule(git.args, { cwd: resolveDir(baseCwd, git.dirs) }) : [];
+    return rule ? rule(git.args, { cwd: resolveDir(baseCwd, git.dirs), isBranch }) : [];
   });
 }
 

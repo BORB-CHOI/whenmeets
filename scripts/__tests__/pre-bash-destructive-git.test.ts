@@ -138,6 +138,14 @@ describe('findReasons: 차단', () => {
     "bash -c -- 'git reset --hard'",
     'cat <<EOF\n$(git reset --hard)\nEOF',
     "git commit -m $'don\\'t'; git reset --hard",
+    'git reset --hard</dev/null',
+    'git clean -fd 2>&1',
+    'git push -f origin feat/a >/dev/null',
+    'git reset --hard > out.log 2>&1',
+    "env -S 'git reset --hard'",
+    'env --split-string "git clean -fd"',
+    'cat <<\\EOF\nbody\nEOF\ngit reset --hard',
+    '(git status); git reset --hard',
   ])('다른 모양으로 감싼 %j 도 차단한다', (command) => {
     expect(findReasons(command).length).toBeGreaterThan(0);
   });
@@ -159,6 +167,14 @@ describe('findReasons: 차단', () => {
         expect(findReasons(command, cwd).length).toBeGreaterThan(0);
       },
     );
+
+    it('같은 이름의 브랜치가 있으면 경로보다 브랜치를 먼저 본다', () => {
+      const branches = new Set(['command-parser.test.ts']);
+      const isBranch = (_cwd: string, name: string) => branches.has(name);
+
+      expect(findReasons(`git checkout ${file}`, cwd, isBranch)).toEqual([]);
+      expect(findReasons(`git checkout ${file}`, cwd, () => false).length).toBeGreaterThan(0);
+    });
 
     it.each(['git checkout feat/a', 'git checkout main', 'git checkout -b __tests__', 'git switch __tests__'])(
       '브랜치로 보이는 %j 는 통과시킨다',

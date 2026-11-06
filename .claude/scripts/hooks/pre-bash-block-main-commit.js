@@ -49,6 +49,23 @@ function newState(baseCwd) {
   return { base: baseCwd, cwd: baseCwd, previous: baseCwd, stack: [], branch: null };
 }
 
+function snapshot(state) {
+  return { cwd: state.cwd, previous: state.previous, stack: [...state.stack], branch: state.branch };
+}
+
+function restore(state, saved) {
+  Object.assign(state, { ...saved, stack: [...saved.stack] });
+}
+
+function syncScopes(state, active, scopes) {
+  let common = 0;
+  while (common < active.length && common < scopes.length && active[common].id === scopes[common]) {
+    common += 1;
+  }
+  while (active.length > common) restore(state, active.pop().saved);
+  for (const id of scopes.slice(common)) active.push({ id, saved: snapshot(state) });
+}
+
 function moveTo(state, target) {
   state.previous = state.cwd;
   state.cwd = isDynamicPath(target) ? state.base : path.resolve(state.cwd, toNativePath(target));
@@ -154,8 +171,10 @@ function findViolations(command, envOrGetBranch = DEFAULT_ENV, baseCwd = process
     return cache.get(key);
   };
   const violations = [];
+  const activeScopes = [];
 
   for (const words of parseCommand(command)) {
+    syncScopes(state, activeScopes, words.scopes ?? []);
     if (applyDirectoryChange(state, words)) continue;
 
     const git = parseGit(words);

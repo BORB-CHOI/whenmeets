@@ -47,6 +47,9 @@ const GIT_OPTIONS_WITH_VALUE = new Set([
   '--config-env',
 ]);
 
+let scopeStack = [];
+let scopeCounter = 0;
+
 function isSpace(ch) {
   return ch === ' ' || ch === '\t';
 }
@@ -56,8 +59,8 @@ function lineEnd(source, pos) {
   return index === -1 ? source.length : index;
 }
 
-function attachStdin(words, text) {
-  Object.defineProperty(words, 'stdin', { value: text, enumerable: false, writable: true });
+function defineHidden(target, name, value) {
+  Object.defineProperty(target, name, { value, enumerable: false, writable: true });
 }
 
 function readHeredocMarker(source, start, heredocs, words) {
@@ -80,7 +83,11 @@ function readHeredocMarker(source, start, heredocs, words) {
     pos = end + 1;
   } else {
     while (pos < source.length && !/[\s;&|()<>]/.test(source[pos])) {
-      if (source[pos] === '\\') quoted = true;
+      if (source[pos] === '\\') {
+        quoted = true;
+        pos += 1;
+        continue;
+      }
       delimiter += source[pos];
       pos += 1;
     }
@@ -96,7 +103,7 @@ function scanSubstitutions(text, depth, out) {
     if (ch === '\\') {
       pos += 2;
     } else if (ch === '$' && text[pos + 1] === '(') {
-      pos = scan(text, pos + 2, true, depth + 1, out);
+      pos = scanNested(text, pos + 2, depth, out);
     } else if (ch === '`') {
       pos = readBackticks(text, pos + 1, depth, out);
     } else {
@@ -118,16 +125,27 @@ function skipHeredocs(source, start, heredocs, depth, out) {
       body.push(line);
     }
     const text = body.join('\n');
-    attachStdin(words, text);
+    defineHidden(words, 'stdin', text);
     if (!quoted) scanSubstitutions(text, depth, out);
   }
   return pos;
 }
 
+function scanNested(source, start, depth, out) {
+  scopeCounter += 1;
+  scopeStack.push(scopeCounter);
+  const end = scan(source, start, true, depth + 1, out);
+  scopeStack.pop();
+  return end;
+}
+
 function readBackticks(source, start, depth, out) {
   const close = source.indexOf('`', start);
   const end = close === -1 ? source.length : close;
+  scopeCounter += 1;
+  scopeStack.push(scopeCounter);
   scan(source.slice(start, end), 0, false, depth + 1, out);
+  scopeStack.pop();
   return end + 1;
 }
 
@@ -148,7 +166,7 @@ function readDoubleQuoted(source, start, depth, out) {
       }
     } else if (ch === '$' && source[pos + 1] === '(') {
       text += SUBSTITUTION_MARK;
-      pos = scan(source, pos + 2, true, depth + 1, out);
+      pos = scanNested(source, pos + 2, depth, out);
     } else if (ch === '`') {
       text += SUBSTITUTION_MARK;
       pos = readBackticks(source, pos + 1, depth, out);
@@ -175,6 +193,17 @@ function readAnsiCQuoted(source, start) {
   return { text, pos: pos + 1 };
 }
 
+function skipRedirection(source, start) {
+  let pos = start + 1;
+  if (source[pos] === source[start]) pos += 1;
+  if (source[pos] === '&') {
+    pos += 1;
+    while (/[\d-]/.test(source[pos] ?? '')) pos += 1;
+    return { pos, discardNext: false };
+  }
+  return { pos, discardNext: true };
+}
+
 function scan(source, start, stopAtParen, depth, out) {
   if (depth > MAX_DEPTH) return source.length;
 
@@ -183,12 +212,16 @@ function scan(source, start, stopAtParen, depth, out) {
   let word = '';
   let inWord = false;
   let awaitingHereString = false;
+  let discardNext = false;
+  let opened = 0;
   const heredocs = [];
 
   const endWord = () => {
     if (!inWord) return;
-    if (awaitingHereString) {
-      attachStdin(words, word);
+    if (discardNext) {
+      discardNext = false;
+    } else if (awaitingHereString) {
+      defineHidden(words, 'stdin', word);
       awaitingHereString = false;
     } else {
       words.push(word);
@@ -199,6 +232,7 @@ function scan(source, start, stopAtParen, depth, out) {
   const endSegment = () => {
     endWord();
     if (words.length > 0) {
+      defineHidden(words, 'scopes', [...scopeStack]);
       out.push(words);
       words = [];
     }
@@ -241,13 +275,21 @@ function scan(source, start, stopAtParen, depth, out) {
     } else if (ch === '$' && source[pos + 1] === '(') {
       word += SUBSTITUTION_MARK;
       inWord = true;
-      pos = scan(source, pos + 2, true, depth + 1, out);
+      pos = scanNested(source, pos + 2, depth, out);
     } else if (ch === ')') {
       endSegment();
       pos += 1;
-      if (stopAtParen) return pos;
+      if (opened > 0) {
+        opened -= 1;
+        scopeStack.pop();
+      } else if (stopAtParen) {
+        return pos;
+      }
     } else if (ch === '(') {
       endSegment();
+      scopeCounter += 1;
+      scopeStack.push(scopeCounter);
+      opened += 1;
       pos += 1;
     } else if (ch === '&' || ch === '|' || ch === ';') {
       endSegment();
@@ -259,6 +301,16 @@ function scan(source, start, stopAtParen, depth, out) {
     } else if (ch === '<' && source[pos + 1] === '<') {
       endWord();
       pos = readHeredocMarker(source, pos + 2, heredocs, words);
+    } else if (ch === '<' || ch === '>') {
+      if (inWord && /^\d+$/.test(word)) {
+        word = '';
+        inWord = false;
+      } else {
+        endWord();
+      }
+      const skipped = skipRedirection(source, pos);
+      pos = skipped.pos;
+      discardNext = skipped.discardNext;
     } else {
       word += ch;
       inWord = true;
@@ -266,6 +318,10 @@ function scan(source, start, stopAtParen, depth, out) {
     }
   }
   endSegment();
+  while (opened > 0) {
+    opened -= 1;
+    scopeStack.pop();
+  }
   return pos;
 }
 
@@ -294,9 +350,19 @@ function commandIndex(words) {
   return -1;
 }
 
+function splitStringPayloads(words, depth) {
+  if (!words.includes('env')) return [];
+  return words.flatMap((word, i) => {
+    if (word === '-S' || word === '--split-string') return parseCommand(words[i + 1] ?? '', depth + 1);
+    if (/^-S.+/.test(word)) return parseCommand(word.slice(2), depth + 1);
+    return [];
+  });
+}
+
 function expandWrapper(words, depth) {
+  const envPayloads = splitStringPayloads(words, depth);
   const index = commandIndex(words);
-  if (index === -1) return [];
+  if (index === -1) return envPayloads;
   const program = programName(words[index]);
   const rest = words.slice(index + 1);
 
@@ -304,19 +370,26 @@ function expandWrapper(words, depth) {
     const flag = rest.findIndex((word) => /^-[A-Za-z]*c[A-Za-z]*$/.test(word));
     if (flag !== -1) {
       const payload = rest[flag + 1] === '--' ? rest[flag + 2] : rest[flag + 1];
-      return payload !== undefined ? parseCommand(payload, depth + 1) : [];
+      return [...envPayloads, ...(payload !== undefined ? parseCommand(payload, depth + 1) : [])];
     }
-    return typeof words.stdin === 'string' ? parseCommand(words.stdin, depth + 1) : [];
+    const stdin = typeof words.stdin === 'string' ? parseCommand(words.stdin, depth + 1) : [];
+    return [...envPayloads, ...stdin];
   }
-  if (program === 'eval') return parseCommand(rest.join(' '), depth + 1);
-  return [];
+  if (program === 'eval') return [...envPayloads, ...parseCommand(rest.join(' '), depth + 1)];
+  return envPayloads;
 }
 
 function parseCommand(command, depth = 0) {
   if (typeof command !== 'string' || depth > MAX_DEPTH) return [];
   const source = command.slice(0, MAX_LENGTH).replace(/\\\r?\n/g, ' ').replace(/\r/g, '');
   const segments = [];
-  scan(source, 0, false, depth, segments);
+  const savedScopes = scopeStack;
+  scopeStack = [];
+  try {
+    scan(source, 0, false, depth, segments);
+  } finally {
+    scopeStack = savedScopes;
+  }
   return [...segments, ...segments.flatMap((words) => expandWrapper(words, depth))];
 }
 
