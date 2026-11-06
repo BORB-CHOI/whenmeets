@@ -227,8 +227,9 @@ describe('서브셸과 치환의 범위', () => {
       base,
     ).length;
 
-  it('서브셸 안의 브랜치 전환은 바깥으로 새지 않는다', () => {
-    expect(run('(git checkout feat/a); git commit -m x', 'main')).toBe(1);
+  it('서브셸 안의 브랜치 전환은 저장소 상태라서 바깥 명령에도 이어진다', () => {
+    expect(run('(git checkout feat/a); git commit -m x', 'main')).toBe(0);
+    expect(run('(git checkout main) && git commit -m x', 'feat/a')).toBe(1);
     expect(run('(git checkout feat/a && git commit -m x)', 'main')).toBe(0);
   });
 
@@ -336,6 +337,15 @@ describe('같은 명령 안의 브랜치 전환', () => {
     'git switch feat/a && git push',
   ])('main 에서 기능 브랜치로 옮긴 뒤의 %j 는 통과시킨다', (command) => {
     expect(findViolations(command, onBranch('main'))).toEqual([]);
+  });
+
+  it('-C 로 가리킨 저장소의 브랜치 전환을 같은 저장소의 다음 명령에 이어 준다', () => {
+    const command = 'git -C ../repo checkout main && git -C ../repo commit -m x';
+
+    expect(findViolations(command, onBranch('feat/a'))).toHaveLength(1);
+    expect(
+      findViolations('git -C ../a checkout main && git -C ../b commit -m x', onBranch('feat/a')),
+    ).toEqual([]);
   });
 
   it('파일만 되돌리는 checkout -- 은 브랜치 전환으로 보지 않는다', () => {

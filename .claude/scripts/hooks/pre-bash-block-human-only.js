@@ -5,6 +5,7 @@ const { commandIndex, parseCommand, programName, readCommand, runHook } = requir
 const RUNNERS = new Set(['npx', 'bunx', 'pnpx']);
 const PACKAGE_MANAGERS = new Set(['npm', 'pnpm', 'yarn', 'bun']);
 const EXEC_SUBCOMMANDS = new Set(['dlx', 'exec', 'x']);
+const RUNNER_VALUE_OPTIONS = new Set(['-p', '--package', '-w', '--workspace', '--prefix', '--cache']);
 const SUPABASE = /^supabase(?:@.*)?$/;
 const DRY_RUN = /^--dry-run(?:=(?:true|1))?$/;
 const LOCAL = /^--local(?:=(?:true|1))?$/;
@@ -24,7 +25,9 @@ function supabaseArgs(words) {
   if (start === -1) return null;
 
   let index = packageStart(words, start);
-  while (index < words.length && words[index].startsWith('-')) index += 1;
+  while (index < words.length && words[index].startsWith('-')) {
+    index += RUNNER_VALUE_OPTIONS.has(words[index]) ? 2 : 1;
+  }
 
   return SUPABASE.test(programName(words[index] ?? '')) ? words.slice(index + 1) : null;
 }

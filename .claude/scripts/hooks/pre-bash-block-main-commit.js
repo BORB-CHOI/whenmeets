@@ -46,11 +46,11 @@ function normalizeEnv(env) {
 }
 
 function newState(baseCwd) {
-  return { base: baseCwd, cwd: baseCwd, previous: baseCwd, stack: [], branch: null };
+  return { base: baseCwd, cwd: baseCwd, previous: baseCwd, stack: [], branches: new Map() };
 }
 
 function snapshot(state) {
-  return { cwd: state.cwd, previous: state.previous, stack: [...state.stack], branch: state.branch };
+  return { cwd: state.cwd, previous: state.previous, stack: [...state.stack] };
 }
 
 function restore(state, saved) {
@@ -69,7 +69,6 @@ function syncScopes(state, active, scopes) {
 function moveTo(state, target) {
   state.previous = state.cwd;
   state.cwd = isDynamicPath(target) ? state.base : path.resolve(state.cwd, toNativePath(target));
-  state.branch = null;
 }
 
 function applyDirectoryChange(state, words) {
@@ -80,14 +79,12 @@ function applyDirectoryChange(state, words) {
   const rest = words.slice(index + 1);
   if (program === 'popd') {
     state.cwd = state.stack.pop() ?? state.cwd;
-    state.branch = null;
     return true;
   }
   if (rest[0] === '-') {
     const back = state.previous;
     state.previous = state.cwd;
     state.cwd = back;
-    state.branch = null;
     return true;
   }
   if (program === 'pushd') state.stack.push(state.cwd);
@@ -100,7 +97,7 @@ function isRelativeRef(name) {
   return name === '-' || /^@\{-\d*\}$/.test(name);
 }
 
-function switchedBranch(git, state, env) {
+function switchedBranch(git, dir, env) {
   if (git.subcommand !== 'checkout' && git.subcommand !== 'switch') return undefined;
   const args = git.args;
   if (args.includes('--')) return undefined;
@@ -114,9 +111,9 @@ function switchedBranch(git, state, env) {
   const target = args.filter((arg) => arg === '-' || !arg.startsWith('-'))[0];
   if (target === undefined) return undefined;
   if (isRelativeRef(target)) {
-    return env.resolveRef(state.cwd, git.gitArgs, target === '-' ? '@{-1}' : target);
+    return env.resolveRef(dir, git.gitArgs, target === '-' ? '@{-1}' : target);
   }
-  if (fs.existsSync(path.resolve(state.cwd, toNativePath(target)))) return undefined;
+  if (fs.existsSync(path.resolve(dir, toNativePath(target)))) return undefined;
   const tracking = args.includes('--track') || args.includes('-t');
   return tracking && target.includes('/') ? target.slice(target.indexOf('/') + 1) : target;
 }
@@ -181,8 +178,8 @@ function findViolations(command, envOrGetBranch = DEFAULT_ENV, baseCwd = process
     if (!git) continue;
 
     const dir = resolveDir(state.cwd, git.dirs);
-    const plain = git.dirs.length === 0 && git.gitArgs.length === 0;
-    const currentBranch = () => (plain && state.branch ? state.branch : lookup(dir, git.gitArgs));
+    const repoKey = [dir, ...git.gitArgs].join('\u0000');
+    const currentBranch = () => state.branches.get(repoKey) ?? lookup(dir, git.gitArgs);
 
     if (git.subcommand === 'commit') {
       const branch = currentBranch();
@@ -191,8 +188,9 @@ function findViolations(command, envOrGetBranch = DEFAULT_ENV, baseCwd = process
       violations.push(...checkPush(git.args, currentBranch));
     }
 
-    const switched = switchedBranch(git, state, env);
-    if (switched !== undefined && plain) state.branch = switched;
+    const switched = switchedBranch(git, dir, env);
+    if (switched === null) state.branches.delete(repoKey);
+    else if (switched !== undefined) state.branches.set(repoKey, switched);
   }
   return violations;
 }
