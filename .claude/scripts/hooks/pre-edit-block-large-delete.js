@@ -21,7 +21,7 @@ process.stdin.on('end', () => {
   }
   let input;
   try {
-    input = JSON.parse(raw || '{}');
+    input = JSON.parse(raw || '{}') || {};
   } catch {
     process.exit(0);
   }
@@ -29,7 +29,7 @@ process.stdin.on('end', () => {
   const ti = input.tool_input || {};
 
   function lines(s) {
-    if (!s) return 0;
+    if (!s || typeof s !== 'string') return 0;
     return s.split('\n').length;
   }
 

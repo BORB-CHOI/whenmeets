@@ -1,63 +1,232 @@
 #!/usr/bin/env node
-// PreToolUse hook: block direct commits to main/master.
-// Blocks: `git commit ...` when current branch is main or master.
-// Allows: commits on feature/fix/chore branches, all other git commands.
-//
-// Bypass for one-off intentional use:
-//   set HARNESS_BYPASS_MAIN_COMMIT=1 in the environment before the command.
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const {
+  commandIndex,
+  isDynamicPath,
+  parseCommand,
+  parseGit,
+  readCommand,
+  readCwd,
+  resolveDir,
+  runHook,
+  toNativePath,
+} = require('./lib/command');
 
-let raw = '';
-process.stdin.on('data', (c) => (raw += c));
-process.stdin.on('end', () => {
-  if (process.env.HARNESS_BYPASS_MAIN_COMMIT === '1') {
-    process.exit(0);
-  }
-  let input;
+const PROTECTED = new Set(['main', 'master']);
+const PUSH_OPTIONS_WITH_VALUE = new Set(['-o', '--push-option', '--repo', '--receive-pack', '--exec']);
+const CREATE_FLAGS = new Set(['-b', '-B', '-c', '-C', '--create', '--force-create']);
+const DETACHED = '(detached)';
+const GIT_TIMEOUT_MS = 5000;
+
+function runGit(dir, gitArgs, args) {
   try {
-    input = JSON.parse(raw || '{}');
+    return execFileSync('git', [...gitArgs, ...args], {
+      cwd: dir || undefined,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: GIT_TIMEOUT_MS,
+    }).trim();
   } catch {
-    process.exit(0);
+    return '';
   }
-  const cmdRaw = (input.tool_input && input.tool_input.command) || '';
-  if (!cmdRaw) process.exit(0);
+}
 
-  // Detect `git commit` invocations. We strip heredocs and quoted strings first
-  // so commit message bodies cannot accidentally match.
-  function strip(s) {
-    let t = s;
-    t = t.replace(/<<-?\s*'?([A-Za-z_][A-Za-z0-9_]*)'?[\s\S]*?\n\s*\1\b/g, ' ');
-    t = t.replace(/"(?:\\.|[^"\\])*"/g, '""');
-    t = t.replace(/'[^']*'/g, "''");
-    return t;
-  }
-  const cmd = strip(cmdRaw);
+const DEFAULT_ENV = {
+  getBranch: (dir, gitArgs = []) => runGit(dir, gitArgs, ['branch', '--show-current']) || null,
+  resolveRef: (dir, gitArgs, ref) => runGit(dir, gitArgs, ['rev-parse', '--abbrev-ref', ref]) || null,
+};
 
-  if (!/\bgit\s+commit\b/.test(cmd)) {
-    process.exit(0);
-  }
+function normalizeEnv(env) {
+  if (typeof env === 'function') return { getBranch: env, resolveRef: () => null };
+  return { ...DEFAULT_ENV, ...env };
+}
 
-  // Get current branch
-  let branch = '';
-  try {
-    branch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
-  } catch {
-    process.exit(0); // git not available — let it fail naturally
-  }
+function newState(baseCwd) {
+  return { base: baseCwd, cwd: baseCwd, previous: baseCwd, stack: [], branches: new Map() };
+}
 
-  if (branch !== 'main' && branch !== 'master') {
-    process.exit(0);
+function snapshot(state) {
+  return { cwd: state.cwd, previous: state.previous, stack: [...state.stack] };
+}
+
+function restore(state, saved) {
+  Object.assign(state, { ...saved, stack: [...saved.stack] });
+}
+
+function syncScopes(state, active, scopes) {
+  let common = 0;
+  while (common < active.length && common < scopes.length && active[common].id === scopes[common]) {
+    common += 1;
   }
+  while (active.length > common) restore(state, active.pop().saved);
+  for (const id of scopes.slice(common)) active.push({ id, saved: snapshot(state) });
+}
+
+function moveTo(state, target) {
+  state.previous = state.cwd;
+  state.cwd = isDynamicPath(target) ? state.base : path.resolve(state.cwd, toNativePath(target));
+}
+
+function applyDirectoryChange(state, words) {
+  const index = commandIndex(words);
+  const program = index === -1 ? '' : words[index];
+  if (!['cd', 'pushd', 'popd'].includes(program)) return false;
+
+  const rest = words.slice(index + 1);
+  if (program === 'popd') {
+    state.cwd = state.stack.pop() ?? state.cwd;
+    return true;
+  }
+  if (rest[0] === '-') {
+    const back = state.previous;
+    state.previous = state.cwd;
+    state.cwd = back;
+    return true;
+  }
+  if (program === 'pushd') state.stack.push(state.cwd);
+  const target = rest.find((word) => !word.startsWith('-'));
+  moveTo(state, target === undefined ? os.homedir() : target);
+  return true;
+}
+
+function isRelativeRef(name) {
+  return name === '-' || /^@\{-\d*\}$/.test(name);
+}
+
+function switchedBranch(git, dir, env) {
+  if (git.subcommand !== 'checkout' && git.subcommand !== 'switch') return undefined;
+  const args = git.args;
+  if (args.includes('--')) return undefined;
+  if (args.includes('--detach')) return DETACHED;
+
+  const compact = args.map((arg) => /^-[bBcC](.+)$/.exec(arg)).find(Boolean);
+  if (compact) return compact[1];
+  const create = args.findIndex((arg) => CREATE_FLAGS.has(arg));
+  if (create !== -1) return args[create + 1];
+
+  const target = args.filter((arg) => arg === '-' || !arg.startsWith('-'))[0];
+  if (target === undefined) return undefined;
+  if (isRelativeRef(target)) {
+    return env.resolveRef(dir, git.gitArgs, target === '-' ? '@{-1}' : target);
+  }
+  if (fs.existsSync(path.resolve(dir, toNativePath(target)))) return undefined;
+  const tracking = args.includes('--track') || args.includes('-t');
+  return tracking && target.includes('/') ? target.slice(target.indexOf('/') + 1) : target;
+}
+
+function splitPushArgs(args) {
+  const positional = [];
+  let hasRepoOption = false;
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg.startsWith('-')) {
+      if (arg === '--repo' || arg.startsWith('--repo=')) hasRepoOption = true;
+      if (PUSH_OPTIONS_WITH_VALUE.has(arg)) i += 1;
+    } else {
+      positional.push(arg);
+    }
+  }
+  return { positional, hasRepoOption };
+}
+
+function destinationViolation(spec, currentBranch) {
+  const raw = spec.replace(/^\+/, '');
+  let destination = raw.includes(':') ? raw.slice(raw.indexOf(':') + 1) : raw;
+  if (destination.includes('*')) {
+    return [{ kind: 'push', detail: `대상을 알 수 없는 refspec ${spec}` }];
+  }
+  if (destination === 'HEAD' || isDynamicPath(destination)) destination = currentBranch() ?? '';
+  destination = destination.replace(/^refs\/heads\//, '');
+  return PROTECTED.has(destination) ? [{ kind: 'push', detail: destination }] : [];
+}
+
+function checkPush(args, currentBranch) {
+  const wide = ['--all', '--mirror'].find((flag) => args.includes(flag));
+  if (wide) return [{ kind: 'push', detail: wide }];
+
+  const { positional, hasRepoOption } = splitPushArgs(args);
+  const refspecs = hasRepoOption ? positional : positional.slice(1);
+  if (refspecs.length === 0) {
+    if (args.includes('--tags')) return [];
+    const branch = currentBranch();
+    return PROTECTED.has(branch) ? [{ kind: 'push', detail: branch }] : [];
+  }
+  return refspecs.flatMap((spec) => destinationViolation(spec, currentBranch));
+}
+
+function findViolations(command, envOrGetBranch = DEFAULT_ENV, baseCwd = process.cwd()) {
+  const env = normalizeEnv(envOrGetBranch);
+  const state = newState(baseCwd);
+  const cache = new Map();
+  const lookup = (dir, gitArgs) => {
+    const key = [dir, ...gitArgs].join('\u0000');
+    if (!cache.has(key)) cache.set(key, env.getBranch(dir, gitArgs));
+    return cache.get(key);
+  };
+  const violations = [];
+  const activeScopes = [];
+
+  for (const words of parseCommand(command)) {
+    syncScopes(state, activeScopes, words.scopes ?? []);
+    if (applyDirectoryChange(state, words)) continue;
+
+    const git = parseGit(words);
+    if (!git) continue;
+
+    const dir = resolveDir(state.cwd, git.dirs);
+    const repoKey = [dir, ...git.gitArgs].join('\u0000');
+    const currentBranch = () => state.branches.get(repoKey) ?? lookup(dir, git.gitArgs);
+
+    if (git.subcommand === 'commit') {
+      const branch = currentBranch();
+      if (PROTECTED.has(branch)) violations.push({ kind: 'commit', detail: branch });
+    } else if (git.subcommand === 'push') {
+      violations.push(...checkPush(git.args, currentBranch));
+    }
+
+    const switched = switchedBranch(git, dir, env);
+    if (switched === null) state.branches.delete(repoKey);
+    else if (switched !== undefined) state.branches.set(repoKey, switched);
+  }
+  return violations;
+}
+
+function describeViolation({ kind, detail }) {
+  if (kind === 'commit') {
+    return [
+      `[harness] 차단: ${detail} 브랜치에는 직접 커밋할 수 없습니다.`,
+      '         기능 브랜치를 먼저 만드세요: git checkout -b feat/<작업 이름>  (또는 fix/<작업 이름>)',
+      '         커밋한 뒤 PR 로 main 에 합칩니다.',
+    ];
+  }
+  return [
+    `[harness] 차단: main/master 로 직접 푸시할 수 없습니다 (${detail}).`,
+    '         기능 브랜치를 푸시하고 PR 로 합치세요.',
+  ];
+}
+
+function main(raw, env = DEFAULT_ENV) {
+  if (process.env.HARNESS_BYPASS_MAIN_COMMIT === '1') return 0;
+
+  const payloadCwd = readCwd(raw);
+  const baseCwd = payloadCwd && fs.existsSync(payloadCwd) ? payloadCwd : process.cwd();
+  const violations = findViolations(readCommand(raw), env, baseCwd);
+  if (violations.length === 0) return 0;
 
   const lines = [
-    '[harness] BLOCKED: direct commit to ' + branch + ' is not allowed.',
-    '         Command: ' + cmd,
-    '         Workflow: create a feature branch first.',
-    '           git checkout -b feat/<task-name>   # or fix/<task-name>',
-    '         Then commit on that branch and open a PR back to ' + branch + '.',
-    '         If absolutely necessary, set HARNESS_BYPASS_MAIN_COMMIT=1 for this command.',
+    ...violations.flatMap(describeViolation),
+    '         꼭 필요하면 Claude Code 를 띄우기 전에 HARNESS_BYPASS_MAIN_COMMIT=1 을 설정하세요.',
   ];
-  process.stderr.write(lines.join('\n') + '\n');
-  process.exit(2);
-});
+  process.stderr.write(`${lines.join('\n')}\n`);
+  return 2;
+}
+
+if (require.main === module) {
+  runHook(main);
+}
+
+module.exports = { findViolations, main };
