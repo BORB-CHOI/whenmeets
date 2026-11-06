@@ -9,7 +9,7 @@ All notable changes to DayMeet will be documented in this file.
 ### Added
 
 - **사람 전용 명령 차단**: `supabase db push`(`--dry-run`과 `--local` 제외), 원격 DB를 가리키는 `supabase db reset --linked`, 원격 `supabase migration up/down/repair`를 에이전트가 실행하지 못하게 막는다. 프로덕션 DB 적용은 머지 뒤 사람이 직접 한다는 규칙을 훅으로 강제한다. `npx supabase@latest`, `npm --prefix ./app exec -- supabase`, `pnpm dlx`, `supabase.exe`처럼 실행 방식이 달라도 막는다.
-- **명령 해석기**: 보호 훅 세 개가 공용으로 쓰는 셸 명령 해석기(`.claude/scripts/hooks/lib/command.js`)를 추가했다. 따옴표(`$'...'` 포함), 줄 끝 `\` 이음, `&&`, `||`, `;`, `|`, `&`, 괄호, heredoc, 주석, `$(...)`, 백틱, `bash -c`, `bash <<EOF`, `eval`, `sudo -u`, `env -u`, `xargs -n`, `timeout` 같은 래퍼 안의 명령을 풀어서 본다.
+- **명령 해석기**: 보호 훅 세 개가 공용으로 쓰는 셸 명령 해석기(`.claude/scripts/hooks/lib/command.js`)를 추가했다. 따옴표(`$'...'` 포함), 줄 끝 `\` 이음, `&&`, `||`, `;`, `|`, `&`, 괄호, heredoc, 주석, `$(...)`, 백틱, `bash -c`, `bash <<EOF`, `eval`, `env -S`, `sudo -u`, `env -u`, `xargs -n`, `timeout` 같은 래퍼 안의 명령을 풀어서 본다. `</dev/null`, `2>&1` 같은 리다이렉션은 인자에서 빼고, 서브셸 `( ... )`과 `$(...)` 안에서 바꾼 디렉터리와 브랜치가 바깥으로 새지 않게 범위를 나눈다.
 - **훅 배선 검증**: `.claude/settings.json`의 모든 훅이 `$CLAUDE_PROJECT_DIR` 형식이고, 가리키는 파일이 있고, 훅 디렉터리의 스크립트가 빠짐없이 등록됐는지 테스트로 확인한다.
 
 ### Changed
