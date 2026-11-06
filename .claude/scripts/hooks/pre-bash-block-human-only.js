@@ -7,19 +7,23 @@ const PACKAGE_MANAGERS = new Set(['npm', 'pnpm', 'yarn', 'bun']);
 const EXEC_SUBCOMMANDS = new Set(['dlx', 'exec', 'x']);
 const SUPABASE = /^supabase(?:@.*)?$/;
 const DRY_RUN = /^--dry-run(?:=(?:true|1))?$/;
+const LOCAL = /^--local(?:=(?:true|1))?$/;
+const REMOTE_TARGET = (flag) => flag === '--linked' || flag.startsWith('--db-url');
 const REMOTE_MIGRATION_ACTIONS = ['up', 'down', 'repair'];
+
+function packageStart(words, start) {
+  const first = programName(words[start]);
+  if (RUNNERS.has(first)) return start + 1;
+  if (!PACKAGE_MANAGERS.has(first)) return start;
+  const exec = words.findIndex((word, i) => i > start && EXEC_SUBCOMMANDS.has(word));
+  return exec === -1 ? start : exec + 1;
+}
 
 function supabaseArgs(words) {
   const start = commandIndex(words);
   if (start === -1) return null;
 
-  let index = start;
-  const first = programName(words[index]);
-  if (RUNNERS.has(first)) {
-    index += 1;
-  } else if (PACKAGE_MANAGERS.has(first) && EXEC_SUBCOMMANDS.has(words[index + 1])) {
-    index += 2;
-  }
+  let index = packageStart(words, start);
   while (index < words.length && words[index].startsWith('-')) index += 1;
 
   return SUPABASE.test(programName(words[index] ?? '')) ? words.slice(index + 1) : null;
@@ -34,13 +38,16 @@ function reasonsFor(args) {
   const flags = args.filter((arg) => arg.startsWith('-'));
   const reasons = [];
 
-  if (hasPair(positional, 'db', 'push') && !flags.some((flag) => DRY_RUN.test(flag))) {
+  const dryRun = flags.some((flag) => DRY_RUN.test(flag));
+  const local = flags.some((flag) => LOCAL.test(flag));
+  const remote = flags.some(REMOTE_TARGET);
+
+  if (hasPair(positional, 'db', 'push') && !dryRun && !local) {
     reasons.push('supabase db push 는 프로덕션 DB 에 마이그레이션을 적용한다');
   }
-  if (hasPair(positional, 'db', 'reset')) {
-    reasons.push('supabase db reset 은 연결된 DB 를 초기화한다');
+  if (hasPair(positional, 'db', 'reset') && remote) {
+    reasons.push('supabase db reset --linked 는 원격 DB 를 초기화한다');
   }
-  const remote = flags.some((flag) => flag === '--linked' || flag.startsWith('--db-url'));
   if (remote && REMOTE_MIGRATION_ACTIONS.some((action) => hasPair(positional, 'migration', action))) {
     reasons.push('supabase migration 은 원격 DB 의 마이그레이션 기록을 바꾼다');
   }
@@ -66,7 +73,7 @@ function main(raw) {
     `         명령: ${command.trim().split('\n')[0].slice(0, 200)}`,
     ...reasons.map((reason) => `         사유: ${reason}`),
     '         프로덕션 적용은 머지 뒤 사람이 직접 한다 (CLAUDE.md 의 Database migrations 절).',
-    '         적용 대상만 확인하려면 --dry-run 을 쓰세요.',
+    '         적용 대상만 확인하려면 --dry-run, 로컬 DB 는 --local 을 쓰세요.',
     '         꼭 필요하면 Claude Code 를 띄우기 전에 HARNESS_BYPASS_HUMAN_ONLY=1 을 설정하세요.',
   ];
   process.stderr.write(`${lines.join('\n')}\n`);

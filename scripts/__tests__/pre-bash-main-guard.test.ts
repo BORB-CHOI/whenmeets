@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import os, { tmpdir } from 'node:os';
+import path, { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HOOK_PATH = fileURLToPath(
@@ -146,6 +146,129 @@ describe('저장소 위치 추적', () => {
   });
 });
 
+describe('해석할 수 없는 디렉터리', () => {
+  const calls: Array<string | null> = [];
+  const recording = (dir: string) => {
+    calls.push(dir);
+    return 'main';
+  };
+
+  it.each([
+    'cd "$CLAUDE_PROJECT_DIR" && git commit -m x',
+    'cd "$(git rev-parse --show-toplevel)" && git commit -m x',
+    'cd $PWD && git commit -m x',
+    'git -C "$PWD" commit -m x',
+    'git -C "$(git rev-parse --show-toplevel)" commit -m x',
+  ])('%j 는 시작 디렉터리를 기준으로 판단해 main 이면 차단한다', (command) => {
+    calls.length = 0;
+    const start = path.resolve('/work/repo');
+
+    expect(findViolations(command, recording, start)).toHaveLength(1);
+    expect(calls[0]).toBe(start);
+  });
+
+  it('~ 로 시작하는 경로는 홈 디렉터리로 푼다', () => {
+    calls.length = 0;
+    findViolations('cd ~/proj && git commit -m x', recording, path.resolve('/work/repo'));
+
+    expect(calls[0]).toBe(path.join(os.homedir(), 'proj'));
+  });
+});
+
+describe('디렉터리 이동 추적', () => {
+  const branchByDirName = (dir: string) => (path.basename(dir).startsWith('main') ? 'main' : 'feat/a');
+  const check = (command: string) =>
+    findViolations(command, branchByDirName, path.resolve('/work/main-repo')).length;
+
+  it('cd - 는 직전 디렉터리로 돌아간다', () => {
+    expect(check('cd ../feature && cd - && git commit -m x')).toBe(1);
+    expect(check('cd ../feature && cd - && cd ../feature && git commit -m x')).toBe(0);
+  });
+
+  it('pushd 와 popd 는 스택으로 돌아간다', () => {
+    expect(check('pushd ../feature; popd; git commit -m x')).toBe(1);
+    expect(check('pushd ../feature; git commit -m x')).toBe(0);
+  });
+
+  it('cd 만 쓰면 홈 디렉터리로 옮긴다', () => {
+    const seen: string[] = [];
+    findViolations('cd && git commit -m x', (dir: string) => {
+      seen.push(dir);
+      return 'feat/a';
+    });
+
+    expect(seen[0]).toBe(os.homedir());
+  });
+});
+
+describe('훅 입력의 cwd', () => {
+  it('payload 의 cwd 를 시작 디렉터리로 쓴다', () => {
+    const seen: string[] = [];
+    const getBranch = (dir: string) => {
+      seen.push(dir);
+      return 'feat/a';
+    };
+    const raw = JSON.stringify({ cwd: process.cwd(), tool_input: { command: 'git commit -m x' } });
+
+    main(raw, { getBranch });
+
+    expect(seen[0]).toBe(process.cwd());
+  });
+
+  it('존재하지 않는 cwd 는 무시하고 프로세스 cwd 를 쓴다', () => {
+    const seen: string[] = [];
+    const getBranch = (dir: string) => {
+      seen.push(dir);
+      return 'feat/a';
+    };
+    const raw = JSON.stringify({ cwd: '/no/such/dir/xyz', tool_input: { command: 'git commit -m x' } });
+
+    main(raw, { getBranch });
+
+    expect(seen[0]).toBe(process.cwd());
+  });
+});
+
+describe('브랜치 전환 대상 판정', () => {
+  const resolveRef = (_dir: string, _args: string[], ref: string) => (ref === '@{-1}' ? 'main' : null);
+  const run = (command: string, current: string) =>
+    findViolations(command, { getBranch: () => current, resolveRef }, process.cwd()).length;
+
+  it.each(['git checkout - && git commit -m x', 'git switch - && git commit -m x', 'git checkout @{-1} && git commit -m x'])(
+    '직전 브랜치로 돌아가는 %j 는 직전 브랜치를 기준으로 판단한다',
+    (command) => {
+      expect(run(command, 'feat/z')).toBe(1);
+    },
+  );
+
+  it.each(['git switch --track origin/main && git commit -m x', 'git checkout --track origin/main && git commit -m x'])(
+    '원격 추적 브랜치를 만드는 %j 는 로컬 이름을 기준으로 판단한다',
+    (command) => {
+      expect(run(command, 'feat/a')).toBe(1);
+    },
+  );
+
+  it('--detach 로 떼어낸 뒤의 커밋은 main 커밋이 아니다', () => {
+    expect(run('git switch --detach main && git commit -m x', 'main')).toBe(0);
+  });
+
+  it('붙여 쓴 -b이름 도 새 브랜치로 본다', () => {
+    expect(run('git checkout -bfeat/y && git commit -m x', 'main')).toBe(0);
+  });
+
+  it('작업 트리에 있는 파일 이름은 브랜치 전환이 아니다', () => {
+    const file = path.basename(__filename);
+    const cwd = path.dirname(__filename);
+    const violations = findViolations(
+      `git checkout ${file} && git commit -m x`,
+      { getBranch: () => 'main', resolveRef },
+      cwd,
+    );
+
+    expect(violations).toHaveLength(1);
+  });
+});
+
 describe('같은 명령 안의 브랜치 전환', () => {
   it.each([
     'git checkout main && git commit -m x',
@@ -186,8 +309,6 @@ describe('푸시 차단', () => {
     "git push origin 'main'",
     'git push origin HEAD:"main"',
     "git push origin 'refs/heads/*:refs/heads/*'",
-    'git push origin $BRANCH',
-    'git push origin $(echo main)',
     'git push --repo=origin main',
     'git push -o ci.skip origin main',
     'git push --repo origin main',
@@ -222,6 +343,16 @@ describe('푸시 차단', () => {
     'git push origin --tags',
   ])('기능 브랜치에서 %j 는 통과시킨다', (command) => {
     expect(kinds(command, 'feat/a')).toEqual([]);
+  });
+
+  it.each([
+    'git push origin $BRANCH',
+    'git push -u origin "$(git branch --show-current)"',
+    'git push origin "HEAD:refs/heads/$BR"',
+    'git push origin feat/x > $LOG',
+  ])('변수나 치환으로 쓴 목적지 %j 는 현재 브랜치를 기준으로 판단한다', (command) => {
+    expect(kinds(command, 'feat/a')).toEqual([]);
+    expect(kinds(command, 'main')).toEqual(['push']);
   });
 
   it('main 에서 태그만 올리는 푸시는 통과시킨다', () => {
@@ -375,6 +506,29 @@ describe('훅 프로세스와 실제 git 저장소', () => {
 
   it('존재하지 않는 -C 경로는 통과시킨다', () => {
     expect(runHook(makeRepo('main'), 'git -C /no/such/dir/at/all commit -m x').status).toBe(0);
+  });
+
+  it('git checkout - 로 직전 main 브랜치로 돌아간 뒤의 커밋을 차단한다', () => {
+    const root = makeRepo('main');
+    execFileSync('git', ['checkout', '-q', '-b', 'feat/x'], { cwd: root, env: isolatedEnv() });
+
+    expect(runHook(root, 'git checkout - && git commit -m x').status).toBe(2);
+    expect(runHook(root, 'git commit -m x').status).toBe(0);
+  });
+
+  it('훅 입력의 cwd 가 가리키는 저장소를 기준으로 판단한다', () => {
+    const mainRepo = makeRepo('main');
+    const featureRepo = makeRepo('feat/a');
+    const input = JSON.stringify({ cwd: mainRepo, tool_input: { command: 'git commit -m x' } });
+
+    const result = spawnSync(process.execPath, [HOOK_PATH], {
+      input,
+      encoding: 'utf8',
+      env: isolatedEnv(),
+      cwd: featureRepo,
+    });
+
+    expect(result.status).toBe(2);
   });
 
   it('기능 브랜치에서 main 으로 가는 푸시는 종료 코드 2 로 끝난다', () => {

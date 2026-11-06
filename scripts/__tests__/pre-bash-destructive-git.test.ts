@@ -117,6 +117,57 @@ describe('findReasons: 차단', () => {
     expect(findReasons(command).length).toBeGreaterThan(0);
   });
 
+  it.each([
+    'xargs -n 1 git branch -D',
+    'git branch --merged | grep -v main | xargs -n 1 git branch -D',
+    'git branch --merged | xargs -r git branch -D',
+    'echo x | xargs -I{} git reset --hard',
+    'env -u FOO git reset --hard',
+    'sudo -u deploy git reset --hard',
+    'timeout 5 git reset --hard',
+    'timeout -s KILL 5 git clean -fd',
+    'nice -n 10 git clean -fd',
+  ])('옵션 값을 받는 래퍼 뒤의 %j 도 차단한다', (command) => {
+    expect(findReasons(command).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    "bash <<'EOF'\ngit reset --hard\nEOF",
+    'sh -s <<EOF\ngit clean -fd\nEOF',
+    'bash <<< "git reset --hard"',
+    "bash -c -- 'git reset --hard'",
+    'cat <<EOF\n$(git reset --hard)\nEOF',
+    "git commit -m $'don\\'t'; git reset --hard",
+  ])('다른 모양으로 감싼 %j 도 차단한다', (command) => {
+    expect(findReasons(command).length).toBeGreaterThan(0);
+  });
+
+  it.each(['git clean -nfd', 'git clean -n -f', 'git clean --dry-run -f', 'git clean -fdn'])(
+    '미리보기 %j 는 통과시킨다',
+    (command) => {
+      expect(findReasons(command)).toEqual([]);
+    },
+  );
+
+  describe('작업 트리에 있는 경로를 넘기는 checkout', () => {
+    const cwd = fileURLToPath(new URL('.', import.meta.url));
+    const file = 'command-parser.test.ts';
+
+    it.each([`git checkout ${file}`, `git checkout HEAD ${file}`, `git -C ${cwd.split('\\').join('/')} checkout ${file}`])(
+      '%j 는 차단한다',
+      (command) => {
+        expect(findReasons(command, cwd).length).toBeGreaterThan(0);
+      },
+    );
+
+    it.each(['git checkout feat/a', 'git checkout main', 'git checkout -b __tests__', 'git switch __tests__'])(
+      '브랜치로 보이는 %j 는 통과시킨다',
+      (command) => {
+        expect(findReasons(command, cwd)).toEqual([]);
+      },
+    );
+  });
+
   it('여러 위험 명령이 이어지면 사유를 모두 돌려준다', () => {
     expect(findReasons('git reset --hard && git clean -fd')).toHaveLength(2);
   });

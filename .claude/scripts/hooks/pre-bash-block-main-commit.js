@@ -1,54 +1,107 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require('child_process');
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { commandIndex, parseCommand, parseGit, readCommand, runHook } = require('./lib/command');
+const {
+  commandIndex,
+  isDynamicPath,
+  parseCommand,
+  parseGit,
+  readCommand,
+  readCwd,
+  resolveDir,
+  runHook,
+  toNativePath,
+} = require('./lib/command');
 
 const PROTECTED = new Set(['main', 'master']);
 const PUSH_OPTIONS_WITH_VALUE = new Set(['-o', '--push-option', '--repo', '--receive-pack', '--exec']);
 const CREATE_FLAGS = new Set(['-b', '-B', '-c', '-C', '--create', '--force-create']);
+const DETACHED = '(detached)';
 const GIT_TIMEOUT_MS = 5000;
 
-function defaultGetBranch(dir, gitArgs = []) {
+function runGit(dir, gitArgs, args) {
   try {
-    const branch = execFileSync('git', [...gitArgs, 'branch', '--show-current'], {
+    return execFileSync('git', [...gitArgs, ...args], {
       cwd: dir || undefined,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: GIT_TIMEOUT_MS,
     }).trim();
-    return branch || null;
   } catch {
-    return null;
+    return '';
   }
 }
 
-function toNativePath(value) {
-  if (process.platform !== 'win32') return value;
-  const match = /^\/([a-zA-Z])(?:\/(.*))?$/.exec(value);
-  return match ? `${match[1].toUpperCase()}:/${match[2] ?? ''}` : value;
+const DEFAULT_ENV = {
+  getBranch: (dir, gitArgs = []) => runGit(dir, gitArgs, ['branch', '--show-current']) || null,
+  resolveRef: (dir, gitArgs, ref) => runGit(dir, gitArgs, ['rev-parse', '--abbrev-ref', ref]) || null,
+};
+
+function normalizeEnv(env) {
+  if (typeof env === 'function') return { getBranch: env, resolveRef: () => null };
+  return { ...DEFAULT_ENV, ...env };
 }
 
-function resolveDir(base, dirs) {
-  return dirs.reduce((cwd, dir) => path.resolve(cwd, toNativePath(dir)), base);
+function newState(baseCwd) {
+  return { base: baseCwd, cwd: baseCwd, previous: baseCwd, stack: [], branch: null };
 }
 
-function cdTarget(words) {
+function moveTo(state, target) {
+  state.previous = state.cwd;
+  state.cwd = isDynamicPath(target) ? state.base : path.resolve(state.cwd, toNativePath(target));
+  state.branch = null;
+}
+
+function applyDirectoryChange(state, words) {
   const index = commandIndex(words);
-  if (index === -1 || !['cd', 'pushd'].includes(words[index])) return null;
+  const program = index === -1 ? '' : words[index];
+  if (!['cd', 'pushd', 'popd'].includes(program)) return false;
+
   const rest = words.slice(index + 1);
-  if (rest[0] === '-') return null;
+  if (program === 'popd') {
+    state.cwd = state.stack.pop() ?? state.cwd;
+    state.branch = null;
+    return true;
+  }
+  if (rest[0] === '-') {
+    const back = state.previous;
+    state.previous = state.cwd;
+    state.cwd = back;
+    state.branch = null;
+    return true;
+  }
+  if (program === 'pushd') state.stack.push(state.cwd);
   const target = rest.find((word) => !word.startsWith('-'));
-  return target === undefined ? os.homedir() : target;
+  moveTo(state, target === undefined ? os.homedir() : target);
+  return true;
 }
 
-function switchedBranch(git) {
+function isRelativeRef(name) {
+  return name === '-' || /^@\{-\d*\}$/.test(name);
+}
+
+function switchedBranch(git, state, env) {
   if (git.subcommand !== 'checkout' && git.subcommand !== 'switch') return undefined;
-  if (git.args.includes('--')) return undefined;
-  const create = git.args.findIndex((arg) => CREATE_FLAGS.has(arg));
-  if (create !== -1) return git.args[create + 1];
-  return git.args.filter((arg) => !arg.startsWith('-'))[0];
+  const args = git.args;
+  if (args.includes('--')) return undefined;
+  if (args.includes('--detach')) return DETACHED;
+
+  const compact = args.map((arg) => /^-[bBcC](.+)$/.exec(arg)).find(Boolean);
+  if (compact) return compact[1];
+  const create = args.findIndex((arg) => CREATE_FLAGS.has(arg));
+  if (create !== -1) return args[create + 1];
+
+  const target = args.filter((arg) => arg === '-' || !arg.startsWith('-'))[0];
+  if (target === undefined) return undefined;
+  if (isRelativeRef(target)) {
+    return env.resolveRef(state.cwd, git.gitArgs, target === '-' ? '@{-1}' : target);
+  }
+  if (fs.existsSync(path.resolve(state.cwd, toNativePath(target)))) return undefined;
+  const tracking = args.includes('--track') || args.includes('-t');
+  return tracking && target.includes('/') ? target.slice(target.indexOf('/') + 1) : target;
 }
 
 function splitPushArgs(args) {
@@ -69,10 +122,10 @@ function splitPushArgs(args) {
 function destinationViolation(spec, currentBranch) {
   const raw = spec.replace(/^\+/, '');
   let destination = raw.includes(':') ? raw.slice(raw.indexOf(':') + 1) : raw;
-  if (/[*$`]/.test(destination)) {
+  if (destination.includes('*')) {
     return [{ kind: 'push', detail: `대상을 알 수 없는 refspec ${spec}` }];
   }
-  if (destination === 'HEAD') destination = currentBranch() ?? '';
+  if (destination === 'HEAD' || isDynamicPath(destination)) destination = currentBranch() ?? '';
   destination = destination.replace(/^refs\/heads\//, '');
   return PROTECTED.has(destination) ? [{ kind: 'push', detail: destination }] : [];
 }
@@ -91,23 +144,19 @@ function checkPush(args, currentBranch) {
   return refspecs.flatMap((spec) => destinationViolation(spec, currentBranch));
 }
 
-function findViolations(command, getBranch = defaultGetBranch) {
-  const state = { cwd: process.cwd(), branch: null };
+function findViolations(command, envOrGetBranch = DEFAULT_ENV, baseCwd = process.cwd()) {
+  const env = normalizeEnv(envOrGetBranch);
+  const state = newState(baseCwd);
   const cache = new Map();
   const lookup = (dir, gitArgs) => {
     const key = [dir, ...gitArgs].join('\u0000');
-    if (!cache.has(key)) cache.set(key, getBranch(dir, gitArgs));
+    if (!cache.has(key)) cache.set(key, env.getBranch(dir, gitArgs));
     return cache.get(key);
   };
   const violations = [];
 
   for (const words of parseCommand(command)) {
-    const target = cdTarget(words);
-    if (target !== null) {
-      state.cwd = path.resolve(state.cwd, toNativePath(target));
-      state.branch = null;
-      continue;
-    }
+    if (applyDirectoryChange(state, words)) continue;
 
     const git = parseGit(words);
     if (!git) continue;
@@ -123,7 +172,7 @@ function findViolations(command, getBranch = defaultGetBranch) {
       violations.push(...checkPush(git.args, currentBranch));
     }
 
-    const switched = switchedBranch(git);
+    const switched = switchedBranch(git, state, env);
     if (switched !== undefined && plain) state.branch = switched;
   }
   return violations;
@@ -143,10 +192,12 @@ function describeViolation({ kind, detail }) {
   ];
 }
 
-function main(raw, getBranch = defaultGetBranch) {
+function main(raw, env = DEFAULT_ENV) {
   if (process.env.HARNESS_BYPASS_MAIN_COMMIT === '1') return 0;
 
-  const violations = findViolations(readCommand(raw), getBranch);
+  const payloadCwd = readCwd(raw);
+  const baseCwd = payloadCwd && fs.existsSync(payloadCwd) ? payloadCwd : process.cwd();
+  const violations = findViolations(readCommand(raw), env, baseCwd);
   if (violations.length === 0) return 0;
 
   const lines = [

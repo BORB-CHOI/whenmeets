@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 
-const { parseCommand, parseGit, readCommand, runHook } = require('./lib/command');
+const fs = require('fs');
+const path = require('path');
+const {
+  parseCommand,
+  parseGit,
+  readCommand,
+  readCwd,
+  resolveDir,
+  runHook,
+  toNativePath,
+} = require('./lib/command');
 
 function hasShort(args, letter) {
   return args.some((arg) => /^-[^-]/.test(arg) && arg.slice(1).includes(letter));
@@ -14,6 +24,19 @@ function positionalOf(args) {
   return args.filter((arg) => !arg.startsWith('-'));
 }
 
+function isDryRun(args) {
+  return args.includes('--dry-run') || hasShort(args, 'n');
+}
+
+function isCreating(args) {
+  return args.some((arg) => /^-[bBcC]/.test(arg) || arg === '--create');
+}
+
+function namesExistingPath(args, cwd) {
+  if (isCreating(args)) return false;
+  return positionalOf(args).some((arg) => fs.existsSync(path.resolve(cwd, toNativePath(arg))));
+}
+
 const RULES = new Map([
   [
     'reset',
@@ -24,10 +47,13 @@ const RULES = new Map([
   ],
   [
     'checkout',
-    (args) => [
+    (args, ctx) => [
       ...(args.includes('--') ? ['git checkout [<커밋>] -- <경로> 는 파일을 되돌려 변경을 버린다'] : []),
       ...(isForce(args) ? ['git checkout -f 는 작업 트리의 변경을 버린다'] : []),
       ...(args.includes('.') ? ['git checkout . 은 작업 트리의 변경을 모두 버린다'] : []),
+      ...(namesExistingPath(args, ctx.cwd) && !args.includes('--') && !args.includes('.')
+        ? ['git checkout <경로> 는 파일을 되돌려 변경을 버린다']
+        : []),
     ],
   ],
   [
@@ -47,7 +73,8 @@ const RULES = new Map([
   ],
   [
     'clean',
-    (args) => (isForce(args) ? ['git clean -f 는 추적하지 않는 파일을 지운다'] : []),
+    (args) =>
+      isForce(args) && !isDryRun(args) ? ['git clean -f 는 추적하지 않는 파일을 지운다'] : [],
   ],
   [
     'branch',
@@ -101,11 +128,11 @@ const RULES = new Map([
   ],
 ]);
 
-function findReasons(command) {
+function findReasons(command, baseCwd = process.cwd()) {
   return parseCommand(command).flatMap((words) => {
     const git = parseGit(words);
     const rule = git && RULES.get(git.subcommand);
-    return rule ? rule(git.args) : [];
+    return rule ? rule(git.args, { cwd: resolveDir(baseCwd, git.dirs) }) : [];
   });
 }
 
@@ -113,7 +140,9 @@ function main(raw) {
   if (process.env.HARNESS_BYPASS_DESTRUCTIVE === '1') return 0;
 
   const command = readCommand(raw);
-  const reasons = findReasons(command);
+  const payloadCwd = readCwd(raw);
+  const baseCwd = payloadCwd && fs.existsSync(payloadCwd) ? payloadCwd : process.cwd();
+  const reasons = findReasons(command, baseCwd);
   if (reasons.length === 0) return 0;
 
   const lines = [

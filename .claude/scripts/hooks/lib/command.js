@@ -1,6 +1,10 @@
+const os = require('os');
+const path = require('path');
+
 const SUBSTITUTION_MARK = '$()';
 const MAX_DEPTH = 4;
 const MAX_LENGTH = 200000;
+const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const PREFIX_WORDS = new Set([
   '{',
   '}',
@@ -21,8 +25,19 @@ const PREFIX_WORDS = new Set([
   'nohup',
   'nice',
   'xargs',
+  'timeout',
 ]);
-const FLAG_TAKING_PREFIXES = new Set(['sudo', 'env', 'nice', 'time', 'nohup', 'command', 'exec']);
+const WRAPPER_OPTIONS = new Map([
+  ['xargs', { values: new Set(['-n', '-I', '-L', '-P', '-d', '-E', '-s', '-a']), skip: 0 }],
+  ['env', { values: new Set(['-u', '-C', '-S']), skip: 0 }],
+  [
+    'sudo',
+    { values: new Set(['-u', '-g', '-h', '-p', '-U', '-C', '-D', '-R', '-T', '-r', '-t']), skip: 0 },
+  ],
+  ['nice', { values: new Set(['-n']), skip: 0 }],
+  ['timeout', { values: new Set(['-s', '-k']), skip: 1 }],
+  ['exec', { values: new Set(['-a']), skip: 0 }],
+]);
 const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash', 'ksh']);
 const GIT_OPTIONS_WITH_VALUE = new Set([
   '--git-dir',
@@ -41,7 +56,11 @@ function lineEnd(source, pos) {
   return index === -1 ? source.length : index;
 }
 
-function readHeredocMarker(source, start, heredocs) {
+function attachStdin(words, text) {
+  Object.defineProperty(words, 'stdin', { value: text, enumerable: false, writable: true });
+}
+
+function readHeredocMarker(source, start, heredocs, words) {
   let pos = start;
   let strip = false;
   if (source[pos] === '-') {
@@ -51,32 +70,56 @@ function readHeredocMarker(source, start, heredocs) {
   while (isSpace(source[pos])) pos += 1;
 
   let delimiter = '';
+  let quoted = false;
   const quote = source[pos];
   if (quote === "'" || quote === '"') {
+    quoted = true;
     const close = source.indexOf(quote, pos + 1);
     const end = close === -1 ? source.length : close;
     delimiter = source.slice(pos + 1, end);
     pos = end + 1;
   } else {
     while (pos < source.length && !/[\s;&|()<>]/.test(source[pos])) {
+      if (source[pos] === '\\') quoted = true;
       delimiter += source[pos];
       pos += 1;
     }
   }
-  heredocs.push({ delimiter, strip });
+  heredocs.push({ delimiter, strip, quoted, words });
   return pos;
 }
 
-function skipHeredocs(source, start, heredocs) {
+function scanSubstitutions(text, depth, out) {
+  let pos = 0;
+  while (pos < text.length) {
+    const ch = text[pos];
+    if (ch === '\\') {
+      pos += 2;
+    } else if (ch === '$' && text[pos + 1] === '(') {
+      pos = scan(text, pos + 2, true, depth + 1, out);
+    } else if (ch === '`') {
+      pos = readBackticks(text, pos + 1, depth, out);
+    } else {
+      pos += 1;
+    }
+  }
+}
+
+function skipHeredocs(source, start, heredocs, depth, out) {
   let pos = start;
   while (heredocs.length > 0) {
-    const { delimiter, strip } = heredocs.shift();
+    const { delimiter, strip, quoted, words } = heredocs.shift();
+    const body = [];
     while (pos < source.length) {
       const end = lineEnd(source, pos);
       const line = source.slice(pos, end);
       pos = Math.min(end + 1, source.length);
       if ((strip ? line.replace(/^\t+/, '') : line) === delimiter) break;
+      body.push(line);
     }
+    const text = body.join('\n');
+    attachStdin(words, text);
+    if (!quoted) scanSubstitutions(text, depth, out);
   }
   return pos;
 }
@@ -117,6 +160,21 @@ function readDoubleQuoted(source, start, depth, out) {
   return { text, pos };
 }
 
+function readAnsiCQuoted(source, start) {
+  let pos = start;
+  let text = '';
+  while (pos < source.length && source[pos] !== "'") {
+    if (source[pos] === '\\') {
+      text += source[pos + 1] ?? '';
+      pos += 2;
+    } else {
+      text += source[pos];
+      pos += 1;
+    }
+  }
+  return { text, pos: pos + 1 };
+}
+
 function scan(source, start, stopAtParen, depth, out) {
   if (depth > MAX_DEPTH) return source.length;
 
@@ -124,14 +182,19 @@ function scan(source, start, stopAtParen, depth, out) {
   let words = [];
   let word = '';
   let inWord = false;
+  let awaitingHereString = false;
   const heredocs = [];
 
   const endWord = () => {
-    if (inWord) {
+    if (!inWord) return;
+    if (awaitingHereString) {
+      attachStdin(words, word);
+      awaitingHereString = false;
+    } else {
       words.push(word);
-      word = '';
-      inWord = false;
     }
+    word = '';
+    inWord = false;
   };
   const endSegment = () => {
     endWord();
@@ -145,7 +208,7 @@ function scan(source, start, stopAtParen, depth, out) {
     const ch = source[pos];
     if (ch === '\n') {
       endSegment();
-      pos = skipHeredocs(source, pos + 1, heredocs);
+      pos = skipHeredocs(source, pos + 1, heredocs, depth, out);
     } else if (isSpace(ch)) {
       endWord();
       pos += 1;
@@ -161,6 +224,11 @@ function scan(source, start, stopAtParen, depth, out) {
       word += source.slice(pos + 1, end);
       inWord = true;
       pos = end + 1;
+    } else if (ch === '$' && source[pos + 1] === "'") {
+      const quoted = readAnsiCQuoted(source, pos + 2);
+      word += quoted.text;
+      inWord = true;
+      pos = quoted.pos;
     } else if (ch === '"') {
       const quoted = readDoubleQuoted(source, pos + 1, depth, out);
       word += quoted.text;
@@ -185,11 +253,12 @@ function scan(source, start, stopAtParen, depth, out) {
       endSegment();
       pos += source[pos + 1] === ch && ch !== ';' ? 2 : 1;
     } else if (ch === '<' && source.startsWith('<<<', pos)) {
-      word += '<<<';
-      inWord = true;
+      endWord();
+      awaitingHereString = true;
       pos += 3;
     } else if (ch === '<' && source[pos + 1] === '<') {
-      pos = readHeredocMarker(source, pos + 2, heredocs);
+      endWord();
+      pos = readHeredocMarker(source, pos + 2, heredocs, words);
     } else {
       word += ch;
       inWord = true;
@@ -207,19 +276,20 @@ function programName(word) {
 
 function commandIndex(words) {
   let index = 0;
-  let afterPrefix = false;
   while (index < words.length) {
     const word = words[index];
-    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(word)) {
-      afterPrefix = false;
-    } else if (PREFIX_WORDS.has(word)) {
-      afterPrefix = FLAG_TAKING_PREFIXES.has(word);
-    } else if (afterPrefix && word.startsWith('-')) {
-      afterPrefix = true;
-    } else {
-      return index;
+    if (ENV_ASSIGNMENT.test(word)) {
+      index += 1;
+      continue;
     }
+    if (!PREFIX_WORDS.has(word)) return index;
+
+    const spec = WRAPPER_OPTIONS.get(word);
     index += 1;
+    while (index < words.length && words[index].startsWith('-')) {
+      index += spec && spec.values.has(words[index]) ? 2 : 1;
+    }
+    index += spec ? spec.skip : 0;
   }
   return -1;
 }
@@ -232,9 +302,11 @@ function expandWrapper(words, depth) {
 
   if (SHELLS.has(program)) {
     const flag = rest.findIndex((word) => /^-[A-Za-z]*c[A-Za-z]*$/.test(word));
-    return flag !== -1 && rest[flag + 1] !== undefined
-      ? parseCommand(rest[flag + 1], depth + 1)
-      : [];
+    if (flag !== -1) {
+      const payload = rest[flag + 1] === '--' ? rest[flag + 2] : rest[flag + 1];
+      return payload !== undefined ? parseCommand(payload, depth + 1) : [];
+    }
+    return typeof words.stdin === 'string' ? parseCommand(words.stdin, depth + 1) : [];
   }
   if (program === 'eval') return parseCommand(rest.join(' '), depth + 1);
   return [];
@@ -276,15 +348,42 @@ function parseGit(words) {
   return { dirs, gitArgs, subcommand: words[index], args: words.slice(index + 1) };
 }
 
-function readCommand(raw) {
-  let input;
+function isDynamicPath(value) {
+  return /[$`]/.test(value);
+}
+
+function toNativePath(value) {
+  let result = value;
+  if (result === '~' || result.startsWith('~/')) result = path.join(os.homedir(), result.slice(1));
+  if (process.platform !== 'win32') return result;
+  const match = /^\/([a-zA-Z])(?:\/(.*))?$/.exec(result);
+  return match ? `${match[1].toUpperCase()}:/${match[2] ?? ''}` : result;
+}
+
+function resolveDir(base, dirs) {
+  return dirs
+    .filter((dir) => !isDynamicPath(dir))
+    .reduce((cwd, dir) => path.resolve(cwd, toNativePath(dir)), base);
+}
+
+function readInput(raw) {
   try {
-    input = JSON.parse(raw || '{}');
+    const input = JSON.parse(raw || '{}');
+    return input && typeof input === 'object' ? input : {};
   } catch {
-    return '';
+    return {};
   }
-  const command = input && input.tool_input && input.tool_input.command;
+}
+
+function readCommand(raw) {
+  const input = readInput(raw);
+  const command = input.tool_input && input.tool_input.command;
   return typeof command === 'string' ? command : '';
+}
+
+function readCwd(raw) {
+  const cwd = readInput(raw).cwd;
+  return typeof cwd === 'string' && cwd !== '' ? cwd : null;
 }
 
 function readStdin(onDone) {
@@ -307,11 +406,16 @@ function runHook(main) {
 }
 
 module.exports = {
+  SUBSTITUTION_MARK,
   commandIndex,
+  isDynamicPath,
   parseCommand,
   parseGit,
   programName,
   readCommand,
+  readCwd,
   readStdin,
+  resolveDir,
   runHook,
+  toNativePath,
 };

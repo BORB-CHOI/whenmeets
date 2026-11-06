@@ -83,6 +83,13 @@ describe('parseCommand: 따옴표와 이스케이프', () => {
     expect(has(segments, 'git', 'reset', '--hard')).toBe(true);
   });
 
+  it("$'...' ANSI-C 따옴표 안의 이스케이프된 작은따옴표에서 닫히지 않는다", () => {
+    const segments = parseCommand("git commit -m $'don\\'t' && git push origin main");
+
+    expect(has(segments, 'git', 'push', 'origin', 'main')).toBe(true);
+    expect(has(segments, 'git', 'commit', '-m', "don't")).toBe(true);
+  });
+
   it('빈 따옴표도 빈 단어로 남긴다', () => {
     expect(parseCommand('echo ""')).toEqual([['echo', '']]);
   });
@@ -157,6 +164,35 @@ describe('parseCommand: 중첩 명령', () => {
     expect(has(parseCommand('echo `git reset --hard`'), 'git', 'reset')).toBe(true);
   });
 
+  it('따옴표 없는 구분자의 heredoc 본문 안 치환 명령은 셸이 실행하므로 꺼낸다', () => {
+    expect(has(parseCommand('cat <<EOF\n$(git reset --hard)\nEOF'), 'git', 'reset', '--hard')).toBe(true);
+    expect(has(parseCommand('cat <<EOF\n`git reset --hard`\nEOF'), 'git', 'reset', '--hard')).toBe(true);
+  });
+
+  it('따옴표 친 구분자의 heredoc 본문은 치환되지 않으므로 꺼내지 않는다', () => {
+    expect(has(parseCommand("cat <<'EOF'\n$(git reset --hard)\nEOF"), 'git', 'reset')).toBe(false);
+    expect(has(parseCommand('cat <<"EOF"\n$(git reset --hard)\nEOF'), 'git', 'reset')).toBe(false);
+  });
+
+  it('이스케이프된 치환은 꺼내지 않는다', () => {
+    expect(has(parseCommand('cat <<EOF\n\\$(git reset --hard)\nEOF'), 'git', 'reset')).toBe(false);
+  });
+
+  it.each([
+    "bash <<'EOF'\ngit reset --hard\nEOF",
+    'sh -s <<EOF\ngit reset --hard\nEOF',
+    'bash <<< "git reset --hard"',
+    "bash -c -- 'git reset --hard'",
+    "bash -lc -- 'git reset --hard'",
+  ])('셸에 스크립트를 넘기는 %j 안의 명령을 꺼낸다', (command) => {
+    expect(has(parseCommand(command), 'git', 'reset', '--hard')).toBe(true);
+  });
+
+  it('셸이 아닌 명령에 넘긴 heredoc 본문은 명령으로 보지 않는다', () => {
+    expect(has(parseCommand('cat <<EOF\ngit reset --hard\nEOF'), 'git', 'reset')).toBe(false);
+    expect(has(parseCommand('cat <<< "git reset --hard"'), 'git', 'reset')).toBe(false);
+  });
+
   it('치환이 든 단어에는 결과를 알 수 없다는 $() 표지를 남긴다', () => {
     expect(parseCommand('git push origin $(echo main)')).toContainEqual([
       'git',
@@ -209,6 +245,17 @@ describe('commandIndex', () => {
     [['{', 'git', 'status'], 1],
     [['if', 'git', 'status'], 1],
     [['time', 'nohup', 'git'], 2],
+    [['time', '-p', 'git'], 2],
+    [['xargs', '-n', '1', 'git', 'branch', '-D'], 3],
+    [['xargs', '-r', 'git'], 2],
+    [['xargs', '-I', '{}', 'git'], 3],
+    [['env', '-u', 'FOO', 'git'], 3],
+    [['env', '-i', 'FOO=1', 'git'], 3],
+    [['sudo', '-u', 'root', 'git'], 3],
+    [['nice', '-n', '10', 'git'], 3],
+    [['timeout', '30', 'git'], 2],
+    [['timeout', '-s', 'KILL', '30', 'git'], 4],
+    [['exec', '-a', 'name', 'git'], 3],
     [[], -1],
     [['FOO=1'], -1],
   ])('%j 의 명령어 위치는 %i 다', (words, expected) => {
