@@ -51,6 +51,18 @@ ECC 글로벌 커맨드 사용 가능: `/build-fix`, `/code-review`, `/tdd`, `/p
 - CI (`.github/workflows/ci.yml`): PR 과 main push 마다 위 단계를 실행한다.
 - `.ts`/`.tsx` 편집 직후 PostToolUse 훅이 `tsc` 를 돌리고 오류를 에이전트에게 돌려준다 (`.claude/scripts/hooks/post-edit-typecheck.js`, 끄려면 `HARNESS_BYPASS_TYPECHECK=1`).
 
+## Guards
+
+`.claude/settings.json` 의 훅이 위험한 동작을 막는다. 훅 명령은 모두 `$CLAUDE_PROJECT_DIR` 기준 경로라서 작업 디렉터리가 어디든 빠지지 않는다.
+
+- `pre-bash-block-destructive-git`: `git reset --hard`, `git clean -f`, `git push --force` 같은 되돌릴 수 없는 명령. `git -C`, `git -c` 를 끼워도 막는다. 우회: `HARNESS_BYPASS_DESTRUCTIVE=1`
+- `pre-bash-block-main-commit`: `main`/`master` 에 직접 커밋, `main`/`master` 로 직접 푸시(`HEAD:main`, `+refspec`, `--all`, `--mirror` 포함). 같은 명령 안의 `cd`, `git -C`, `git checkout main` 도 따라가서 실제로 닿는 브랜치를 기준으로 본다. 우회: `HARNESS_BYPASS_MAIN_COMMIT=1`
+- `pre-bash-block-human-only`: `supabase db push`(`--dry-run` 은 허용)와 `supabase db reset`. 프로덕션 DB 적용은 머지 뒤 사람이 직접 한다. 우회: `HARNESS_BYPASS_HUMAN_ONLY=1`
+- `pre-edit-block-large-delete`, `pre-edit-block-dark-class`: 한 번에 100줄 넘게 지우는 편집, `dark:` 클래스 추가.
+- 우회 변수는 Claude Code 를 띄우기 전에 설정해야 한다. 명령 앞에 `VAR=1` 을 붙여도 훅에는 전달되지 않는다.
+- `gh pr merge` 는 막지 않는다. 머지는 `main` 룰셋의 필수 검사(`check-migrations`, `verify`)가 지킨다.
+- 따옴표 안에 감싼 명령(`bash -c "..."`)은 훅이 안쪽을 보지 않는다. 실수를 막는 장치이고, 의도적인 우회까지 막지는 못한다.
+
 ## Next.js Version Warning
 
 This project uses Next.js 16+ with breaking changes. APIs, conventions, and file structure
