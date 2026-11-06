@@ -11,7 +11,7 @@ All notable changes to DayMeet will be documented in this file.
 - **PR 자동 검증**: PR과 `main` push마다 타입 검사, 린트, 테스트, 컴포넌트 맵 일치 검사, 린트 억제 건수 검사를 GitHub Actions에서 실행한다. 하나라도 실패하면 CI가 실패한다.
 - **린트 억제 건수 검사 (`npm run check:lint-baseline`)**: `eslint-suppressions.json`의 억제 건수가 `origin/main`보다 늘면 실패한다. 새 위반을 억제 파일로 덮어서 통과시킬 수 없다.
 - **컴포넌트 맵 검사 (`npm run check:map`)**: `.claude/rules/whenmeets-component-map.md`가 실제 코드와 맞는지 확인한다. 맵에 적힌 파일이 없거나, 코드에 있는 파일과 API 라우트가 맵에 없거나, 설치한 Radix 패키지가 규칙 문서에 없으면 실패한다.
-- **검증 스크립트**: `npm run verify`(타입 검사, 린트, 테스트, 맵 검사를 차례로 실행), `npm run typecheck`, `npm run lint:prune`.
+- **검증 스크립트**: `npm run verify`(타입 검사, 린트, 테스트, 맵 검사, 린트 억제 건수 검사를 차례로 실행), `npm run typecheck`, `npm run lint:prune`.
 
 ### Changed
 
