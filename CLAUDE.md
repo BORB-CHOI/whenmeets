@@ -41,7 +41,15 @@ ECC 글로벌 커맨드 사용 가능: `/build-fix`, `/code-review`, `/tdd`, `/p
 
 프로젝트 로컬 커맨드:
 
-- `/verify` — 커밋 전 전체 검증 파이프라인 + 컴포넌트 관계성 체크 (글로벌 verify를 오버라이드)
+- `/verify` — `npm run verify`(타입체크, 린트, 테스트, 컴포넌트 맵 일치 검사)를 통과할 때까지 반복 (글로벌 verify를 오버라이드)
+
+## Verification
+
+- `npm run verify`: `typecheck`, `lint`, `test`, `check:map`, `check:lint-baseline` 을 순서대로 실행. 커밋 전에 통과해야 한다.
+- `npm run check:map`: `.claude/rules/whenmeets-component-map.md` 가 코드와 일치하는지 검사 (소스 파일, `src/app` 페이지와 레이아웃, API 라우트, Radix 패키지 목록).
+- 린트 기존 위반은 `eslint-suppressions.json` 에 고정돼 있고 새 위반만 실패한다. 위반을 고쳤으면 `npm run lint:prune` 으로 정리한다. 억제 건수는 `origin/main` 보다 늘 수 없고(`check:lint-baseline`), 경고는 `--max-warnings 5` 까지만 허용한다.
+- CI (`.github/workflows/ci.yml`): PR 과 main push 마다 위 단계를 실행한다.
+- `.ts`/`.tsx` 편집 직후 PostToolUse 훅이 `tsc` 를 돌리고 오류를 에이전트에게 돌려준다 (`.claude/scripts/hooks/post-edit-typecheck.js`, 끄려면 `HARNESS_BYPASS_TYPECHECK=1`).
 
 ## Next.js Version Warning
 
@@ -60,7 +68,7 @@ Rules in `.claude/rules/` MUST stay in sync with the actual codebase. When you:
 - **Add a new page/feature area** → add a new relationship group in `whenmeets-component-map.md`
 
 After any structural change (new file, renamed file, deleted file, moved file),
-verify that `whenmeets-component-map.md` still reflects reality. If it doesn't, fix it before committing.
+run `npm run check:map` to verify that `whenmeets-component-map.md` still reflects reality. If it fails, fix the map before committing.
 
 ## Dark mode disabled
 
