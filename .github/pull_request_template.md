@@ -4,7 +4,7 @@
 
 ## 체크리스트
 
-- [ ] 로컬에서 `npm run lint` + `npm test` 통과
+- [ ] 로컬에서 `npm run verify` 통과 (타입 검사, 린트, 테스트, 컴포넌트 맵, 린트 기준선. CI 가 같은 단계를 실행)
 - [ ] 새 기능에 시각 회귀 우려가 있으면 8가지 모드(요일/달력 × 가용/불가능 × 시간/날짜) 점검
 - [ ] `.claude/rules/whenmeets-component-map.md`가 구조 변경(파일 추가/이름변경/삭제)을 반영
 - [ ] `docs/CHANGELOG.md`의 `## [Unreleased]` 섹션에 항목 추가
