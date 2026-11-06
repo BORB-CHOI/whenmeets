@@ -4,6 +4,17 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.7.4] - 2026-11-07
+
+### Fixed
+
+- **실시간 갱신이 응답자 필터를 풀던 문제**: 응답자 필터에서 한 명만 골라 보는 중에 다른 사람이 응답을 저장하면 실시간 갱신이 모든 참여자를 다시 선택해서 고른 한 명 보기가 전체 보기로 풀렸다. 이제 새로 들어온 참여자만 선택에 더하고, 필터에서 뺀 참여자는 그대로 둔다.
+- **삭제된 참여자가 선택에 남던 문제**: 참여자가 삭제돼도 선택 목록에 ID가 남아서 "전체 선택" 판정(선택 수와 전체 수 비교)이 어긋났다. 이제 삭제된 참여자는 선택에서도 빠진다. 선택된 참여자가 모두 사라지면 전체 선택으로 돌아간다.
+
+### Changed
+
+- **린트 경고**: 실시간 갱신 핸들러의 `useCallback` 의존성에 `setEvent`를 추가해 `react-hooks/exhaustive-deps` 경고 1건을 없앴다.
+
 ## [0.7.3] - 2026-11-07
 
 ### Added
