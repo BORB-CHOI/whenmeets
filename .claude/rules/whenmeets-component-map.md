@@ -64,7 +64,7 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `useAvailabilitySave` | 가용성 저장 hook. `EventPageClient` 가 사용 | `src/hooks/useAvailabilitySave.ts` |
 | `useRealtimeSync` | Supabase Realtime(`postgres_changes`) 구독으로 다른 참여자의 변경을 반영 | `src/hooks/useRealtimeSync.ts` |
 | `session-store.ts` | 익명 참여자 세션을 localStorage 에 여러 개 보관(`readSessionStore`, `getActiveSession`, `upsertSession`) | `src/lib/session-store.ts` |
-| `participantToggle` | `ParticipantFilter` 의 참여자 선택 토글(`toggleParticipant`) | `src/components/results/participantToggle.ts` |
+| `participantToggle` | `ParticipantFilter` 의 참여자 선택 토글(`toggleParticipant`)과, `EventPageClient` 의 실시간 갱신이 선택 목록을 새 참여자 목록에 맞추는 `reconcileSelection` | `src/components/results/participantToggle.ts` |
 
 **Shared concerns:**
 - Event title/description display style
