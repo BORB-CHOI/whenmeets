@@ -29,3 +29,17 @@ export function toggleParticipant(
 
   return next;
 }
+
+export function reconcileSelection(
+  current: ReadonlySet<string>,
+  knownIds: readonly string[],
+  incomingIds: readonly string[],
+): Set<string> {
+  const known = new Set(knownIds);
+  const next = new Set<string>();
+  for (const id of incomingIds) {
+    if (current.has(id) || !known.has(id)) next.add(id);
+  }
+  if (next.size === 0) return new Set(incomingIds);
+  return next;
+}

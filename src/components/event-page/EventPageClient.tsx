@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { eventQueryKey } from '@/hooks/useEvent';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
+import { reconcileSelection } from '@/components/results/participantToggle';
 import SidebarCount, { type SidebarCountHandle } from '@/components/event-page/SidebarCount';
 import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
@@ -209,22 +210,25 @@ export default function EventPageClient({
   });
 
   // Realtime sync
+  const knownParticipantIdsRef = useRef<string[]>(initialEvent.participants.map((p) => p.id));
+  useEffect(() => {
+    knownParticipantIdsRef.current = event.participants.map((p) => p.id);
+  }, [event.participants]);
+
   const handleRealtimeUpdate = useCallback(() => {
     eventsApi
       .getDetail(eventId)
       .then((data) => {
         const ev = data as unknown as EventData;
         if (!ev.requires_auth) {
+          const knownIds = knownParticipantIdsRef.current;
+          const incomingIds = ev.participants.map((p) => p.id);
           setEvent(ev);
-          setSelectedIds((prev) => {
-            const next = new Set(prev);
-            ev.participants.forEach((p) => next.add(p.id));
-            return next;
-          });
+          setSelectedIds((prev) => reconcileSelection(prev, knownIds, incomingIds));
         }
       })
       .catch(() => undefined);
-  }, [eventId]);
+  }, [eventId, setEvent]);
 
   useRealtimeSync(eventId, viewMode === 'view', handleRealtimeUpdate);
 
