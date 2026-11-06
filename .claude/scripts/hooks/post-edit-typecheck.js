@@ -1,24 +1,38 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const TS_FILE = /\.(ts|tsx|mts|cts)$/;
 const MAX_REPORTED_LINES = 30;
 const TIMEOUT_MS = 80000;
-const PROJECT_DIR = path.resolve(__dirname, '..', '..', '..');
 
 function toPosix(p) {
   return p.split(path.sep).join('/');
 }
 
-function resolveTscBin() {
-  return require.resolve('typescript/bin/tsc', { paths: [PROJECT_DIR] });
+function findProjectDir(filePath) {
+  let dir = path.dirname(path.resolve(filePath));
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'tsconfig.json'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
 }
 
-function runTypecheck() {
-  return spawnSync(process.execPath, [resolveTscBin(), '--noEmit', '--pretty', 'false'], {
-    cwd: PROJECT_DIR,
+function resolveTscBin(projectDir) {
+  try {
+    return require.resolve('typescript/bin/tsc', { paths: [projectDir] });
+  } catch {
+    throw new Error(`${projectDir} 에서 typescript 를 찾을 수 없습니다. npm ci 를 먼저 실행하세요.`);
+  }
+}
+
+function runTypecheck(projectDir) {
+  return spawnSync(process.execPath, [resolveTscBin(projectDir), '--noEmit', '--pretty', 'false'], {
+    cwd: projectDir,
     encoding: 'utf8',
     timeout: TIMEOUT_MS,
     maxBuffer: 16 * 1024 * 1024,
@@ -27,8 +41,9 @@ function runTypecheck() {
 
 function buildReport(output, editedRelPath) {
   const errorLines = output.split('\n').filter((line) => line.includes('error TS'));
-  const own = errorLines.filter((line) => line.startsWith(editedRelPath));
-  const others = errorLines.filter((line) => !line.startsWith(editedRelPath));
+  const prefix = `${editedRelPath}(`;
+  const own = errorLines.filter((line) => line.startsWith(prefix));
+  const others = errorLines.filter((line) => !line.startsWith(prefix));
   const shown = [...own, ...others].slice(0, MAX_REPORTED_LINES);
   const hidden = errorLines.length - shown.length;
 
@@ -62,17 +77,16 @@ function main(raw, run = runTypecheck) {
     return 0;
   }
 
-  const filePath = (input && input.tool_input && input.tool_input.file_path) || '';
-  if (!TS_FILE.test(filePath)) return 0;
+  const filePath = input && input.tool_input && input.tool_input.file_path;
+  if (typeof filePath !== 'string' || !TS_FILE.test(filePath)) return 0;
 
-  const editedRelPath = toPosix(path.relative(PROJECT_DIR, path.resolve(filePath)));
-  if (editedRelPath === '..' || editedRelPath.startsWith('../') || path.isAbsolute(editedRelPath)) {
-    return 0;
-  }
+  const projectDir = findProjectDir(filePath);
+  if (!projectDir) return 0;
+  const editedRelPath = toPosix(path.relative(projectDir, path.resolve(filePath)));
 
   let result;
   try {
-    result = run();
+    result = run(projectDir);
   } catch (error) {
     process.stderr.write(`[harness] 타입 검사를 실행하지 못했습니다: ${error.message}\n`);
     return 1;
@@ -93,7 +107,7 @@ function main(raw, run = runTypecheck) {
     return 1;
   }
 
-  process.stderr.write(`${buildReport(result.stdout || '', editedRelPath)}\n`);
+  process.stderr.write(`${buildReport(output, editedRelPath)}\n`);
   return 2;
 }
 

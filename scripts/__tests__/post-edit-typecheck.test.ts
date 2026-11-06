@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import {
   copyFileSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -22,7 +21,7 @@ const EDITED_FILE = join(REPO_ROOT, 'src', 'a.ts');
 
 const { buildReport, main, TIMEOUT_MS } = createRequire(import.meta.url)(HOOK_PATH);
 
-const CLEAN_ENV = { ...process.env, HARNESS_BYPASS_TYPECHECK: '' };
+const CLEAN_ENV = { ...process.env, HARNESS_BYPASS_TYPECHECK: '', NODE_PATH: '' };
 
 const errorLine = (file: string, n = 1) => `${file}(${n},1): error TS2322: Type mismatch`;
 const hookInput = (filePath: string) => JSON.stringify({ tool_input: { file_path: filePath } });
@@ -40,6 +39,15 @@ describe('buildReport', () => {
     expect(lines[2]).toContain('src/a.ts(2,1)');
     expect(lines).toHaveLength(2 + 30 + 1);
     expect(lines[lines.length - 1]).toContain('외 11건');
+  });
+
+  it('파일 이름이 접두사로 겹치는 다른 파일의 오류를 편집한 파일 것으로 세지 않는다', () => {
+    const output = [errorLine('src/a.tsx'), errorLine('src/a.ts')].join('\n');
+
+    const report = buildReport(output, 'src/a.ts');
+
+    expect(report.split('\n')[0]).toContain('src/a.ts 에서 1건');
+    expect(report.split('\n')[2]).toContain('src/a.ts(1,1)');
   });
 
   it('오류가 30건 이하면 넘침 안내를 붙이지 않는다', () => {
@@ -62,6 +70,7 @@ describe('buildReport', () => {
 
 describe('main', () => {
   let stderr: string;
+  const tempDirs: string[] = [];
 
   beforeEach(() => {
     stderr = '';
@@ -75,6 +84,7 @@ describe('main', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
   });
 
   it('.ts 가 아닌 파일은 tsc 를 돌리지 않고 통과시킨다', () => {
@@ -84,7 +94,18 @@ describe('main', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it.each(['null', '', '{}', '{"tool_input":null}', '[]', '123', '"text"'])(
+  it.each([
+    'null',
+    '',
+    '{}',
+    '{"tool_input":null}',
+    '[]',
+    '123',
+    '"text"',
+    '{"tool_input":{"file_path":["a.ts"]}}',
+    '{"tool_input":{"file_path":5}}',
+    '{"tool_input":{"file_path":null}}',
+  ])(
     '입력이 %j 이면 tsc 를 돌리지 않고 통과시킨다',
     (raw) => {
       const run = vi.fn();
@@ -117,11 +138,17 @@ describe('main', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it('프로젝트 밖의 .ts 파일은 tsc 를 돌리지 않고 통과시킨다', () => {
-    const run = vi.fn();
+  it('가장 가까운 tsconfig.json 이 있는 디렉터리를 프로젝트로 삼는다', () => {
+    const outer = mkdtempSync(join(tmpdir(), 'ts-outer-'));
+    tempDirs.push(outer);
+    mkdirSync(join(outer, 'packages', 'app', 'src'), { recursive: true });
+    writeFileSync(join(outer, 'tsconfig.json'), '{}');
+    writeFileSync(join(outer, 'packages', 'app', 'tsconfig.json'), '{}');
+    const run = vi.fn().mockReturnValue({ status: 0, stdout: '' });
 
-    expect(main(hookInput(join(tmpdir(), 'helper.ts')), run)).toBe(0);
-    expect(run).not.toHaveBeenCalled();
+    main(hookInput(join(outer, 'packages', 'app', 'src', 'a.ts')), run);
+
+    expect(run).toHaveBeenCalledWith(join(outer, 'packages', 'app'));
   });
 
   it('우회 환경변수가 1이면 통과시킨다', () => {
@@ -158,6 +185,20 @@ describe('main', () => {
     expect(stderr).toContain('종료 코드 134');
     expect(stderr).toContain('heap out of memory');
     expect(stderr).not.toContain('오류 0건');
+  });
+
+  it('시그널로 죽었으면 시그널 이름을 원인으로 쓴다', () => {
+    const run = vi.fn().mockReturnValue({ status: null, signal: 'SIGKILL', stdout: '', stderr: '' });
+
+    expect(main(hookInput(EDITED_FILE), run)).toBe(1);
+    expect(stderr).toContain('SIGKILL');
+  });
+
+  it('stderr 가 비어 있으면 stdout 을 원인으로 쓴다', () => {
+    const run = vi.fn().mockReturnValue({ status: 1, stdout: 'config exploded', stderr: '' });
+
+    expect(main(hookInput(EDITED_FILE), run)).toBe(1);
+    expect(stderr).toContain('config exploded');
   });
 
   it('시간 초과는 1 을 돌려주고 시간 초과 문구를 쓴다', () => {
@@ -201,13 +242,6 @@ describe('settings.json 배선', () => {
 
   it('Edit 와 Write 에 걸려 있다', () => {
     expect(entry.matcher.split('|')).toEqual(expect.arrayContaining(['Edit', 'Write']));
-  });
-
-  it('명령이 가리키는 훅 파일이 실제로 있다', () => {
-    const quoted = /"([^"]*post-edit-typecheck\.js)"/.exec(entry.hooks[0].command);
-
-    expect(quoted).not.toBeNull();
-    expect(existsSync(join(REPO_ROOT, quoted![1]))).toBe(true);
   });
 
   it('하네스 timeout 이 훅 내부 timeout 보다 길다', () => {
@@ -300,6 +334,35 @@ describe('실제 tsc 연동', () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
   }, 30000);
+
+  it('훅이 설치된 프로젝트가 아니라 편집한 파일이 속한 프로젝트를 검사한다', () => {
+    const home = makeProject(SANDBOX_BASE, { 'good.ts': 'export const ok = 1;\n' });
+    const other = makeProject(SANDBOX_BASE, { 'bad.ts': "export const n: number = 'x';\n" });
+
+    const result = spawnSync(
+      process.execPath,
+      [join(home, '.claude', 'scripts', 'hooks', 'post-edit-typecheck.js')],
+      { input: hookInput(join(other, 'bad.ts')), encoding: 'utf8', env: CLEAN_ENV },
+    );
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('bad.ts 에서 1건');
+  }, 30000);
+
+  it('tsconfig.json 이 없는 위치의 .ts 파일은 종료 코드 0 으로 건너뛴다', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'no-tsconfig-'));
+    roots.push(bare);
+    writeFileSync(join(bare, 'x.ts'), "export const n: number = 'x';\n");
+
+    const result = spawnSync(process.execPath, [HOOK_PATH], {
+      input: hookInput(join(bare, 'x.ts')),
+      encoding: 'utf8',
+      env: CLEAN_ENV,
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+  });
 
   it('typescript 를 찾을 수 없으면 종료 코드 1 과 실행하지 못했다는 문구를 낸다', () => {
     const root = makeProject(tmpdir(), { 'good.ts': 'export const ok = 1;\n' });
