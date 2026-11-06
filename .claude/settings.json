@@ -50,6 +50,16 @@
           }
         ],
         "description": "Block Edit/Write that introduce Tailwind `dark:` classes (dark mode is disabled project-wide)"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/pre-edit-block-new-comments.js\""
+          }
+        ],
+        "description": "Block Edit/Write that add code comments in src/ and scripts/ (project rule: zero comments, directives allowed)"
       }
     ],
     "PostToolUse": [

@@ -176,6 +176,25 @@ exit 애니메이션이 필요하면 Framer Motion `AnimatePresence` + `forceMou
    사용자가 직접 중지할 수 없음. 띄워야 한다면 사용자에게 직접 실행 요청. 빌드 검증이 필요하면
    `next build` 같은 일회성 커맨드를 foreground로 실행.
 
+## No Code Comments (MANDATORY)
+
+`src/`, `scripts/`, `.claude/scripts/` 의 코드에 주석(`//`, `/* */`, JSX `{/* */}`, CSS `/* */`)을 새로 쓰지 않는다. 의도는 이름과 구조로 드러낸다.
+
+- `.claude/scripts/hooks/pre-edit-block-new-comments.js` 가 Edit/Write 의 주석 본문을 편집 전후로 비교해서, 편집 전에 없던 주석이 생기면 막는다. 기존 주석을 지우거나 내용 그대로 옮기는 편집은 통과한다. 내용을 바꾸면 새 주석으로 센다.
+- 지시어는 주석으로 세지 않는다: `eslint-disable`, `eslint-enable`, `eslint-env`, `@ts-expect-error`, `@ts-ignore`, `@ts-nocheck`, `@ts-check`, `prettier-ignore`, `/// <reference />`, `istanbul ignore`, `c8 ignore`, `v8 ignore`. 접두사만 비슷한 설명 주석은 지시어가 아니다.
+- 문자열, 템플릿 리터럴(`${}` 안은 코드로 본다), 정규식 안의 `//` 는 주석이 아니다. `.css` 는 `/* */` 만 주석으로 센다. JSX 텍스트처럼 해석이 모호한 곳은 주석으로 오인할 수 있다. 막히면 코드를 고쳐 쓰고, 정말 필요하면 Claude Code 를 띄우기 전에 `HARNESS_BYPASS_COMMENT_BLOCK=1` 을 설정한다.
+- 이미 있는 주석은 이 규칙으로 정리하지 않는다. 기능 작업과 섞지 말고 별도 PR 로 지운다.
+
+## Testing Standards
+
+실제로 돌아가는 기준만 적는다.
+
+- 러너는 Vitest(`environment: 'node'`). 테스트는 `src/**/__tests__/` 와 `scripts/__tests__/` 에 둔다. `.claude/**` 는 러너에서 제외한다.
+- 커밋 전에 `npm run verify` 가 통과해야 한다. CI 의 `verify` 가 같은 순서로 실행한다.
+- 버그 수정은 재현 테스트를 먼저 쓰고(실패 확인), 고친 뒤 통과시킨다.
+- 커버리지 수치 기준(전역 룰의 80%)과 E2E(Playwright)는 이 프로젝트에 적용하지 않는다. 커버리지 도구도 E2E 도구도 설치돼 있지 않다. 도입 여부는 소유자가 정한다.
+- UI 조작감(드래그 선택, 셀 토글, 모바일 시트)은 자동 테스트로 잡지 못한다. 순수 로직은 `drag-logic.test.ts` 처럼 함수로 분리해서 시험하고, 나머지는 브라우저에서 직접 확인한다.
+
 ## Commit Messages
 
 All commit messages MUST be written in Korean.

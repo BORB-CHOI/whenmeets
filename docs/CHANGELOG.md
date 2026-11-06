@@ -4,6 +4,13 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.7.3] - 2026-11-07
+
+### Added
+
+- **신규 주석 차단 훅**: `src/`, `scripts/`, `.claude/scripts/`의 코드 파일에 주석을 늘리는 Edit/Write를 막는다(`pre-edit-block-new-comments.js`). 편집 전후 주석 본문을 비교해서 편집 전에 없던 주석이 생기면 막는다. 기존 주석을 지우거나 그대로 옮기는 편집은 통과하고, 내용을 바꾸면 새 주석으로 센다. 문자열, 템플릿 리터럴(`${}` 안은 코드로 스캔), 정규식 안의 `//`는 주석으로 세지 않고, `.css`는 `/* */`만 센다. `eslint-disable`, `@ts-expect-error`, `prettier-ignore`, `/// <reference />` 같은 지시어도 세지 않는다. 우회는 `HARNESS_BYPASS_COMMENT_BLOCK=1`을 Claude Code 실행 전에 설정한다.
+- **규칙 문서**: `whenmeets-conventions.md`에 "코드 주석 금지"와 "테스트 기준" 절을 추가했다. 테스트 기준은 현재 실태(Vitest 단위·통합 테스트, `npm run verify`)를 적고, 커버리지 수치와 Playwright E2E는 적용하지 않는다고 명시했다.
+
 ## [0.7.2] - 2026-11-06
 
 ### Added

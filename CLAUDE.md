@@ -59,6 +59,7 @@ ECC 글로벌 커맨드 사용 가능: `/build-fix`, `/code-review`, `/tdd`, `/p
 - `pre-bash-block-main-commit`: `main`/`master` 에 직접 커밋, `main`/`master` 로 직접 푸시(`HEAD:main`, `+refspec`, `--all`, `--mirror` 포함). 같은 명령 안의 `cd`, `git -C`, `git checkout main` 도 따라가서 실제로 닿는 브랜치를 기준으로 본다. 우회: `HARNESS_BYPASS_MAIN_COMMIT=1`
 - `pre-bash-block-human-only`: `supabase db push`(`--dry-run` 과 `--local` 은 허용), 원격을 가리키는 `db reset --linked`/`--db-url`, 원격 `migration up/down/repair`. 로컬 DB 를 다루는 `db reset` 은 허용한다. 프로덕션 적용은 머지 뒤 사람이 직접 한다. 우회: `HARNESS_BYPASS_HUMAN_ONLY=1`
 - `pre-edit-block-large-delete`, `pre-edit-block-dark-class`: 한 번에 100줄 넘게 지우는 편집, `dark:` 클래스 추가.
+- `pre-edit-block-new-comments`: `src/`, `scripts/`, `.claude/scripts/` 의 코드 파일(`.ts .tsx .js .jsx .mjs .cjs .css`)에 주석을 늘리는 편집. 편집 전후 주석 본문을 비교해서 편집 전에 없던 주석이 생기면 막는다. 기존 주석을 지우거나 그대로 옮기는 편집은 통과하고, 내용을 바꾸면 새 주석으로 센다. `eslint-disable`, `@ts-expect-error`, `prettier-ignore`, `/// <reference />` 같은 지시어는 세지 않는다. 우회: `HARNESS_BYPASS_COMMENT_BLOCK=1`
 - 우회 변수는 Claude Code 를 띄우기 전에 설정해야 한다. 명령 앞에 `VAR=1` 을 붙여도 훅에는 전달되지 않는다.
 - `gh pr merge` 는 막지 않는다. 머지는 `main` 룰셋의 필수 검사(`check-migrations`, `verify`)가 지킨다.
 - 세 Bash 훅은 명령을 셸처럼 해석한다(`.claude/scripts/hooks/lib/command.js`). 따옴표, 줄 이음, `&&`/`||`/`;`/`|`/`&`, 괄호, heredoc, 주석, `$(...)`, 백틱, `bash -c`, `bash <<EOF`, `eval`, `sudo`/`env`/`xargs`/`timeout` 같은 래퍼를 풀어서 본다. 명령어 자리에 있는 단어만 보므로 `echo git reset --hard` 같은 글자는 막지 않는다.

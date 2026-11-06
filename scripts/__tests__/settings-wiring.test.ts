@@ -59,10 +59,11 @@ describe('settings.json 훅 배선', () => {
     ]);
   });
 
-  it('Edit 와 Write 의 사전 훅은 대량 삭제 차단과 다크 모드 클래스 차단이 정확히 한 번씩이다', () => {
+  it('Edit 와 Write 의 사전 훅은 다크 모드 클래스, 대량 삭제, 신규 주석 차단이 정확히 한 번씩이다', () => {
     expect(scriptsFor('PreToolUse', 'Edit|Write').sort()).toEqual([
       '.claude/scripts/hooks/pre-edit-block-dark-class.js',
       '.claude/scripts/hooks/pre-edit-block-large-delete.js',
+      '.claude/scripts/hooks/pre-edit-block-new-comments.js',
     ]);
   });
 
