@@ -4,6 +4,22 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [0.7.1] - 2026-11-06
+
+### Added
+
+- **PR 자동 검증**: PR과 `main` push마다 타입 검사, 린트, 테스트, 컴포넌트 맵 일치 검사, 린트 억제 건수 검사를 GitHub Actions에서 실행한다. 하나라도 실패하면 CI가 실패한다.
+- **린트 억제 건수 검사 (`npm run check:lint-baseline`)**: `eslint-suppressions.json`의 억제 건수가 `origin/main`보다 늘면 실패한다. 새 위반을 억제 파일로 덮어서 통과시킬 수 없다.
+- **컴포넌트 맵 검사 (`npm run check:map`)**: `.claude/rules/whenmeets-component-map.md`가 실제 코드와 맞는지 확인한다. 맵에 적힌 파일이 없거나, 코드에 있는 파일과 API 라우트가 맵에 없거나, 설치한 Radix 패키지가 규칙 문서에 없으면 실패한다.
+- **검증 스크립트**: `npm run verify`(타입 검사, 린트, 테스트, 맵 검사, 린트 억제 건수 검사를 차례로 실행), `npm run typecheck`, `npm run lint:prune`.
+
+### Changed
+
+- **타입 검사 훅**: `.ts`/`.tsx`를 편집한 직후 `tsc`를 돌리고, 오류가 있으면 에이전트에게 돌려준다. 기존 훅은 오류가 에이전트에게 전달되지 않았다.
+- **린트 기준선**: 기존 위반 19건을 `eslint-suppressions.json`에 고정했다. 새 위반만 실패하고, 경고는 5건까지만 허용한다.
+- **`/verify` 커맨드**: 위 검증 파이프라인을 통과할 때까지 반복하도록 바꿨다.
+- **컴포넌트 맵**: v1.0 서버 계층과 홈, 데모 페이지 등 빠져 있던 파일을 추가했다. 이름이 바뀐 `proxy.ts`와 삭제된 `ResultsPageClient` 참조도 바로잡았다.
+
 ## [0.7.0] - 2026-05-22
 
 ### Added

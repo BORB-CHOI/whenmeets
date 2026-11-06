@@ -77,7 +77,7 @@ DESIGN.md는 현재 없습니다 (코드와 불일치하여 삭제됨). 디자�
 | `/build-fix` | 빌드 에러 수정 | ECC |
 | `/investigate` | 버그 원인 추적 | gstack |
 | `/checkpoint` | 진행 저장 (긴 작업) | gstack |
-| `/verify` | 커밋 전 검증 (tsc/lint/test/build/관계성) | local |
+| `/verify` | 커밋 전 검증 (tsc/lint/test/컴포넌트 맵/린트 기준선) | local |
 | `/code-review` | 셀프 리뷰 | ECC |
 | `/ship` | PR 생성 | gstack |
 | `/qa` | 기능 QA + 버그 픽스 | gstack |
@@ -92,7 +92,7 @@ DESIGN.md는 현재 없습니다 (코드와 불일치하여 삭제됨). 디자�
 - ECC rules (TypeScript, Web, Common) -- 글로벌
 - `whenmeets-component-map.md` -- 컴포넌트 수정 시 관련 컴포넌트 강제 확인
 - `whenmeets-conventions.md` -- 하드코딩 금지, Pretendard only, 애니메이션 필수
-- PostToolUse hook -- 파일 수정 시 tsc 자동 체크
+- PostToolUse hook -- `.ts`/`.tsx` 편집 직후 tsc 자동 체크 (오류는 에이전트에게 전달)
 
 ## 프로젝트 구조
 

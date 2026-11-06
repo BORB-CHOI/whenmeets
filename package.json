@@ -1,14 +1,19 @@
 {
   "name": "whenmeets",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 5",
+    "lint:prune": "eslint --prune-suppressions",
+    "typecheck": "tsc --noEmit",
+    "check:map": "node scripts/check-component-map.mjs",
+    "check:lint-baseline": "node scripts/check-lint-baseline.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run check:map && npm run check:lint-baseline"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
