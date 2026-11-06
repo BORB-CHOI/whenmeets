@@ -8,15 +8,15 @@ All notable changes to DayMeet will be documented in this file.
 
 ### Added
 
-- **사람 전용 명령 차단**: `supabase db push`(`--dry-run` 제외), `supabase db reset`, 원격 DB를 바꾸는 `supabase migration up/down/repair`를 에이전트가 실행하지 못하게 막는다. 프로덕션 DB 적용은 머지 뒤 사람이 직접 한다는 규칙을 훅으로 강제한다. `npx supabase@latest`, `pnpm dlx`, `supabase.exe`처럼 실행 방식이 달라도 막는다.
-- **명령 해석기**: 보호 훅 세 개가 공용으로 쓰는 셸 명령 해석기(`.claude/scripts/hooks/lib/command.js`)를 추가했다. 따옴표, 줄 끝 `\` 이음, `&&`, `||`, `;`, `|`, `&`, 괄호, heredoc, 주석, `$(...)`, 백틱, `bash -c`, `eval` 안의 명령을 풀어서 본다.
+- **사람 전용 명령 차단**: `supabase db push`(`--dry-run`과 `--local` 제외), 원격 DB를 가리키는 `supabase db reset --linked`, 원격 `supabase migration up/down/repair`를 에이전트가 실행하지 못하게 막는다. 프로덕션 DB 적용은 머지 뒤 사람이 직접 한다는 규칙을 훅으로 강제한다. `npx supabase@latest`, `npm --prefix ./app exec -- supabase`, `pnpm dlx`, `supabase.exe`처럼 실행 방식이 달라도 막는다.
+- **명령 해석기**: 보호 훅 세 개가 공용으로 쓰는 셸 명령 해석기(`.claude/scripts/hooks/lib/command.js`)를 추가했다. 따옴표(`$'...'` 포함), 줄 끝 `\` 이음, `&&`, `||`, `;`, `|`, `&`, 괄호, heredoc, 주석, `$(...)`, 백틱, `bash -c`, `bash <<EOF`, `eval`, `sudo -u`, `env -u`, `xargs -n`, `timeout` 같은 래퍼 안의 명령을 풀어서 본다.
 - **훅 배선 검증**: `.claude/settings.json`의 모든 훅이 `$CLAUDE_PROJECT_DIR` 형식이고, 가리키는 파일이 있고, 훅 디렉터리의 스크립트가 빠짐없이 등록됐는지 테스트로 확인한다.
 
 ### Changed
 
 - **훅 경로**: 훅 명령을 상대경로에서 `$CLAUDE_PROJECT_DIR` 기준으로 바꿨다. 작업 디렉터리가 저장소 루트가 아니어도 보호 훅이 빠지지 않는다.
-- **main 보호 훅**: `git -C`(붙여 쓴 `-C경로`, 따옴표 경로, Git Bash의 `/c/...` 경로 포함), `git -c`, `git.exe`를 낀 커밋과 `git push origin "HEAD:main"`, `+refspec`, `--mirror` 같은 main 직접 푸시도 막는다. 같은 명령 안의 `cd`와 `git checkout main`을 따라가서 실제로 닿는 브랜치를 기준으로 판단하고, `git push --tags`는 막지 않는다.
-- **파괴적 git 훅**: `git -C`나 `git.exe`를 끼운 명령, `checkout .`, `checkout -f`, `switch -f`, `restore --source`, `push -fu`, `push +refspec`, `stash drop` 같은 되돌릴 수 없는 명령도 막는다. `echo git reset --hard`처럼 글자일 뿐인 명령은 더 이상 막지 않는다.
+- **main 보호 훅**: `git -C`(붙여 쓴 `-C경로`, 따옴표 경로, Git Bash의 `/c/...` 경로 포함), `git -c`, `git.exe`를 낀 커밋과 `git push origin "HEAD:main"`, `+refspec`, `--mirror` 같은 main 직접 푸시도 막는다. 같은 명령 안의 `cd`(`cd -`, `pushd`/`popd`, `cd "$VAR"`, `cd ~` 포함)와 `git checkout`/`switch`(`-`, `@{-1}`, `--track`, `--detach` 포함)를 따라가서 실제로 닿는 브랜치를 기준으로 판단한다. 훅 입력의 `cwd`를 시작 디렉터리로 쓰고, `git push --tags`와 `git push origin "$(git branch --show-current)"`는 막지 않는다.
+- **파괴적 git 훅**: `git -C`나 `git.exe`를 끼운 명령, `checkout .`, `checkout -f`, 작업 트리에 있는 경로를 넘기는 `checkout src/a.ts`, `switch -f`, `restore --source`, `push -fu`, `push +refspec`, `stash drop` 같은 되돌릴 수 없는 명령도 막는다. 미리보기 `git clean -nfd`와 `echo git reset --hard`처럼 글자일 뿐인 명령은 막지 않는다.
 - **타입 검사 훅**: 편집한 파일에서 가장 가까운 `tsconfig.json`의 프로젝트를 검사한다. 다른 체크아웃이나 워크트리의 파일도 올바른 트리에서 검사한다.
 
 ### Fixed
