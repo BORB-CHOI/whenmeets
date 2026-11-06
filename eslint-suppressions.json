@@ -1,0 +1,35 @@
+{
+  "src/app/guide/page.tsx": {
+    "react/no-unescaped-entities": {
+      "count": 10
+    }
+  },
+  "src/app/page.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    },
+    "react/no-unescaped-entities": {
+      "count": 2
+    }
+  },
+  "src/components/dashboard/FolderNameModal.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/event-page/EventPageClient.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "src/components/ui/HoverInfoPopover.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/lib/__tests__/api-routes.integration.test.ts": {
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 2
+    }
+  }
+}
