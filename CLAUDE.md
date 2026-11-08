@@ -1,5 +1,9 @@
 # DayMeet
 
+## Shared harness
+
+Codex의 진입점은 `AGENTS.md`이며 이 문서와 `.claude/rules/`를 공유한다. Codex 훅은 `.codex/hooks.json`과 `scripts/codex-hook.mjs`가 기존 가드를 재사용한다. 설정·활성화·동시 작업 절차는 `docs/agent-harness.md`를 따른다.
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
