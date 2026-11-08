@@ -4,6 +4,12 @@ All notable changes to DayMeet will be documented in this file.
 
 > 버전은 [SemVer](https://semver.org/)를 따르며, `package.json`의 `version` 필드가 source of truth.
 
+## [Unreleased]
+
+### Added
+
+- **Codex 하네스**: `AGENTS.md`에서 Claude의 프로젝트 규칙을 공유하고, Codex용 검증 스킬과 `apply_patch` 훅 변환기를 추가했다. 기존 명령·편집 가드와 타입 검사를 재사용하며 활성화 절차는 `docs/agent-harness.md`에 기록했다.
+
 ## [0.7.3] - 2026-11-07
 
 ### Added

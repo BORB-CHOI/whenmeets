@@ -329,6 +329,10 @@ When modifying an API response shape, check ALL consuming components.
 
 ## Self-Maintenance
 
+### Agent harness
+
+`AGENTS.md` → `CLAUDE.md` + `.claude/rules/` 공유 규칙. `.agents/skills/whenmeets-verify/SKILL.md` → `.claude/commands/verify.md` → `npm run verify`. `.codex/hooks.json` → `scripts/codex-hook.mjs` → `.claude/scripts/hooks/` 기존 가드. 변환기 회귀 검증은 `scripts/__tests__/codex-hook.test.ts`, 사용법은 `docs/agent-harness.md`에 있다.
+
 This file MUST be updated when:
 - A new component is created → add to the correct group
 - A new API route is added → add to the API mapping table
