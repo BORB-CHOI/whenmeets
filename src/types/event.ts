@@ -43,6 +43,7 @@ export interface EventDetail {
 }
 
 export interface CreateEventInput {
+  request_id?: string;
   title: string;
   dates: string[];
   time_start?: number;

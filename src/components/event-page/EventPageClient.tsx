@@ -12,6 +12,7 @@ import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
+import { applySavedAvailability } from '@/lib/event-availability';
 import { useQueryClient } from '@tanstack/react-query';
 import { eventQueryKey } from '@/hooks/useEvent';
 import EventFormModal from '@/components/event-form/EventFormModal';
@@ -202,7 +203,7 @@ export default function EventPageClient({
     return existing?.availability ?? {};
   });
 
-  const { saving, saveNow } = useAvailabilitySave({
+  const { saving, error: saveError, clearError: clearSaveError, saveNow } = useAvailabilitySave({
     eventId,
     participantId,
     participantPassword,
@@ -563,27 +564,34 @@ export default function EventPageClient({
   }
 
   function handleAvailabilityChange(newAvailability: Availability) {
+    if (saving) return;
     setAvailability(newAvailability);
     // No auto-save here — saving happens only on 편집 완료
   }
 
   function handleCancelEditing() {
+    clearSaveError();
     const savedAvailability = event.participants.find((p) => p.id === participantId)?.availability ?? {};
     setAvailability(savedAvailability);
     setViewMode('view');
   }
 
   async function handleFinishEditing() {
-    await saveNow(availability);
+    if (!(await saveNow(availability))) return;
+    if (participantId) {
+      setEvent(applySavedAvailability(event, { id: participantId, name: session?.name ?? authUserName ?? '' }, availability));
+      setSelectedIds((prev) => new Set([...prev, participantId]));
+    }
+    setViewMode('view');
     // Refresh event data to show updated heatmap and participant list
     try {
       const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
+      if (data.requires_auth || !data.participants) return;
       setEvent(data);
       setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
     } catch {
       // ignore
     }
-    setViewMode('view');
   }
 
   async function handleDeleteParticipant(pid: string) {
@@ -710,7 +718,7 @@ export default function EventPageClient({
                 disabled={saving}
                 className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
               >
-                {saving ? '저장 중...' : '편집 완료'}
+                {saving ? '저장 중...' : saveError ? '다시 저장' : '편집 완료'}
               </button>
             </>
           )}
@@ -1204,6 +1212,7 @@ export default function EventPageClient({
         onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
         onCancelEdit={handleCancelEditing}
         saving={saving}
+        saveFailed={!!saveError}
         dates={event.dates}
         timeStart={event.time_start}
         timeEnd={event.time_end}
@@ -1235,6 +1244,21 @@ export default function EventPageClient({
       <div className={`${viewMode === 'edit' ? 'h-36' : 'h-24'} lg:hidden`} />
 
       {/* Toast for copy */}
+      <AnimatePresence>
+        {viewMode === 'edit' && saveError && (
+          <motion.div
+            role="alert"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-40 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg lg:bottom-6"
+          >
+            <p>{saveError}</p>
+            <p className="mt-1">입력 내용은 유지됩니다. 다시 저장을 눌러 주세요.</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {copied && (
           <motion.div

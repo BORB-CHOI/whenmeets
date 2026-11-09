@@ -9,6 +9,7 @@ interface MobileBottomBarProps {
   onToggleMode: () => void;
   onCancelEdit: () => void;
   saving?: boolean;
+  saveFailed?: boolean;
   dates: string[];
   timeStart: number;
   timeEnd: number;
@@ -56,6 +57,7 @@ export default function MobileBottomBar({
   onToggleMode,
   onCancelEdit,
   saving,
+  saveFailed,
   dates,
   timeStart,
   timeEnd,
@@ -101,7 +103,7 @@ export default function MobileBottomBar({
               </MobileActionSlot>
               <MobileActionSlot>
                 <MobileActionButton onClick={onToggleMode} disabled={saving} variant="primary">
-                  {saving ? '저장 중...' : '편집 완료'}
+                  {saving ? '저장 중...' : saveFailed ? '다시 저장' : '편집 완료'}
                 </MobileActionButton>
               </MobileActionSlot>
             </>

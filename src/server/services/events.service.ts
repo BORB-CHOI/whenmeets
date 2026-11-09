@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
+import { createHash } from 'node:crypto';
 import { eventsRepo } from '@/server/repositories/events.repo';
 import { participantsRepo } from '@/server/repositories/participants.repo';
 import { profilesRepo } from '@/server/repositories/profiles.repo';
@@ -10,10 +11,16 @@ import type { CreateEventInput, EventDetail, UpdateEventInput } from '@/types/ev
 
 export const eventsService = {
   async create(input: CreateEventInput, auth: AuthContext): Promise<{ id: string }> {
-    const id = nanoid(10);
     const start = input.time_start ?? 36;
     const end = input.time_end ?? 84;
     const mode = input.mode === 'unavailable' ? 'unavailable' : 'available';
+    const id = input.request_id
+      ? createHash('sha256').update(JSON.stringify([
+        input.request_id, auth.userId, input.title.trim(), input.dates,
+        start, end, mode, input.date_only === true,
+        input.start_on_monday === true, input.password ?? null,
+      ])).digest('base64url').slice(0, 20)
+      : nanoid(10);
 
     const row: Record<string, unknown> = {
       id,
@@ -33,7 +40,13 @@ export const eventsService = {
       row.password_hash = await bcrypt.hash(input.password, 10);
     }
 
-    await eventsRepo.insert(row);
+    try {
+      await eventsRepo.insert(row);
+    } catch (err) {
+      if (!input.request_id || (err as { code?: string }).code !== '23505') throw err;
+      const existing = await eventsRepo.findById(id);
+      if (!existing) throw err;
+    }
     return { id };
   },
 
