@@ -100,6 +100,11 @@ vi.mock('@/lib/supabase/server', () => {
       },
       then(resolve: Function) {
         if (pendingInsert) {
+          if (tableName === 'events' && mockTables.events.some((row) => row.id === pendingInsert?.id)) {
+            pendingInsert = null;
+            resolve({ data: null, error: { code: '23505', message: 'duplicate key' } });
+            return;
+          }
           mockTables[tableName].push(pendingInsert);
           resolve({ data: pendingInsert, error: null });
           pendingInsert = null;
@@ -185,6 +190,26 @@ async function readBody(res: Response): Promise<Record<string, unknown>> {
 // ==========================================
 describe('POST /api/events', () => {
   beforeEach(resetTables);
+
+  it('recovers a repeated creation after the first response is lost without overwriting the event', async () => {
+    const body = {
+      title: 'Retry meeting',
+      dates: ['2026-11-09'],
+      password: 'secret',
+      request_id: '9a84f88d-36f5-4f7a-a13b-222222222222',
+    };
+    const send = () => createEvent(createMockRequest('/api/events', { method: 'POST', body }));
+    const first = await send();
+    const initial = await readBody(first);
+    mockTables.events[0].title = 'Edited after creation';
+    const retried = await send();
+    expect(first.status).toBe(201);
+    expect(retried.status).toBe(201);
+    expect(await readBody(retried)).toEqual(initial);
+    expect(mockTables.events).toHaveLength(1);
+    expect(mockTables.events[0].title).toBe('Edited after creation');
+    expect(mockTables.events[0].password_hash).toBe('hashed:secret');
+  });
 
   it('creates an event with valid payload', async () => {
     const req = createMockRequest('/api/events', {

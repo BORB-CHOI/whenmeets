@@ -6,6 +6,11 @@ All notable changes to DayMeet will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **저장 실패 복구**: 시간표 저장이 실패하면 편집 내용과 화면을 유지하고 오류와 다시 저장 동작을 제공한다. 저장 성공 후 결과 조회가 실패해도 확인된 응답은 화면에 반영한다.
+- **이벤트 생성 중복 방지**: 페이지와 모달의 생성 요청에 재시도 식별자를 공유하고, 같은 내용·사용자의 재전송은 DB 기본키로 한 건만 생성한다. DB 마이그레이션 없이 적용하며 기존 클라이언트도 호환한다.
+
 ### Added
 
 - **Codex 하네스**: `AGENTS.md`에서 Claude의 프로젝트 규칙을 공유하고, Codex용 검증 스킬과 `apply_patch` 훅 변환기를 추가했다. 기존 명령·편집 가드와 타입 검사를 재사용하며 활성화 절차는 `docs/agent-harness.md`에 기록했다.

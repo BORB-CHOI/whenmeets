@@ -11,6 +11,7 @@ import TimeRangePicker from "./TimeRangePicker";
 import DayOfWeekPicker from "./DayOfWeekPicker";
 import { eventsApi } from "@/lib/api-client";
 import { ApiClientError } from "@/lib/api-client/client";
+import { useEventCreation } from "@/hooks/useEventCreation";
 
 interface EventFormModalProps {
   open: boolean;
@@ -43,6 +44,7 @@ export default function EventFormModal({
   onEventUpdated,
 }: EventFormModalProps) {
   const router = useRouter();
+  const { createEvent, resetCreation } = useEventCreation();
   const now = new Date();
   const [title, setTitle] = useState(
     editEvent?.title ?? `새 이벤트 ${now.getMonth() + 1}/${now.getDate()}`,
@@ -105,6 +107,7 @@ export default function EventFormModal({
     setShowPassword(false);
     setSubmitting(false);
     setError("");
+    resetCreation();
     setShowTimeRange(editEvent ? !editEvent.date_only : true);
     setMode(editEvent?.mode ?? "available");
     setTitleError(false);
@@ -117,6 +120,7 @@ export default function EventFormModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setTitleError(false);
 
     if (!title.trim()) {
@@ -156,7 +160,7 @@ export default function EventFormModal({
 
     let id: string;
     try {
-      const result = await eventsApi.create({
+      const result = await createEvent({
         title: title.trim(),
         dates,
         time_start: dateOnly ? 0 : timeStart,
@@ -202,6 +206,7 @@ export default function EventFormModal({
           }}
           onClick={(e) => {
             if (
+              !submitting &&
               e.target === e.currentTarget &&
               (e.currentTarget as HTMLElement).dataset.backdropMousedown ===
                 "true"
@@ -226,6 +231,7 @@ export default function EventFormModal({
               </h2>
               <button
                 onClick={onClose}
+                disabled={submitting}
                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 <svg
