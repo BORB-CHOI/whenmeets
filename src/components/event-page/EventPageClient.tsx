@@ -1330,7 +1330,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
   }
 
   return (
-    <div className="whitespace-nowrap">
+    <div className="space-y-1">
       <div className="font-semibold text-[11px] tabular-nums">
         {dateLabel} · {timeLabel}
       </div>
@@ -1352,7 +1352,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
             <Row dotClass="bg-amber-300" label={`If Needed ${ifNeeded.length}명`} names={ifNeeded} />
           )}
           {(filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)) > 0 && (
-            <div className="text-[11px] text-white/55">
+            <div className="text-[11px] text-gray-500">
               나머지 {filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)}명 무응답/불가
             </div>
           )}
@@ -1382,10 +1382,10 @@ function Row({ dotClass, label, names }: { dotClass: string; label: string; name
   return (
     <div>
       <div className="flex items-center gap-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-        <span className="text-[11px] font-medium text-white/85">{label}</span>
+        <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${dotClass}`} />
+        <span className="text-[11px] font-medium text-gray-700">{label}</span>
       </div>
-      <div className="text-[11px] text-white/70 ml-3 leading-tight">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
+      <div className="text-[11px] text-gray-600 ml-3 leading-relaxed break-words">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
     </div>
   );
 }

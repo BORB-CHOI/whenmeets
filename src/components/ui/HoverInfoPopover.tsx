@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,13 +35,19 @@ export default function HoverInfoPopover({
   position,
   children,
   offset = 10,
-  maxWidth = 160,
+  maxWidth = 240,
 }: HoverInfoPopoverProps) {
   const [mounted, setMounted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useLayoutEffect(() => {
+    if (contentRef.current) setHeight(contentRef.current.offsetHeight);
+  }, [mounted, children, position]);
 
   if (!mounted) return null;
 
@@ -49,17 +55,18 @@ export default function HoverInfoPopover({
     <AnimatePresence>
       {position && (
         <motion.div
+          ref={contentRef}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
           className="absolute z-[200] pointer-events-none"
           style={{
-            ...getPopoverPosition(position, maxWidth, offset),
-            maxWidth,
+            ...getPopoverPosition(position, maxWidth, height, offset),
+            width: Math.min(maxWidth, window.innerWidth - 16),
           }}
         >
-          <div className="rounded-md border border-teal-200/80 bg-white/90 text-gray-800 text-xs shadow-md backdrop-blur-md px-2 py-1 leading-relaxed">
+          <div role="tooltip" className="rounded-md border border-teal-200/80 bg-white/95 text-gray-800 text-xs shadow-md backdrop-blur-md px-3 py-2 leading-relaxed break-words">
             {children}
           </div>
         </motion.div>
@@ -72,12 +79,12 @@ export default function HoverInfoPopover({
 function getPopoverPosition(
   position: HoverInfoPosition,
   popoverWidth: number,
+  popoverHeight: number,
   offset: number,
-): { left: number; top: number; transform: string } {
+): { left: number; top: number } {
   const fallback = {
     left: position.x + position.width + offset,
     top: position.y + position.height / 2,
-    transform: 'translateY(-50%)',
   };
 
   if (typeof window === 'undefined') return fallback;
@@ -88,13 +95,12 @@ function getPopoverPosition(
   const left = hasRoomOnRight
     ? preferredLeft
     : Math.max(margin, position.x - popoverWidth - offset);
-  const top = Math.max(margin, Math.min(window.innerHeight - margin, fallback.top));
+  const top = Math.max(margin, Math.min(window.innerHeight - margin - popoverHeight, fallback.top - popoverHeight / 2));
 
   // Convert viewport coords to page coords so the popover (position: absolute,
   // portaled to body) stays anchored to the cell when the page scrolls.
   return {
     left: left + window.scrollX,
     top: top + window.scrollY,
-    transform: 'translateY(-50%)',
   };
 }
