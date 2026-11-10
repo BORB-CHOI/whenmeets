@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { Availability } from '@/lib/types';
 import { participantsApi } from '@/lib/api-client';
 import { ApiClientError } from '@/lib/api-client/client';
+import { trackConversions, trackEvent } from '@/lib/measurement-client';
 
 interface UseAvailabilitySaveOptions {
   eventId: string;
@@ -30,14 +31,16 @@ export function useAvailabilitySave({ eventId, participantId, participantPasswor
     setSaving(true);
     setError(null);
     try {
-      await participantsApi.updateAvailability(
+      const result = await participantsApi.updateAvailability(
         eventId,
         identity.participantId,
         availability,
         identity.participantPassword ?? undefined,
       );
+      trackConversions(result?.conversions);
       return true;
     } catch (err) {
+      trackEvent('availability_save_failed', { failure_stage: err instanceof ApiClientError ? 'save' : 'network' }, eventId);
       setError(err instanceof ApiClientError ? err.message : '저장하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.');
       return false;
     } finally {

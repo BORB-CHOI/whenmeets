@@ -74,7 +74,7 @@ export default function HoverInfoPopover({
             width: Math.min(maxWidth, window.innerWidth - 16),
           }}
         >
-          <div role="tooltip" className="rounded-md border border-teal-200/80 bg-white/95 text-gray-800 text-xs shadow-md backdrop-blur-md px-3 py-2 leading-relaxed break-words">
+          <div role="tooltip" data-clarity-mask="true" className="rounded-md border border-teal-200/80 bg-white/95 text-gray-800 text-xs shadow-md backdrop-blur-md px-3 py-2 leading-relaxed break-words">
             {children}
           </div>
         </motion.div>

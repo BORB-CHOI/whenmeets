@@ -11,6 +11,7 @@
  * "사이트의 Google 애널리틱스 추적 코드가 페이지에서 잘못된 위치에 있습니다" error.
  */
 export default function GoogleAnalyticsScript() {
+  if (process.env.NEXT_PUBLIC_MEASUREMENT_ENABLED !== undefined) return null;
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   if (!measurementId) return null;
   const initScript = `window.dataLayer = window.dataLayer || [];

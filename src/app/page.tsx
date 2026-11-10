@@ -277,7 +277,7 @@ export default function Home() {
 
       <Faq />
 
-      <EventFormModal open={showModal} onClose={() => setShowModal(false)} />
+      <EventFormModal open={showModal} onClose={() => setShowModal(false)} entryPoint="home" />
 
       <style>{`
         @keyframes fadeInUp {

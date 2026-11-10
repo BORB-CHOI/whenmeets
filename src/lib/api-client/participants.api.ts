@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import type { Availability } from '@/lib/types';
+import type { ConversionReceipt } from '@/lib/measurement';
 
 export interface JoinResponse {
   id: string;
@@ -21,9 +22,10 @@ export const participantsApi = {
     availability: Availability,
     password?: string,
   ) =>
-    apiClient.patch<{ ok: true }>(
+    apiClient.patch<{ ok: true; conversions?: ConversionReceipt[] }>(
       `/api/events/${eventId}/participants/${participantId}`,
       { availability, ...(password !== undefined && { password }) },
+      { measurement: true },
     ),
 
   remove: (eventId: string, participantId: string, password?: string) =>

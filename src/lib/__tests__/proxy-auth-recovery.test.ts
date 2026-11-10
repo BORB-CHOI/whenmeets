@@ -31,7 +31,7 @@ describe('페이지 렌더 전 로그인 세션 복구', () => {
     for (const url of ['/', '/demo', '/new', '/e/example', '/dashboard', '/mypage', '/auth/callback?code=test']) {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
     }
-    for (const url of ['/_next/static/chunk.js', '/_next/image?url=x', '/favicon.ico', '/image.png', '/api/user/profile']) {
+    for (const url of ['/_next/static/chunk.js', '/_next/image?url=x', '/favicon.ico', '/image.png', '/api/user/profile', '/measurement?oppref=test']) {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
     }
     expect(unstable_doesMiddlewareMatch({ config, url: '/api/events' })).toBe(true);

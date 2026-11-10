@@ -100,6 +100,8 @@ Before creating any new magic number or string, check if it already exists:
 - `formatDateCompact()` — date to "M/D day-of-week"
 - `generateSlots()` — slot range generator
 - `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey()` — day-of-week mode helpers
+- `MEASUREMENT_BROWSER_EVENTS`, `MEASUREMENT_CONVERSION_EVENTS` — 브라우저 행동과 서버 확정 전환 이벤트 목록
+- `MEASUREMENT_COOKIES`, `MEASUREMENT_STORAGE_KEYS` — 계측 동의·방문 식별 저장 키. 인증·수정 권한에 사용하지 않는다
 
 Availability level type is `AvailabilityLevel = 0 | 1 | 2` in `src/lib/types.ts`.
 Cell color logic lives in `src/components/drag-grid/GridCell.tsx` (`getCellColorClass`, `getCellCssColor`).

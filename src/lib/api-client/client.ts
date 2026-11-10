@@ -1,4 +1,5 @@
 import type { ApiResponse, ApiErrorBody } from '@/types/api';
+import { getMeasurementHeaders } from '@/lib/measurement-client';
 
 export class ApiClientError extends Error {
   constructor(
@@ -22,6 +23,7 @@ interface FetchOptions {
   signal?: AbortSignal;
   headers?: Record<string, string>;
   keepalive?: boolean;
+  measurement?: boolean;
 }
 
 async function request<T>(
@@ -34,6 +36,7 @@ async function request<T>(
     method,
     headers: {
       ...(body !== undefined && { 'Content-Type': 'application/json' }),
+      ...(options.measurement && getMeasurementHeaders()),
       ...options.headers,
     },
     ...(body !== undefined && { body: JSON.stringify(body) }),

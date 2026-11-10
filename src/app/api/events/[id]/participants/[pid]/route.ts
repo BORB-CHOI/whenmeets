@@ -9,10 +9,14 @@ import {
 } from '@/server/validators/participant.schema';
 import type { NextRequest } from 'next/server';
 import type { z } from 'zod';
+import { after } from 'next/server';
+import { collectConversions, flushConversions, measurementEnabled } from '@/server/measurement/service';
 
 type Params = z.infer<typeof participantPidParamsSchema>;
 type PatchBody = z.infer<typeof updateAvailabilitySchema>;
 type DeleteBody = z.infer<typeof deleteParticipantSchema>;
+
+export const maxDuration = 60;
 
 export const PATCH = withApiHandler<Params, PatchBody>(
   {
@@ -20,6 +24,7 @@ export const PATCH = withApiHandler<Params, PatchBody>(
     bodySchema: updateAvailabilitySchema,
   },
   async ({ req, params, body }) => {
+    const startedAt = Date.now();
     const auth = await getAuthContext(req);
     await participantsService.updateAvailability(
       params.id,
@@ -28,7 +33,9 @@ export const PATCH = withApiHandler<Params, PatchBody>(
       body.password,
       auth,
     );
-    return ok({ ok: true });
+    const conversions = await collectConversions(req, params.id, 'availability_first_submitted', startedAt, params.pid);
+    if (measurementEnabled()) after(flushConversions);
+    return ok({ ok: true, ...(conversions.length && { conversions }) });
   },
 );
 

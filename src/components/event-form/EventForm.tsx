@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EventMode } from '@/lib/types';
 import SegmentedControl from '@/components/ui/SegmentedControl';
@@ -8,6 +8,7 @@ import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
 import { ApiClientError } from '@/lib/api-client/client';
 import { useEventCreation } from '@/hooks/useEventCreation';
+import { trackEvent } from '@/lib/measurement-client';
 
 export default function EventForm() {
   const router = useRouter();
@@ -27,6 +28,14 @@ export default function EventForm() {
   const [mode, setMode] = useState<EventMode>('available');
   const [titleError, setTitleError] = useState(false);
   const [dateError, setDateError] = useState(false);
+  const [titleEdited, setTitleEdited] = useState(false);
+  const measuredOpen = useRef(false);
+  useEffect(() => {
+    const opened = () => { if (!measuredOpen.current && trackEvent('event_form_opened', { entry_point: 'new_page' })) measuredOpen.current = true; };
+    opened();
+    window.addEventListener('daymeet-measurement-consent', opened);
+    return () => window.removeEventListener('daymeet-measurement-consent', opened);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +67,7 @@ export default function EventForm() {
         password: password || undefined,
         mode,
         date_only: dateOnly,
-      });
+      }, { entry_point: 'new_page', title_edited: titleEdited });
       id = result.id;
     } catch (err) {
       const message = err instanceof ApiClientError ? err.message : '이벤트 생성에 실패했습니다';
@@ -79,6 +88,7 @@ export default function EventForm() {
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
+            setTitleEdited(true);
             if (titleError) setTitleError(false);
           }}
           placeholder="이벤트 제목"
