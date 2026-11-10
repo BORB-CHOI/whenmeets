@@ -97,7 +97,7 @@ export default function Home() {
                 href="/demo"
                 className="px-7 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-50 transition-colors text-lg"
               >
-                데모 화면 보기
+                체험하기
               </Link>
             </div>
             <p

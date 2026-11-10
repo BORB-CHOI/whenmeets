@@ -250,7 +250,7 @@ export default function GuidePage() {
             href="/demo"
             className="inline-flex items-center justify-center px-6 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-100 transition-colors"
           >
-            데모 화면 보기
+            체험하기
           </Link>
         </div>
       </section>

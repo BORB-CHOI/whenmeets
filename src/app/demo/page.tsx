@@ -65,7 +65,7 @@ export default function DemoPage() {
 
       <section className="mb-12 rounded-xl border border-teal-200 bg-teal-50 p-6 sm:p-8 text-center">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-          위 화면이 마음에 들면 1분 만에 같은 이벤트를 만들 수 있습니다
+          “내 약속도 1분이면 잡을 수 있어요”
         </h2>
         <p className="text-sm sm:text-base text-gray-600 mb-5">
           후보 날짜와 시간대만 입력하면 끝. 링크를 복사해서 단톡방, 슬랙, 메신저 어디든 공유하세요.
