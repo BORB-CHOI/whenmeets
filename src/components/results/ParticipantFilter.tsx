@@ -31,6 +31,7 @@ export interface ParticipantFilterHandle {
 }
 
 const UNAVAILABLE_CLASSES = ['[&_.p-name]:line-through', '[&_.p-name]:text-gray-400', '[&_.p-icon]:opacity-40'];
+const PREVIEW_CLASSES = new Set(['bg-[#FFE8B8]', 'rounded', ...UNAVAILABLE_CLASSES]);
 
 function isAvailableForSlot(val: AvailabilityLevel | undefined, eventMode: EventMode): boolean {
   return eventMode === 'unavailable' ? val !== 0 : val === 2;
@@ -59,16 +60,13 @@ const ParticipantFilter = forwardRef<ParticipantFilterHandle, ParticipantFilterP
         const row = rowRefs.current.get(p.id);
         if (!row) continue;
 
-        row.classList.remove('bg-[#FFE8B8]', 'rounded', ...UNAVAILABLE_CLASSES);
+        const val = nextSlotAvailability?.get(p.id);
+        const ifNeeded = nextSlotAvailability !== null && isIfNeededForSlot(val, eventMode);
+        const unavailable = nextSlotAvailability !== null && !ifNeeded && !isAvailableForSlot(val, eventMode);
+        if (row.classList.contains('bg-[#FFE8B8]') === ifNeeded && row.classList.contains(UNAVAILABLE_CLASSES[0]) === unavailable) continue;
 
-        if (!nextSlotAvailability) continue;
-
-        const val = nextSlotAvailability.get(p.id);
-        if (isIfNeededForSlot(val, eventMode)) {
-          row.classList.add('bg-[#FFE8B8]', 'rounded');
-        } else if (!isAvailableForSlot(val, eventMode)) {
-          row.classList.add(...UNAVAILABLE_CLASSES);
-        }
+        const nextClasses = ifNeeded ? ['bg-[#FFE8B8]', 'rounded'] : unavailable ? UNAVAILABLE_CLASSES : [];
+        row.classList.value = [...row.classList].filter(value => !PREVIEW_CLASSES.has(value)).concat(nextClasses).join(' ');
       }
     },
   }), [participants, eventMode]);

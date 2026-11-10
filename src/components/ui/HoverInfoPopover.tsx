@@ -40,14 +40,22 @@ export default function HoverInfoPopover({
   const [mounted, setMounted] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
+  const open = position !== null;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useLayoutEffect(() => {
-    if (contentRef.current) setHeight(contentRef.current.offsetHeight);
-  }, [mounted, children, position]);
+    const content = contentRef.current;
+    if (!mounted || !open || !content) return;
+    setHeight(content.offsetHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      setHeight(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height);
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [mounted, open]);
 
   if (!mounted) return null;
 
