@@ -6,6 +6,8 @@ All notable changes to DayMeet will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-11-10
+
 ### Fixed
 
 - **셀 호버 지연**: 같은 응답 상태·인원수를 반복해서 그리지 않고 팝업 크기 변화를 관찰해, 빠르게 셀을 이동할 때의 DOM 갱신과 강제 레이아웃 계산을 줄였다.
