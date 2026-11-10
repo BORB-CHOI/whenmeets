@@ -17,9 +17,12 @@ export function useAvailabilitySave({ eventId, participantId, participantPasswor
   const inFlight = useRef(false);
   const clearError = useCallback(() => setError(null), []);
 
-  const saveNow = useCallback(async (availability: Availability) => {
+  const saveNow = useCallback(async (
+    availability: Availability,
+    identity = { participantId, participantPassword },
+  ) => {
     if (inFlight.current) return false;
-    if (!participantId) {
+    if (!identity.participantId) {
       setError('참여자 정보를 확인한 뒤 다시 저장해 주세요.');
       return false;
     }
@@ -29,9 +32,9 @@ export function useAvailabilitySave({ eventId, participantId, participantPasswor
     try {
       await participantsApi.updateAvailability(
         eventId,
-        participantId,
+        identity.participantId,
         availability,
-        participantPassword ?? undefined,
+        identity.participantPassword ?? undefined,
       );
       return true;
     } catch (err) {

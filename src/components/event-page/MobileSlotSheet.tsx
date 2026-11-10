@@ -61,7 +61,7 @@ export default function MobileSlotSheet({
       onDragEnd={(_, info) => {
         if (info.offset.y > 36 || info.velocity.y > 450) onClose();
       }}
-      className="fixed inset-x-0 bottom-[72px] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white lg:hidden"
+      className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom,0px))] z-30 overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white lg:hidden"
     >
       <div className="flex justify-center pt-2">
         <div className="h-1 w-10 rounded-full bg-gray-300" />
