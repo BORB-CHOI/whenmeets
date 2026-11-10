@@ -84,18 +84,18 @@ export default function Home() {
               회원가입 없이, 1분이면 끝납니다.
             </p>
             <div
-              className="mt-8 flex flex-wrap items-center gap-3 justify-center lg:justify-start"
+              className="mt-8 flex max-w-full flex-wrap items-center gap-3 justify-center lg:justify-start"
               style={{ animation: 'fadeInUp 0.6s ease-out 0.2s both' }}
             >
               <button
                 onClick={() => setShowModal(true)}
-                className="px-7 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) transition-all text-lg cursor-pointer"
+                className="inline-flex w-40 max-w-full items-center justify-center px-7 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-(--shadow-primary) hover:bg-teal-700 hover:shadow-(--shadow-primary-hover) transition-all text-lg cursor-pointer"
               >
                 이벤트 만들기
               </button>
               <Link
                 href="/demo"
-                className="px-7 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-50 transition-colors text-lg"
+                className="inline-flex w-40 max-w-full items-center justify-center px-7 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-50 transition-colors text-lg"
               >
                 체험하기
               </Link>

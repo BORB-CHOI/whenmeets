@@ -372,16 +372,16 @@ export default function GuidePage() {
         <p className="text-sm sm:text-base text-gray-600 mb-5">
           가이드를 다 안 읽어도 됩니다. 만들면서 익히는 게 가장 빠릅니다.
         </p>
-        <div className="inline-flex flex-wrap items-center gap-3 justify-center">
+        <div className="inline-flex max-w-full flex-wrap items-center gap-3 justify-center">
           <Link
             href="/new"
-            className="inline-flex items-center justify-center px-6 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-sm hover:bg-teal-700 transition-colors"
+            className="inline-flex w-40 max-w-full items-center justify-center px-6 py-3 bg-teal-600 text-white font-semibold rounded-md shadow-sm hover:bg-teal-700 transition-colors"
           >
             이벤트 만들기
           </Link>
           <Link
             href="/demo"
-            className="inline-flex items-center justify-center px-6 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-100 transition-colors"
+            className="inline-flex w-40 max-w-full items-center justify-center px-6 py-3 bg-white text-teal-700 font-semibold rounded-md border border-teal-200 hover:bg-teal-100 transition-colors"
           >
             체험하기
           </Link>
