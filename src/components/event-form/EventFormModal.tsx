@@ -12,10 +12,13 @@ import DayOfWeekPicker from "./DayOfWeekPicker";
 import { eventsApi } from "@/lib/api-client";
 import { ApiClientError } from "@/lib/api-client/client";
 import { useEventCreation } from "@/hooks/useEventCreation";
+import { trackEvent } from '@/lib/measurement-client';
+import type { MeasurementProperties } from '@/lib/measurement';
 
 interface EventFormModalProps {
   open: boolean;
   onClose: () => void;
+  entryPoint?: MeasurementProperties['entry_point'];
   // edit mode props
   editEvent?: {
     id: string;
@@ -42,6 +45,7 @@ export default function EventFormModal({
   onClose,
   editEvent,
   onEventUpdated,
+  entryPoint = 'other',
 }: EventFormModalProps) {
   const router = useRouter();
   const { createEvent, resetCreation } = useEventCreation();
@@ -68,6 +72,16 @@ export default function EventFormModal({
   const dateOnly = !showTimeRange;
 
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [titleEdited, setTitleEdited] = useState(false);
+  const measuredOpen = useRef(false);
+  useEffect(() => {
+    if (!open || editEvent?.id) { measuredOpen.current = false; return; }
+    setTitleEdited(false);
+    const opened = () => { if (!measuredOpen.current && trackEvent('event_form_opened', { entry_point: entryPoint })) measuredOpen.current = true; };
+    opened();
+    window.addEventListener('daymeet-measurement-consent', opened);
+    return () => window.removeEventListener('daymeet-measurement-consent', opened);
+  }, [open, editEvent?.id, entryPoint]);
 
   // Auto-focus the title input only on desktop. Mobile in-app browsers
   // (KakaoTalk, Instagram, etc.) lie about `hover`/`pointer` media features,
@@ -168,7 +182,7 @@ export default function EventFormModal({
         password: password || undefined,
         mode,
         date_only: dateOnly,
-      });
+      }, { entry_point: entryPoint, title_edited: titleEdited });
       id = result.id;
     } catch (err) {
       const message = err instanceof ApiClientError ? err.message : "이벤트 생성에 실패했습니다";
@@ -267,6 +281,7 @@ export default function EventFormModal({
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
+                  setTitleEdited(true);
                   if (titleError) setTitleError(false);
                 }}
                 placeholder="이벤트 제목"

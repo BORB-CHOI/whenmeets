@@ -24,7 +24,7 @@ export default function CreateEventButton() {
         이벤트 만들기
       </button>
       {open && typeof document !== 'undefined' && createPortal(
-        <EventFormModal open={open} onClose={() => setOpen(false)} />,
+        <EventFormModal open={open} onClose={() => setOpen(false)} entryPoint="header" />,
         document.body,
       )}
     </>

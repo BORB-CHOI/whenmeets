@@ -32,6 +32,7 @@ import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
 import { detectInAppBrowser } from '@/lib/inAppBrowser';
 import { eventsApi, participantsApi } from '@/lib/api-client';
 import { ApiClientError } from '@/lib/api-client/client';
+import { trackEvent } from '@/lib/measurement-client';
 
 const HeatmapGrid = dynamic(() => import('@/components/results/HeatmapGrid'), {
   loading: () => (
@@ -243,6 +244,17 @@ export default function EventPageClient({
   // session (first-time visitors: stored session is null, so without this
   // flag the gate stays true forever).
   const [passwordVerified, setPasswordVerified] = useState(false);
+  const viewedEventRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialState.type === 'password' && !passwordVerified) return;
+    const viewed = () => {
+      if (viewedEventRef.current === eventId) return;
+      if (trackEvent('event_viewed', { event_mode: event.mode, date_only: event.date_only }, eventId)) viewedEventRef.current = eventId;
+    };
+    viewed();
+    window.addEventListener('daymeet-measurement-consent', viewed);
+    return () => window.removeEventListener('daymeet-measurement-consent', viewed);
+  }, [eventId, event.mode, event.date_only, initialState.type, passwordVerified]);
 
   const [participantId, setParticipantId] = useState<string | null>(session?.participantId ?? null);
   const [participantPassword, setParticipantPassword] = useState<string | null>(session?.password ?? null);
@@ -544,6 +556,7 @@ export default function EventPageClient({
   async function handleEditClick() {
     if (editClickInProgress.current) return;
     editClickInProgress.current = true;
+    trackEvent('availability_edit_started', { entry_point: 'event_page', event_mode: event.mode, date_only: event.date_only }, eventId);
     saveRefreshRevisionRef.current += 1;
     try {
       hoverPopoverRef.current?.update(null);
@@ -755,10 +768,12 @@ export default function EventPageClient({
     setCopyError('');
     try {
       await navigator.clipboard.writeText(url);
+      trackEvent('event_link_copied', { entry_point: 'event_page' }, eventId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopyError('링크를 복사하지 못했습니다. 브라우저 주소창의 주소를 복사해 주세요.');
+      trackEvent('event_link_copy_failed', { failure_stage: 'clipboard' }, eventId);
     }
   }
 
@@ -789,7 +804,7 @@ export default function EventPageClient({
       : `${fmtShort(firstDate)} – ${fmtShort(lastDate)}`;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12" data-clarity-mask="true">
       {/* Event header — timeful style */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
         <div>

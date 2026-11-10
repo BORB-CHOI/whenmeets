@@ -80,7 +80,7 @@ UI → Client API → Controller(route.ts) → Service → Repository → Supaba
   `ApiResponse<T>` envelope 을 자동으로 벗기고 실패 시 `ApiClientError` 를
   throw 합니다.
 
-모든 API 응답은 다음 envelope 을 따릅니다.
+일정·참여자·폴더·사용자 API 응답은 다음 envelope 을 따릅니다.
 
 ```ts
 type ApiResponse<T> =
@@ -91,6 +91,10 @@ type ApiResponse<T> =
 도메인 예외는 `src/server/http/errors.ts` 에 정의되어 있고, HTTP status 와
 `code` 로 자동 매핑됩니다 (`NotFoundError` → 404 + `NOT_FOUND` 등).
 
+전환 계측 API는 별도 응답 형식을 사용합니다. 동의·GA4·ChatGPT Ads 설정과
+사람이 수행할 DB 적용 절차는 [전환 계측 설정](docs/conversion-measurement.md),
+요청·응답 형식은 [API 레퍼런스](docs/API.md)를 참고하세요. 컬럼·이벤트·JSON·광고 전송 필드의 정확한 정의와 공통 측정/ChatGPT Ads 전용 경계는 [계측 데이터 사전](docs/measurement-data-dictionary.md)에 기록합니다.
+
 ## 평가 항목 매핑
 
 학교 과제(AD 프로젝트, 자율주제) 평가 항목 5 개와 본 프로젝트의 구현
@@ -98,7 +102,7 @@ type ApiResponse<T> =
 
 | 평가 항목 | 본 프로젝트의 구현 |
 | --- | --- |
-| 1. 기능 완성도 | 라이브 사이트 [daymeet.org](https://daymeet.org), 13 개 REST API, 8 가지 그리드 모드 조합 |
+| 1. 기능 완성도 | 라이브 사이트 [daymeet.org](https://daymeet.org), 15 개 REST API 경로, 8 가지 그리드 모드 조합 |
 | 2. 주제 독창성·기획력 | when2meet 한국어·모바일 친화 대안, 캘린더+요일 모드 동시 지원, 폴더/순서 관리, 실시간 히트맵 |
 | 3. 기술 활용 적절성 | Supabase Auth (OAuth + RLS), 이벤트 비밀번호 HMAC 쿠키, zod 검증, 통일 예외/응답 envelope, withApiHandler 미들웨어 |
 | 4. UI/UX | 모바일 드래그 입력, 자체 스크롤바, 자동 픽셀 정렬 그리드, 한국어 라벨, 반응형 |

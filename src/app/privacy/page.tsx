@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: 'DayMeet 개인정보처리방침',
 };
 
-const LAST_UPDATED = '2026-05-07';
+const LAST_UPDATED = '2026-11-10';
 
 export default function PrivacyPage() {
   return (
@@ -58,6 +58,7 @@ export default function PrivacyPage() {
             <li>참여자 식별 및 응답 충돌 방지</li>
             <li>비밀번호 보호 이벤트의 인증 유지</li>
             <li>광고 표시 및 부정 사용 방지(아래 8항 참조)</li>
+            <li>이벤트 생성과 실제 응답 저장 결과 집계, 이용자가 허용한 방문·유입·광고 효과 측정</li>
           </ul>
         </section>
 
@@ -90,8 +91,10 @@ export default function PrivacyPage() {
               <strong>Vercel, Inc.</strong> — 웹 애플리케이션 호스팅 및 엣지 네트워크.
             </li>
             <li>
-              <strong>Google LLC</strong> — Google 로그인(OAuth), Google AdSense 광고 표시.
+              <strong>Google LLC</strong> — Google 로그인(OAuth), Google AdSense 광고 표시, 활성화된 경우 Google Analytics 이용 분석.
             </li>
+            <li><strong>OpenAI</strong> — 이용자가 허용한 경우 ChatGPT Ads 광고 효과 측정.</li>
+            <li><strong>Microsoft</strong> — Clarity 프로젝트가 설정된 경우 이용 흐름 녹화와 히트맵 분석. GA4·OpenAI 전환 측정과 별도로 운영됩니다.</li>
           </ul>
           <p className="mt-2">위탁 사업자는 본 방침과 동일한 수준의 보호 조치를 적용해야 하며, 별도의 동의
             없이는 그 외 제3자에게 개인정보를 제공하지 않습니다(법령에 의거한 경우 제외).</p>
@@ -155,6 +158,14 @@ export default function PrivacyPage() {
             </a>
             을 참고해주세요.
           </p>
+          <p className="mt-2">
+            전환 계측이 활성화된 경우 방문자는 GA4·OpenAI 전환 측정을 허용하거나 거부할 수 있으며, 페이지 하단의
+            전환 측정 설정에서 선택을 변경할 수 있습니다. 허용한 경우 브라우저 방문 식별자, 페이지 유형,
+            유입 채널, 생성·응답 저장·링크 복사 등의 행동과 광고 클릭 참조를 사용합니다. 이름, 이메일,
+            이벤트 제목, 비밀번호와 시간표 원문은 이 계측 데이터에 포함하지 않습니다. 브라우저 식별자는
+            로그인 계정이나 실제 개인을 확정하는 용도로 사용하지 않습니다.
+          </p>
+          <p className="mt-2">Clarity 녹화와 히트맵은 기존 운영 설정으로 유지하며 위 전환 측정 선택과 별도로 동작합니다. 녹화에는 페이지 경로와 화면에서의 조작이 포함될 수 있고, 이벤트 화면과 호버 팝업의 텍스트에는 마스킹을 적용합니다.</p>
         </section>
 
         <section>

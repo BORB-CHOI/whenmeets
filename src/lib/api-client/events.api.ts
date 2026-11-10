@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import type { ConversionReceipt, MeasurementProperties } from '@/lib/measurement';
 import type {
   CreateEventInput,
   EventDetail,
@@ -6,8 +7,8 @@ import type {
 } from '@/types/event';
 
 export const eventsApi = {
-  create: (input: CreateEventInput) =>
-    apiClient.post<{ id: string }>('/api/events', input),
+  create: (input: CreateEventInput, properties?: MeasurementProperties) =>
+    apiClient.post<{ id: string; conversions?: ConversionReceipt[] }>('/api/events', input, { measurement: true, ...(properties && { headers: { 'x-daymeet-measurement-properties': encodeURIComponent(JSON.stringify(properties)) } }) }),
 
   getDetail: (eventId: string) =>
     apiClient.get<EventDetail>(`/api/events/${eventId}`),

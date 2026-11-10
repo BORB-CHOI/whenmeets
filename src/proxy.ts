@@ -122,7 +122,7 @@ export async function proxy(request: NextRequest) {
   if (limited) return limited;
 
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/api/') || pathname === '/api' || pathname === '/auth/callback') {
+  if (pathname.startsWith('/api/') || pathname === '/api' || pathname === '/auth/callback' || pathname === '/measurement') {
     return NextResponse.next({ request });
   }
   const projectRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split('.')[0];
@@ -140,7 +140,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Auth refresh routes
-    '/((?!api(?:/|$)|_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest|woff2?)$).*)',
+    '/((?!api(?:/|$)|measurement(?:/|$)|_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest|woff2?)$).*)',
     // Rate-limited API routes
     '/api/events',
     '/api/events/:path*/verify',

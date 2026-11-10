@@ -4,6 +4,16 @@
 
 Codex의 진입점은 `AGENTS.md`이며 이 문서와 `.claude/rules/`를 공유한다. Codex 훅은 `.codex/hooks.json`과 `scripts/codex-hook.mjs`가 기존 가드를 재사용한다. 설정·활성화·동시 작업 절차는 `docs/agent-harness.md`를 따른다.
 
+## Measurement context
+
+전환·GA4·Clarity·ChatGPT Ads·유입·리텐션·계측 성능을 다룰 때는 먼저 `docs/conversion-measurement.md`(설정·한계·운영)와 `docs/measurement-data-dictionary.md`(컬럼·이벤트·JSON·광고 전송 필드 정의)를 모두 읽는다. 각 문서가 해당 범위의 공유 원본이다.
+
+- **사용자 확정 요구: 기존 Clarity 녹화와 히트맵을 유지한다.** 새 GA4·OpenAI 전환 스위치나 측정 선택으로 Clarity를 끄지 않는다. 프로젝트 ID만 기존 활성화 조건이며 숨김 픽셀 문서는 녹화 대상이 아니다.
+- 참여자 등록은 응답 제출이 아니다. 빈 값의 명시적 저장도 제출이며, 응답 슬롯 2개는 실제 사람 2명이나 일정 확정이 아니다.
+- 저장 결과 전체·동의 브라우저 퍼널·광고 귀속의 분모를 구분한다. 구현 완료를 운영 활성화나 실제 광고 귀속 검증으로 표현하지 않는다.
+- 제품 이벤트는 공통 측정이지만 현재 광고 연결과 `ads_*` 전송 상태는 ChatGPT Ads CAPI 한 곳 전용이다. 다중 광고 매체 지원이나 GA4를 통한 Google Ads 전환 연동이 구현됐다고 추정하지 않는다.
+- 변경 시 위 문서와 컴포넌트 맵을 함께 갱신하고 생성·저장 지연, SDK 격리, 동의 철회, 재시도·중복 방지를 다시 확인한다.
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill

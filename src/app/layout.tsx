@@ -9,6 +9,7 @@ import FloatingAds from '@/components/ads/FloatingAds';
 import JsonLd from '@/components/seo/JsonLd';
 import ClarityScript from '@/components/analytics/ClarityScript';
 import GoogleAnalyticsScript from '@/components/analytics/GoogleAnalyticsScript';
+import MeasurementProvider from '@/components/analytics/MeasurementProvider';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://daymeet.org';
@@ -84,6 +85,7 @@ export default function RootLayout({
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
+            <MeasurementProvider />
             <FloatingAds />
           </QueryProvider>
         </ThemeProvider>

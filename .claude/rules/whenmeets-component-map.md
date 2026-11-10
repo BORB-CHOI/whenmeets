@@ -177,6 +177,17 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 |-----------|------|------|
 | `ClarityScript` | Microsoft Clarity (heatmap + session recording) — `NEXT_PUBLIC_CLARITY_PROJECT_ID` | `src/components/analytics/ClarityScript.tsx` |
 | `GoogleAnalyticsScript` | GA4 gtag.js — `NEXT_PUBLIC_GA_MEASUREMENT_ID` (`G-...` 형식) | `src/components/analytics/GoogleAnalyticsScript.tsx` |
+| `MeasurementProvider` | 새 계측 모드의 동의·철회 UI와 경로별 조회. RootLayout에서 사용 | `src/components/analytics/MeasurementProvider.tsx` |
+| `/measurement` | 루트 레이아웃·React 없이 제공하는 비색인 픽셀 문서. OpenAI SDK만 로드하며 부모 출처·메시지 검증 | `src/app/measurement/route.ts` |
+| `measurement.ts` | 허용 이벤트·속성·광고 문맥 스키마, 분석 경로·유입 정제, 전환 영수증 타입 | `src/lib/measurement.ts` |
+| `measurement-client.ts` | 방문 문맥·동의 저장, GA4와 iframe 픽셀 큐, 행동·전환 발행. 생성 폼·저장 hook·EventPageClient가 사용 | `src/lib/measurement-client.ts` |
+| `measurement-pixel-queue.ts` | 픽셀 준비 전 큐와 동의 철회 시 대기 이벤트 폐기 | `src/lib/measurement-pixel-queue.ts` |
+| `measurement/service.ts` | 서버 동의 확인·전환 영수증 원자적 확보·재전송 대기 처리 | `src/server/measurement/service.ts` |
+| `measurement/chatgpt-ads.ts` | 서버 전용 OpenAI Conversions API 전송. 비밀키를 브라우저에 전달하지 않음 | `src/server/measurement/chatgpt-ads.ts` |
+
+`NEXT_PUBLIC_MEASUREMENT_ENABLED=true`에서는 GA4·OpenAI에 동의 기반 전환 계측을 사용한다. 명시적 `false`는 이 전환 계측을 끄며, 미설정은 기존 GA4 로더와 호환된다. Clarity 녹화는 이 스위치·전환 측정 선택과 분리해 기존 프로젝트 ID로 유지하고, 광고용 숨김 iframe만 녹화에서 제외한다. 생성·최초 제출·두 응답 슬롯 활성화는 `supabase/migrations/017_conversion_measurement.sql`의 DB 트리거가 기록한다. 비공개 계측 테이블은 Realtime에 공개하지 않는다. 설정·GA4 자동 조회 중복 방지·수동 마이그레이션 절차는 `docs/conversion-measurement.md`를 따른다.
+
+컬럼·이벤트·JSON·전송 필드 정의는 `docs/measurement-data-dictionary.md`를 따른다. 제품 이벤트는 공통 측정이며 현재 광고 어댑터와 `ads_*` 상태는 ChatGPT Ads CAPI 한 곳 전용이다.
 
 **Shared concerns:**
 - 환경변수 ID(`NEXT_PUBLIC_ADSENSE_*`) 미설정 시 모든 광고 컴포넌트는 렌더 안 됨 → 키 없는 환경에서도 안전
@@ -337,6 +348,9 @@ v1.0 리팩토링(#48)으로 생긴 서버 계층. 요청은 `src/app/api/**/rou
 | `PATCH /api/folders/reorder` | DashboardClient (폴더 순서 일괄 변경 — folders.position 다건 + profiles.no_folder_position 한 트랜잭션) |
 | `PATCH /api/events/[id]/folder` | DashboardClient (move event to folder — upserts `user_event_folders` for caller; visibility check: 소유자 OR 참여자) |
 | `PATCH /api/events/reorder` | DashboardClient (카드 cross-folder 이동 + 폴더 내 순서 일괄 — user_event_folders upsert/delete + user_event_order upsert) |
+| `POST /api/measurement` | MeasurementProvider의 동의 저장·철회, measurement-client의 허용 행동 이벤트 |
+| `GET /api/measurement/flush` | CRON_SECRET으로 인증한 서버 작업. 전환 재전송 |
+| `GET /measurement` | measurement-client가 만든 숨김 iframe용 정적 HTML. 앱 화면·인증·Clarity·AdSense를 로드하지 않음 |
 
 When modifying an API response shape, check ALL consuming components.
 

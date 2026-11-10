@@ -47,3 +47,8 @@ export function formatDateCompact(dateStr: string): string {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return `${date.getMonth() + 1}/${date.getDate()} ${days[date.getDay()]}`;
 }
+
+export const MEASUREMENT_BROWSER_EVENTS = ['page_viewed', 'event_form_opened', 'event_viewed', 'availability_edit_started', 'event_link_copied', 'event_link_copy_failed', 'availability_save_failed'] as const;
+export const MEASUREMENT_CONVERSION_EVENTS = ['event_created', 'availability_first_submitted', 'group_activated'] as const;
+export const MEASUREMENT_COOKIES = { visitor: 'daymeet_measurement_visitor', consent: 'daymeet_measurement_consent' } as const;
+export const MEASUREMENT_STORAGE_KEYS = { consent: 'daymeet:measurement:consent', denial: 'daymeet:measurement:denial', session: 'daymeet:measurement:session', acquisition: 'daymeet:measurement:acquisition', sent: 'daymeet:measurement:sent' } as const;
