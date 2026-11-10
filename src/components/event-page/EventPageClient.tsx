@@ -1164,11 +1164,11 @@ export default function EventPageClient({
               aria-modal="true"
               aria-labelledby="save-name-title"
               aria-describedby="save-name-description"
-              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 h-[min(36rem,calc(100dvh-2rem))] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[calc(100dvh-2rem)] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-2">
+              <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-2">
                 <h2 id="save-name-title" className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
                 <button
                   onClick={closeNameModal}
