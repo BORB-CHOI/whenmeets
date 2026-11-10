@@ -380,6 +380,7 @@ export default function EventPageClient({
       sidebarCountRef.current?.updateForSlot(null);
       ifNeededLegendRef.current?.setVisible(false);
       hoverPopoverRef.current?.update(null);
+      cancelAnimationFrame(hoverRafRef.current);
     }
   }, [isHeld, mobileSlotSheet, mobileSlotAvailability, event.mode, event.date_only, effectiveIncludeIfNeeded, readCellRect]);
 
@@ -783,7 +784,7 @@ export default function EventPageClient({
           {viewMode === 'edit' ? (
             <>
               {/* Guide banner — centered bold, sticky on mobile */}
-              <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
+              <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold ${
                 event.mode === 'unavailable'
                   ? 'bg-red-50 text-red-700 border border-red-200'
                   : 'bg-teal-50 text-teal-700 border border-teal-200'

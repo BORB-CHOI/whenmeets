@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
 import { getCellCssColor } from './GridCell';
+import useGridTouch from './useGridTouch';
 
 interface UseGridDragOptions {
   activeMode: AvailabilityLevel;
@@ -54,19 +55,26 @@ export default function useGridDrag({
   const erasing = useRef(false);
   const containerRef = useRef<HTMLElement | null>(null);
   const [containerEl, setContainerEl] = useState<HTMLElement | null>(null);
-  const cellEntriesRef = useRef<CellEntry[]>([]);
   const cellByKeyRef = useRef<Map<string, CellEntry>>(new Map());
   const cellByCoordRef = useRef<Map<string, CellEntry>>(new Map());
   const paintedKeys = useRef<Set<string>>(new Set());
   const lastEndKey = useRef('');
-  const lastTouchEndAt = useRef(0);
+  const rafId = useRef(0);
   const onAvailabilityChangeRef = useRef(onAvailabilityChange);
   onAvailabilityChangeRef.current = onAvailabilityChange;
   const onDragEndRef = useRef(onDragEnd);
   onDragEndRef.current = onDragEnd;
 
+  const setGridContainer = useCallback((el: HTMLElement | null) => {
+    containerRef.current = el;
+    setContainerEl(el);
+    if (!el) {
+      cellByKeyRef.current = new Map();
+      cellByCoordRef.current = new Map();
+    }
+  }, []);
+
   function rebuildCellCache() {
-    const entries: CellEntry[] = [];
     const byKey = new Map<string, CellEntry>();
     const byCoord = new Map<string, CellEntry>();
     containerRef.current?.querySelectorAll('[data-date][data-slot]').forEach((node) => {
@@ -82,12 +90,10 @@ export default function useGridDrag({
         dateIdx: Number(el.dataset.dateIdx ?? -1),
         slotIdx: Number(el.dataset.slotIdx ?? -1),
       };
-      entries.push(entry);
       byKey.set(`${date}|${slot}`, entry);
       byCoord.set(`${entry.dateIdx}|${entry.slotIdx}`, entry);
     });
 
-    cellEntriesRef.current = entries;
     cellByKeyRef.current = byKey;
     cellByCoordRef.current = byCoord;
   }
@@ -97,10 +103,8 @@ export default function useGridDrag({
     if (!cell) return;
     const cellEl = cell.el;
     if (mode === 'reset') {
-      const baseVal = baselineRef.current[cell.date]?.[cell.slot];
       cellEl.style.backgroundColor = '';
       delete cellEl.dataset.erased;
-      void baseVal;
     } else if (mode === 'erase') {
       cellEl.style.backgroundColor = getCellCssColor(-1, eventMode);
       cellEl.dataset.erased = '1';
@@ -187,9 +191,9 @@ export default function useGridDrag({
 
   const handlePointerStart = useCallback(
     (x: number, y: number) => {
-      if (isDragging.current) return;
+      if (isDragging.current) return false;
       const cell = getCellFromPoint(x, y, containerRef.current);
-      if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return;
+      if (!cell || cell.dateIdx < 0 || cell.slotIdx < 0) return false;
 
       isDragging.current = true;
       if (containerRef.current) containerRef.current.dataset.dragging = 'true';
@@ -214,6 +218,7 @@ export default function useGridDrag({
       erasing.current = existing === activeMode;
 
       applyRectangle(cell, cell);
+      return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeMode, availability],
@@ -230,7 +235,8 @@ export default function useGridDrag({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMode]);
 
-  const handlePointerEnd = useCallback(() => {
+  const handlePointerEnd = useCallback((commit = true) => {
+    cancelAnimationFrame(rafId.current);
     if (isDragging.current) {
       // Clear all inline styles within the container so React takes back control
       paintedKeys.current.forEach((key) => {
@@ -240,8 +246,10 @@ export default function useGridDrag({
         delete cell.el.dataset.erased;
       });
       const committed = { ...draftRef.current };
-      onAvailabilityChangeRef.current(committed);
-      onDragEndRef.current?.(committed);
+      if (commit) {
+        onAvailabilityChangeRef.current(committed);
+        onDragEndRef.current?.(committed);
+      }
     }
     isDragging.current = false;
     if (containerRef.current) delete containerRef.current.dataset.dragging;
@@ -251,91 +259,53 @@ export default function useGridDrag({
     erasing.current = false;
   }, []);
 
+  const ignoreMouse = useGridTouch({
+    container: containerEl,
+    disabled,
+    onStart: handlePointerStart,
+    onMove: handlePointerMove,
+    onEnd: (x, y) => {
+      handlePointerMove(x, y);
+      handlePointerEnd();
+    },
+    onCancel: () => handlePointerEnd(false),
+  });
+
   // Window-level listeners so dragging doesn't break when pointer leaves the grid
   useEffect(() => {
-    function onWindowMouseUp() {
-      if (isDragging.current) handlePointerEnd();
-    }
-    function onWindowTouchEnd() {
-      // Track touch end time even when not dragging so synthetic mouse events
-      // fired by iOS after touchend (ghost click, ~300-400ms later) can be ignored.
-      lastTouchEndAt.current = Date.now();
-      if (isDragging.current) handlePointerEnd();
+    function onWindowMouseUp(e: MouseEvent) {
+      if (!isDragging.current) return;
+      handlePointerMove(e.clientX, e.clientY);
+      handlePointerEnd();
     }
     window.addEventListener('mouseup', onWindowMouseUp);
-    window.addEventListener('touchend', onWindowTouchEnd);
-    window.addEventListener('touchcancel', onWindowTouchEnd);
     return () => {
       window.removeEventListener('mouseup', onWindowMouseUp);
-      window.removeEventListener('touchend', onWindowTouchEnd);
-      window.removeEventListener('touchcancel', onWindowTouchEnd);
-    };
-  }, [handlePointerEnd]);
-
-  // rAF throttle for pointer move
-  const rafId = useRef(0);
-
-  // Native touchmove listener with { passive: false } to allow preventDefault.
-  // React's synthetic onTouchMove is passive by default, which causes
-  // "Unable to preventDefault inside passive event listener invocation" errors.
-  useEffect(() => {
-    if (!containerEl) return;
-
-    function onTouchMoveNative(e: TouchEvent) {
-      if (disabled) return;
-      if (!isDragging.current) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      if (!touch) return;
-      const { clientX, clientY } = touch;
       cancelAnimationFrame(rafId.current);
-      rafId.current = requestAnimationFrame(() => {
-        handlePointerMove(clientX, clientY);
-      });
-    }
-
-    containerEl.addEventListener('touchmove', onTouchMoveNative, { passive: false });
-    return () => {
-      containerEl.removeEventListener('touchmove', onTouchMoveNative);
     };
-  }, [containerEl, disabled, handlePointerMove]);
+  }, [handlePointerEnd, handlePointerMove]);
 
   const gridProps = {
-    ref: (el: HTMLElement | null) => {
-      containerRef.current = el;
-      setContainerEl(el);
-      if (el) {
-        requestAnimationFrame(rebuildCellCache);
-      } else {
-        cellEntriesRef.current = [];
-        cellByKeyRef.current = new Map();
-        cellByCoordRef.current = new Map();
-      }
-    },
+    ref: setGridContainer,
     onMouseDown: (e: React.MouseEvent) => {
       if (disabled) return;
+      if (e.button !== 0) return;
       // Ignore synthetic mouse events that iOS fires after touchend (ghost click).
       // Without this guard the freshly-painted cell gets re-toggled and erased.
-      if (Date.now() - lastTouchEndAt.current < 500) return;
+      if (ignoreMouse()) return;
       e.preventDefault();
       handlePointerStart(e.clientX, e.clientY);
     },
     onMouseMove: (e: React.MouseEvent) => {
       if (disabled) return;
       if (!isDragging.current) return;
-      if (Date.now() - lastTouchEndAt.current < 500) return;
+      if (ignoreMouse()) return;
       const { clientX, clientY } = e;
       cancelAnimationFrame(rafId.current);
       rafId.current = requestAnimationFrame(() => {
         handlePointerMove(clientX, clientY);
       });
     },
-    onTouchStart: (e: React.TouchEvent) => {
-      if (disabled) return;
-      const touch = e.touches[0];
-      handlePointerStart(touch.clientX, touch.clientY);
-    },
-    // touchmove is attached natively in useEffect above with { passive: false }
   };
 
   return { gridProps };

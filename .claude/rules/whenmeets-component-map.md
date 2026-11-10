@@ -33,10 +33,11 @@ A change to one MUST be reflected in the others.
 | `AvailabilityGrid` | Read-only availability display — integer cellWidth, SVG-wave date-gap separator | `src/components/availability-grid/AvailabilityGrid.tsx` |
 | `MonthCalendarGrid` | Shared month / 요일 grid layout (한국어 day headers, integer cell size, sub-pixel safe) | `src/components/calendar-grid/MonthCalendarGrid.tsx` |
 | `useGridDrag` | 드래그 선택 hook. `DragGrid` 가 사용 | `src/components/drag-grid/useGridDrag.ts` |
+| `useGridTouch` | 시간·날짜 편집 그리드의 공통 터치 처리. 실제 시작 좌표가 셀 안일 때만 이벤트를 소유하며, 식별자·합성 마우스 억제·취소·종료를 관리 | `src/components/drag-grid/useGridTouch.ts` |
 | `HeatmapLegend` | 결과 히트맵 단계 범례. `EventPageClient`, `DemoEventViewer` 가 사용 | `src/components/results/HeatmapLegend.tsx` |
 | `heatmap.ts` | 히트맵 단계와 색 계산(`getStep`, `getStepColor`, `getStepLabels`). `HeatmapGrid`, `CalendarHeatmapGrid`, `HeatmapLegend` 공용 | `src/lib/heatmap.ts` |
 | `types.ts` | 공용 타입(`Availability`, `AvailabilityLevel`, `Event`, `Participant`). 컴포넌트, hook, 서버 계층이 폭넓게 import | `src/lib/types.ts` |
-| `constants.ts` | 그리드 상수와 슬롯 유틸(`CELL_HEIGHT`, `SLOTS_PER_HOUR`, `slotToTime`, `generateSlots`, `formatDateCompact`, `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey`). 입력 그리드와 결과 그리드가 공유 | `src/lib/constants.ts` |
+| `constants.ts` | 그리드 상수와 슬롯 유틸(`CELL_HEIGHT`, `CELL_HEIGHT_MOBILE`, `TIME_COL_WIDTH_DESKTOP`, `TIME_COL_WIDTH_MOBILE`, `SLOTS_PER_HOUR`, `slotToTime`, `generateSlots`, `formatDateCompact`, `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey`). 입력 그리드와 결과 그리드가 공유 | `src/lib/constants.ts` |
 
 **Shared concerns:**
 - Cell height/width must be consistent between input and results grids
@@ -69,6 +70,9 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 **Shared concerns:**
 - Event title/description display style
+- `AvailabilityGrid` 날짜 헤더는 모든 화면 폭에서 sticky이며, 모바일·태블릿의 셀 높이와 양옆 스크롤 여백은 편집·결과가 공유한다. 루트는 `touch-pan-y`이며 셀에 `touch-action: none`을 지정하지 않는다. 브라우저가 손가락 범위 때문에 숫자·여백 터치 대상을 가까운 셀로 바꿀 수 있으므로 `useGridTouch`에서 실제 좌표로 선택 시작을 판별한다.
+- 편집 셀에서 시작한 단일 터치만 native `touchstart`/`touchmove`의 기본 동작을 막는다. 여백에서 시작한 터치는 셀 안으로 이동해도 스크롤로 유지한다. 시간 사각형 선택과 날짜 자유 선택의 칠하기 로직은 각각 `useGridDrag`와 `CalendarDragGrid`에 둔다.
+- `MonthCalendarGrid`의 요일 헤더도 모든 화면 폭에서 sticky다. 날짜 전용 셀은 기존 정사각형을 유지하고, 편집 중 터치 취소와 마지막 이동 좌표는 `CalendarDragGrid`에서 처리한다.
 - Participant count/list display format
 - Date formatting
 - Responsive breakpoints

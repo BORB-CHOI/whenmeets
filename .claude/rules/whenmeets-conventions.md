@@ -93,6 +93,8 @@ NEVER hardcode values that are defined in `src/lib/constants.ts`.
 ### Shared Constants (`src/lib/constants.ts`)
 Before creating any new magic number or string, check if it already exists:
 - `CELL_HEIGHT` — grid cell height in pixels
+- `CELL_HEIGHT_MOBILE` — 모바일·태블릿 시간 셀 높이(`CELL_HEIGHT`의 1.5배). 편집·결과 그리드 공용
+- `TIME_COL_WIDTH_DESKTOP`, `TIME_COL_WIDTH_MOBILE` — 시간 범례와 스크롤 여백 폭
 - `SLOTS_PER_HOUR` — time slot granularity
 - `slotToTime()` — slot index to "HH:MM"
 - `formatDateCompact()` — date to "M/D day-of-week"

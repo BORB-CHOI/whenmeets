@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useMemo, useEffect, useRef } from 'react';
-import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT, isDayOfWeekKey, DAY_OF_WEEK_LABELS, TIME_COL_WIDTH_DESKTOP, TIME_COL_WIDTH_MOBILE } from '@/lib/constants';
+import { generateSlots, SLOTS_PER_HOUR, CELL_HEIGHT, CELL_HEIGHT_MOBILE, isDayOfWeekKey, DAY_OF_WEEK_LABELS, TIME_COL_WIDTH_DESKTOP, TIME_COL_WIDTH_MOBILE } from '@/lib/constants';
 
 interface AvailabilityGridProps {
   dates: string[];
@@ -9,7 +9,6 @@ interface AvailabilityGridProps {
   timeEnd: number;
   renderCell: (date: string, slot: number, indices?: { dateIdx: number; slotIdx: number }) => ReactNode;
   columnsProps?: React.HTMLAttributes<HTMLDivElement> & { ref?: (el: HTMLElement | null) => void };
-  disableTouchScroll?: boolean;
   header?: ReactNode;
   footer?: ReactNode;
   maxColumns?: number;
@@ -17,7 +16,7 @@ interface AvailabilityGridProps {
 }
 
 const GRID_WIDTH = 770;
-const MOBILE_BREAKPOINT = 640;
+const MOBILE_BREAKPOINT = 1024;
 const HEADER_HEIGHT = 48;
 const DATE_GAP_WIDTH = 6;
 const PAGINATION_BTN = 36;
@@ -43,7 +42,6 @@ export default function AvailabilityGrid({
   timeEnd,
   renderCell,
   columnsProps,
-  disableTouchScroll = false,
   header,
   footer,
   maxColumns = 7,
@@ -54,6 +52,7 @@ export default function AvailabilityGrid({
   const [containerWidth, setContainerWidth] = useState(0);
   const [availableWidth, setAvailableWidth] = useState(0);
   const [timeColWidth, setTimeColWidth] = useState(TIME_COL_WIDTH_DESKTOP);
+  const [slotHeight, setSlotHeight] = useState(CELL_HEIGHT);
   const containerRef = useRef<HTMLDivElement>(null);
   const columnsRestProps = useMemo(() => {
     if (!columnsProps) return undefined;
@@ -74,6 +73,8 @@ export default function AvailabilityGrid({
       const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
       const tcw = isMobile ? TIME_COL_WIDTH_MOBILE : TIME_COL_WIDTH_DESKTOP;
       setTimeColWidth(tcw);
+      const dpr = window.devicePixelRatio || 1;
+      setSlotHeight(Math.round((isMobile ? CELL_HEIGHT_MOBILE : CELL_HEIGHT) * dpr) / dpr);
       if (containerRef.current) {
         const available = containerRef.current.parentElement?.clientWidth ?? GRID_WIDTH + tcw;
         setAvailableWidth(available);
@@ -136,12 +137,11 @@ export default function AvailabilityGrid({
     };
   }, [visibleDates.length, dateGapIndices, containerWidth]);
 
-  const slotHeight = CELL_HEIGHT;
   const gridOuterWidth = adjustedContainerWidth;
   const totalFlexWidth = gridOuterWidth + effectiveTimeColWidth + rightSpacerWidth;
   const centeredMarginLeft = Math.max(0, Math.floor((availableWidth - totalFlexWidth) / 2));
   const measured = containerWidth > 0;
-  const placeholderHeight = HEADER_HEIGHT + slots.length * CELL_HEIGHT;
+  const placeholderHeight = HEADER_HEIGHT + slots.length * slotHeight;
 
   const gapBarrierStyle: React.CSSProperties = {
     position: 'relative',
@@ -161,10 +161,10 @@ export default function AvailabilityGrid({
   const canNext = page < totalPages - 1;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 select-none touch-pan-y">
       {header}
 
-      <div className="overflow-x-auto lg:overflow-x-visible" ref={containerRef}>
+      <div ref={containerRef}>
         {!measured ? (
           <div style={{ height: placeholderHeight }} aria-hidden />
         ) : (
@@ -175,10 +175,10 @@ export default function AvailabilityGrid({
               marginLeft: centeredMarginLeft,
             }}
           >
-            <div className="shrink-0 flex flex-col" style={{ width: effectiveTimeColWidth }}>
+            <div data-grid-scroll-gutter="" className="shrink-0 flex flex-col" style={{ width: effectiveTimeColWidth }}>
               {needsPagination ? (
                 <div
-                  className="flex items-center justify-center bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                  className="flex items-center justify-center bg-white/95 backdrop-blur-md sticky top-14 sm:top-16 z-20"
                   style={{ height: HEADER_HEIGHT }}
                 >
                   <button
@@ -213,7 +213,8 @@ export default function AvailabilityGrid({
 
             <div className="flex flex-col" style={{ flex: '0 0 auto', width: gridOuterWidth }}>
               <div
-                className="grid bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                data-grid-date-header=""
+                className="grid bg-white/95 backdrop-blur-md sticky top-14 sm:top-16 z-20"
                 style={{
                   gridTemplateColumns: gridTemplateCols,
                   boxSizing: 'content-box',
@@ -248,7 +249,7 @@ export default function AvailabilityGrid({
               <div
                 data-grid-container=""
                 ref={columnsProps?.ref}
-                className={`grid${disableTouchScroll ? ' touch-none' : ''}`}
+                className="grid"
                 style={{
                   gridTemplateColumns: gridTemplateCols,
                   boxSizing: 'content-box',
@@ -310,7 +311,7 @@ export default function AvailabilityGrid({
 
             {needsPagination ? (
               <div
-                className="shrink-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md lg:sticky lg:top-16 lg:z-20"
+                className="shrink-0 flex flex-col items-center justify-center bg-white/95 backdrop-blur-md sticky top-14 sm:top-16 z-20"
                 style={{ width: PAGINATION_BTN, height: HEADER_HEIGHT }}
               >
                 <button
@@ -323,7 +324,7 @@ export default function AvailabilityGrid({
                 </button>
               </div>
             ) : (
-              <div className="shrink-0" style={{ width: rightSpacerWidth }} aria-hidden />
+              <div data-grid-scroll-gutter="" className="shrink-0 self-stretch" style={{ width: rightSpacerWidth }} aria-hidden />
             )}
           </div>
         )}
