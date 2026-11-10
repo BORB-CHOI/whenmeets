@@ -52,6 +52,11 @@ DayMeet은 Next.js 16 App Router 위에서 동작하는 풀스택 서비스다. 
 의존 방향은 위에서 아래로만 흐른다. Repository 가 Service 를 import 할 수
 없고, Service 가 Controller 를 import 할 수 없다.
 
+전환 계측은 `src/server/measurement/`의 별도 서버 모듈을 사용한다.
+생성·응답 저장의 DB 트리거가 전환을 기록하고, 라우트가 영수증을 연결한 뒤
+`after`에서 광고 전송을 시도한다. 브라우저 Pixel은 `/measurement`의 독립 HTML에서
+실행한다. 세부 흐름과 운영 활성화 조건은 [전환 계측 설정](conversion-measurement.md)을 따른다.
+
 ## 디렉터리 구조
 
 ```
@@ -70,9 +75,14 @@ src/
 │     ├─ folders/route.ts
 │     ├─ folders/[id]/route.ts
 │     ├─ folders/reorder/route.ts
+│     ├─ measurement/route.ts
+│     ├─ measurement/flush/route.ts
 │     └─ user/profile/route.ts
 │
 ├─ server/                          서버 전용 모듈 (Node-only)
+│  ├─ measurement/                  전환 영수증·동의 확인·광고 재전송
+│  │  ├─ service.ts
+│  │  └─ chatgpt-ads.ts
 │  ├─ http/                         HTTP 인프라
 │  │  ├─ api-handler.ts             withApiHandler() 래퍼
 │  │  ├─ response.ts                ok / created / fail 헬퍼
@@ -121,7 +131,7 @@ src/
 
 ## HTTP 응답 envelope
 
-모든 API 응답은 다음 형태를 따른다.
+일정·참여자·폴더·사용자 API 응답은 다음 형태를 따른다.
 
 ```ts
 type ApiResponse<T> =
@@ -150,7 +160,7 @@ Service 는 도메인 예외만 던지고 HTTP status 를 모른다. `withApiHan
 
 ## Controller 패턴
 
-모든 route handler 는 다음 모양을 따른다.
+일정·참여자·폴더·사용자 route handler 는 다음 모양을 따른다.
 
 ```ts
 export const POST = withApiHandler<Params, Body>(
@@ -168,6 +178,10 @@ export const POST = withApiHandler<Params, Body>(
   인라인 검증을 두지 않는다.
 - 권한 체크는 Service 에서 `authService.requireUser(auth)` /
   `authService.requireEventOwner(...)` 로 일관되게 처리한다.
+
+`/api/measurement`와 `/api/measurement/flush`는 별도 핸들러와 응답 형식을 사용한다.
+동의 기록은 빈 상태 응답을, 재전송은 `{ ok: true }`를 반환한다.
+요청 조건과 상태 코드는 [API 레퍼런스](API.md)의 계측 절에 있다.
 
 ## 인증 흐름
 
@@ -194,6 +208,12 @@ DayMeet 은 두 종류의 인증을 함께 사용한다.
 - `folders` — 사용자 폴더 (`user_id`, `name`, `position`)
 - `user_event_folders` — 사용자별 이벤트 폴더 배정 매핑
 - `user_event_order` — 사용자별 이벤트 카드 순서
+- `measurement_visitors` — 전환 계측 방문자의 동의 상태
+- `measurement_events` — DB 확정 결과·동의한 브라우저 행동·광고 재전송 상태.
+  위 두 계측 테이블은 anon·authenticated 접근과 Realtime 공개를 허용하지 않는다.
+
+마이그레이션 017은 `participants.first_submitted_at`, `last_submitted_at`과
+생성·명시적 저장 트리거를 추가한다. 기존 참여자의 과거 제출 시각은 소급하지 않는다.
 
 RLS 가 모든 테이블에 적용되어 있고, 서버에서는 service-role 키로
 우회한 뒤 application-level 권한 체크를 Service 레이어에서 강제한다.

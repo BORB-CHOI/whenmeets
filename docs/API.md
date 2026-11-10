@@ -1,6 +1,7 @@
 # DayMeet API 레퍼런스
 
-모든 응답은 다음 envelope 을 따른다.
+일정·참여자·폴더·사용자 API 응답은 다음 envelope 을 따른다.
+계측 API는 아래 계측 절에 명시한 별도 응답 형식을 사용한다.
 
 ```ts
 type ApiResponse<T> =
@@ -47,7 +48,12 @@ Request body (`createEventSchema`):
 }
 ```
 
-Response: `201 Created` `{ id: string }`
+Response: `201 Created` `{ id: string, conversions?: ConversionReceipt[] }`.
+계측이 활성화되고 동의한 방문자에게 전환 영수증이 연결되면 `conversions`가 포함된다.
+영수증이 없어도 일정 생성은 성공할 수 있다. 영수증은 광고 수신 완료를 뜻하지 않는다.
+
+`ConversionReceipt`는 `{ id: string, name: 'event_created' | 'availability_first_submitted' | 'group_activated', occurred_at: string }`이다.
+`id`는 DB가 확정한 전환 UUID이며 브라우저와 서버 광고 전송에서 공유한다.
 
 ### `GET /api/events/[id]`
 
@@ -96,6 +102,10 @@ Response: `{ id, name, existing, numbered? }`
 가용성 저장. 본인(로그인) 또는 비밀번호 인증한 익명 슬롯만 수정 가능.
 
 Body: `{ availability: { [date]: { [slot]: 0|1|2 } }, password?: string }`
+
+Response: `{ ok: true, conversions?: ConversionReceipt[] }`.
+최초 명시적 저장의 영수증이 연결되면 `availability_first_submitted`가 포함된다.
+빈 응답 저장도 제출이며, 참여자 등록만으로는 제출로 세지 않는다.
 
 ### `DELETE /api/events/[id]/participants/[pid]`
 
@@ -161,3 +171,26 @@ Body: `{ order: { key: string, position: number }[] }`
 
 Body: `{ display_name: string }`
 Response: `{ profile, participants: { updated, skipped } | null }`
+
+## 계측
+
+정의·환경변수·동의와 운영 활성화 절차는 [전환 계측 설정](conversion-measurement.md)을 따른다.
+다음 두 경로는 공통 `ApiResponse` envelope을 사용하지 않는다.
+
+### `POST /api/measurement`
+
+Body는 동의 저장·철회의 `{ consent: boolean }` 또는 행동 기록의
+`{ name, schedule_id?, properties? }`이다. 허용 이벤트와 속성은
+`src/lib/measurement.ts`의 스키마로 제한한다. 행동 기록은 동의 쿠키·DB 동의와
+`x-daymeet-measurement` 헤더의 유효한 문맥이 모두 필요하다.
+
+서버 계측이 꺼져 있으면 `204`이며, 켜져 있을 때는 같은 출처의 `Origin` 헤더가 필요하다.
+성공과 동의 없는 행동 무시는 모두 빈 `204` 응답이다. 오류도 본문 없이
+`400`(JSON·스키마), `403`(출처), `413`(본문 8,192자 초과),
+`429`(IP별 분당 120회 초과), `503`(DB 기록 실패)을 반환한다.
+
+### `GET /api/measurement/flush`
+
+운영 스케줄러용 재전송 요청. `Authorization: Bearer <CRON_SECRET>`이 필요하며
+키가 없거나 일치하지 않으면 빈 `401` 응답이다. 실행 후 `{ ok: true }`를 반환한다.
+이 응답은 모든 전환의 광고 수신 완료를 보장하지 않는다. 자동 스케줄러 등록은 포함하지 않는다.
