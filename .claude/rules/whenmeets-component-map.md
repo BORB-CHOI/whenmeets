@@ -187,6 +187,8 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 
 `NEXT_PUBLIC_MEASUREMENT_ENABLED=true`에서는 GA4·OpenAI에 동의 기반 전환 계측을 사용한다. 명시적 `false`는 이 전환 계측을 끄며, 미설정은 기존 GA4 로더와 호환된다. Clarity 녹화는 이 스위치·전환 측정 선택과 분리해 기존 프로젝트 ID로 유지하고, 광고용 숨김 iframe만 녹화에서 제외한다. 생성·최초 제출·두 응답 슬롯 활성화는 `supabase/migrations/017_conversion_measurement.sql`의 DB 트리거가 기록한다. 비공개 계측 테이블은 Realtime에 공개하지 않는다. 설정·GA4 자동 조회 중복 방지·수동 마이그레이션 절차는 `docs/conversion-measurement.md`를 따른다.
 
+컬럼·이벤트·JSON·전송 필드 정의는 `docs/measurement-data-dictionary.md`를 따른다. 제품 이벤트는 공통 측정이며 현재 광고 어댑터와 `ads_*` 상태는 ChatGPT Ads CAPI 한 곳 전용이다.
+
 **Shared concerns:**
 - 환경변수 ID(`NEXT_PUBLIC_ADSENSE_*`) 미설정 시 모든 광고 컴포넌트는 렌더 안 됨 → 키 없는 환경에서도 안전
 - 모바일 하단 배너 활성 시 `body { padding-bottom }`로 콘텐츠 가림 방지 — 이벤트 페이지(`/e/[id]`)는 `MobileBottomBar`(z-40)와 충돌 회피 위해 모바일 광고 비표시

@@ -174,7 +174,7 @@ Response: `{ profile, participants: { updated, skipped } | null }`
 
 ## 계측
 
-정의·환경변수·동의와 운영 활성화 절차는 [전환 계측 설정](conversion-measurement.md)을 따른다.
+환경변수·동의와 운영 활성화 절차는 [전환 계측 설정](conversion-measurement.md), 필드·이벤트 정의와 ChatGPT Ads 전용 범위는 [계측 데이터 사전](measurement-data-dictionary.md)을 따른다.
 다음 두 경로는 공통 `ApiResponse` envelope을 사용하지 않는다.
 
 ### `POST /api/measurement`

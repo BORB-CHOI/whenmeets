@@ -4,7 +4,7 @@
 
 작업 시작 시 `CLAUDE.md`, `.claude/rules/whenmeets-conventions.md`, `.claude/rules/whenmeets-component-map.md`를 읽고 준수한다. 세 파일은 Claude와 Codex의 공유 원본이며 복사본을 만들지 않는다. 프로젝트 규칙은 전역 규칙보다 우선한다.
 
-전환·GA4·Clarity·ChatGPT Ads·유입·리텐션·계측 성능 작업은 `CLAUDE.md`의 Measurement context와 `docs/conversion-measurement.md`를 먼저 읽는다.
+전환·GA4·Clarity·ChatGPT Ads·유입·리텐션·계측 성능 작업은 `CLAUDE.md`의 Measurement context, `docs/conversion-measurement.md`, `docs/measurement-data-dictionary.md`를 먼저 읽는다.
 
 - 검증: `npm run verify`. 상세 절차는 `.claude/commands/verify.md`, Codex 스킬은 `$whenmeets-verify` (`.agents/skills/whenmeets-verify/SKILL.md`).
 - Codex 훅: `.codex/hooks.json` → `scripts/codex-hook.mjs` → 기존 `.claude/scripts/hooks/` 가드. Claude 설정은 Codex가 자동 로드하지 않는다.

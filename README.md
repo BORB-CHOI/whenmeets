@@ -93,7 +93,7 @@ type ApiResponse<T> =
 
 전환 계측 API는 별도 응답 형식을 사용합니다. 동의·GA4·ChatGPT Ads 설정과
 사람이 수행할 DB 적용 절차는 [전환 계측 설정](docs/conversion-measurement.md),
-요청·응답 형식은 [API 레퍼런스](docs/API.md)를 참고하세요.
+요청·응답 형식은 [API 레퍼런스](docs/API.md)를 참고하세요. 컬럼·이벤트·JSON·광고 전송 필드의 정확한 정의와 공통 측정/ChatGPT Ads 전용 경계는 [계측 데이터 사전](docs/measurement-data-dictionary.md)에 기록합니다.
 
 ## 평가 항목 매핑
 

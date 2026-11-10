@@ -57,6 +57,8 @@ DayMeet은 Next.js 16 App Router 위에서 동작하는 풀스택 서비스다. 
 `after`에서 광고 전송을 시도한다. 브라우저 Pixel은 `/measurement`의 독립 HTML에서
 실행한다. 세부 흐름과 운영 활성화 조건은 [전환 계측 설정](conversion-measurement.md)을 따른다.
 
+제품 이벤트의 정의는 광고 매체와 무관하지만 현재 전송 어댑터와 `ads_*` 상태는 ChatGPT Ads CAPI 한 곳 전용이다. 다중 매체 전송 상태 분리는 없다. 컬럼·이벤트·JSON·전송 필드 계약과 확장 시 제한은 [계측 데이터 사전](measurement-data-dictionary.md)을 따른다.
+
 ## 디렉터리 구조
 
 ```

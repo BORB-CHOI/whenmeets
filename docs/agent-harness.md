@@ -36,7 +36,7 @@ Claude와 Codex를 동시에 실행하려면 서로 다른 워크트리를 사�
 
 | 작업 | 먼저 읽을 공유 원본 | 재개 시 확인 |
 |---|---|---|
-| 전환·GA4·Clarity·ChatGPT Ads·리텐션·계측 성능 | [전환 계측](conversion-measurement.md), `CLAUDE.md` Measurement context | Clarity 녹화 유지, 지표별 분모, DB 적용·환경변수·실제 수신 상태, 성능 검증과 남은 작업 |
+| 전환·GA4·Clarity·ChatGPT Ads·리텐션·계측 성능 | [전환 계측](conversion-measurement.md), [데이터 사전](measurement-data-dictionary.md), `CLAUDE.md` Measurement context | 컬럼·이벤트·JSON·전송 필드 정의, 공통 측정과 ChatGPT Ads 전용 상태의 경계, Clarity 유지, DB 적용·환경변수·실제 수신·성능 검증 |
 | 코드 검증 | `.claude/commands/verify.md` | 현재 코드로 `npm run verify`. 이전 세션의 통과 기록을 현재 결과로 재사용하지 않음 |
 
 계측 구현 계획은 `docs/superpowers/plans/2026-11-10-conversion-measurement.md`에 있으며 현재 운영 사실의 근거로 삼지 않는다. 배포·마이그레이션·Ads Manager 수신 여부는 다음 작업에서 각각 확인한다. 훅 신뢰 상태나 배포 완료를 문서만으로 추정하지 않는다.
