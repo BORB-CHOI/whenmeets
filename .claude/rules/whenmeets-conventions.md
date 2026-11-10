@@ -145,6 +145,7 @@ exit 애니메이션이 필요하면 Framer Motion `AnimatePresence` + `forceMou
 ## Layout Stability (MANDATORY)
 
 - Modal height: ALWAYS fixed. Never use `h-auto` or `max-h-*` that causes layout shift.
+- 예외: `EventPageClient`의 이름 입력 모달은 내용에 맞는 높이와 뷰포트 기준 `max-h-*`를 사용한다. 헤더·하단 버튼은 축소하지 않고 본문만 스크롤한다.
 - Calendar height: fixed regardless of month length.
 - No layout shift on data load — use skeleton or fixed-size containers.
 

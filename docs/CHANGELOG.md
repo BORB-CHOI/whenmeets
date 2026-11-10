@@ -6,6 +6,12 @@ All notable changes to DayMeet will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-11-10
+
+### Fixed
+
+- **이름 입력 모달 높이**: 고정 높이로 생기던 본문과 하단 버튼 사이의 빈 공간을 제거했다. 내용에 맞춰 높이를 정하고 작은 화면에서는 본문만 스크롤한다.
+
 ## [0.7.5] - 2026-11-10
 
 ### Fixed
