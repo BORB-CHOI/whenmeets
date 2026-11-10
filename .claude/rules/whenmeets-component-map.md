@@ -120,8 +120,8 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `PasswordForm` | Event password | `src/components/event-page/PasswordForm.tsx` |
 | `auth-client.ts` | Client auth | `src/lib/supabase/auth-client.ts` |
 | `auth-server.ts` | Server auth | `src/lib/supabase/auth-server.ts` |
-| `proxy.ts` | 세션 갱신(`/dashboard`, `/mypage`, `/auth`)과 POST 속도 제한(이벤트 생성, 참여, 비밀번호 확인, 폴더 생성). Next 16 에서 `middleware.ts` 가 `proxy.ts` 로 바뀜 | `src/proxy.ts` |
-| `/auth/callback` | OAuth 로그인 뒤 돌아오는 라우트(`GET`). `code` 를 세션으로 바꾸고(Supabase `@supabase/ssr`) 사이트 주소(`NEXT_PUBLIC_SITE_URL`, 로컬은 요청 origin) 기준으로 `next` 로 보냄. `proxy.ts` 의 세션 갱신 대상 경로 | `src/app/auth/callback/route.ts` |
+| `proxy.ts` | 현재 프로젝트의 로그인 세션 쿠키가 있는 HTML 페이지에서 렌더 전 세션 갱신·정리. OAuth 콜백은 코드 교환이 먼저이므로 제외. 쿠키 변경 시 SDK 캐시 금지 헤더 전달. 기존 POST 속도 제한 유지 | `src/proxy.ts` |
+| `/auth/callback` | OAuth 로그인 뒤 돌아오는 라우트(`GET`). `code` 를 세션으로 바꾸고(Supabase `@supabase/ssr`) 사이트 주소(`NEXT_PUBLIC_SITE_URL`, 로컬은 요청 origin) 기준으로 `next` 로 보냄. PKCE verifier 보존을 위해 프록시에서 이전 세션을 갱신하지 않음 | `src/app/auth/callback/route.ts` |
 | `rateLimit` | 요청 횟수 제한. 인스턴스 메모리의 `Map` 에 쌓으므로 서버리스 인스턴스끼리 공유되지 않음. `proxy.ts` 의 `RATE_POLICIES` 가 호출 | `src/lib/rate-limit.ts` |
 | `useAuthUser` | 로그인 사용자 hook. `AuthButton`, `HeaderDashboardLink` 가 사용 | `src/hooks/useAuthUser.ts` |
 | `InAppBrowserModal` | 인앱 브라우저 사용자에게 외부 브라우저로 열도록 안내하는 모달. `AuthButton`, `EventPageClient` 가 띄움 | `src/components/auth/InAppBrowserModal.tsx` |

@@ -96,13 +96,16 @@ async function refreshSupabaseSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
+          );
+          Object.entries(headers).forEach(([name, value]) =>
+            supabaseResponse.headers.set(name, value),
           );
         },
       },
@@ -119,11 +122,15 @@ export async function proxy(request: NextRequest) {
   if (limited) return limited;
 
   const { pathname } = request.nextUrl;
-  if (
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/mypage') ||
-    pathname.startsWith('/auth')
-  ) {
+  if (pathname.startsWith('/api/') || pathname === '/api' || pathname === '/auth/callback') {
+    return NextResponse.next({ request });
+  }
+  const projectRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split('.')[0];
+  const authCookieName = `sb-${projectRef}-auth-token`;
+  const hasSession = request.cookies.getAll().some(({ name, value }) => value && (
+    name === authCookieName || (name.startsWith(`${authCookieName}.`) && /^\d+$/.test(name.slice(authCookieName.length + 1)))
+  ));
+  if (hasSession) {
     return refreshSupabaseSession(request);
   }
 
@@ -133,9 +140,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Auth refresh routes
-    '/dashboard/:path*',
-    '/mypage/:path*',
-    '/auth/:path*',
+    '/((?!api(?:/|$)|_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest|woff2?)$).*)',
     // Rate-limited API routes
     '/api/events',
     '/api/events/:path*/verify',
