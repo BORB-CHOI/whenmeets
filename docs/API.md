@@ -28,8 +28,14 @@ type ApiResponse<T> =
 
 Request body (`createEventSchema`):
 
+`request_id`는 선택적인 UUID 문자열이다. 생성 전에 한 번 만들고, 응답 유실 등으로
+같은 요청을 재시도할 때 재사용한다. 같은 식별자·정규화된 내용·사용자이면 동시 요청도
+이벤트 한 건만 만들고 기존 id를 `201`로 반환한다. 내용이나 사용자, 식별자가 바뀌면
+별도 이벤트를 생성한다. 식별자를 생략하는 기존 클라이언트는 호출마다 새 이벤트를 생성한다.
+
 ```ts
 {
+  request_id?: string,
   title: string,           // 1~200자
   dates: string[],         // YYYY-MM-DD 형식 1~60개 OR ['mon','tue',...] 요일
   time_start?: number,     // 슬롯 인덱스 0~96 (기본 36 = 09:00)
@@ -55,7 +61,8 @@ Response: `201 Created` `{ id: string }`
 
 이벤트 메타데이터 수정. 본인 (`created_by === userId`) 만 가능.
 
-Body (`updateEventSchema`): create 와 같은 필드를 모두 optional 로.
+Body (`updateEventSchema`): `title`, `dates`, `time_start`, `time_end`, `mode`,
+`date_only`, `description` 중 수정할 필드만 전달한다. `request_id`는 생성 전용이다.
 
 ### `DELETE /api/events/[id]`
 

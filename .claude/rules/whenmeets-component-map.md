@@ -61,7 +61,8 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `CalendarImportButton` | Google 캘린더 일정을 가져와 응답으로 채움. `EventPageClient`, `GridEditor`, `MobileBottomBar` 가 사용 | `src/components/event-page/CalendarImportButton.tsx` |
 | `calendar.ts` | Google Calendar API 호출(`fetchCalendarEvents`)과 응답 변환(`calendarEventsToAvailability`) | `src/lib/calendar.ts` |
 | `useEvent` | `EventPageClient` 는 React Query 키(`eventQueryKey`)만 import 해서 씀. 같은 파일의 `useEvent`, `useResults`, `useInvalidateEvent` 는 호출처가 없음 | `src/hooks/useEvent.ts` |
-| `useAvailabilitySave` | 가용성 저장 hook. `EventPageClient` 가 사용 | `src/hooks/useAvailabilitySave.ts` |
+| `useAvailabilitySave` | 가용성 저장 hook. 성공 여부·오류·중복 요청 잠금 제공. 실패 시 `EventPageClient`는 편집 내용과 모드 유지 | `src/hooks/useAvailabilitySave.ts` |
+| `applySavedAvailability` | 저장이 확인된 신규·기존 참여자의 응답을 조회 없이 결과에 반영. `EventPageClient`가 사용 | `src/lib/event-availability.ts` |
 | `useRealtimeSync` | Supabase Realtime(`postgres_changes`) 구독으로 다른 참여자의 변경을 반영 | `src/hooks/useRealtimeSync.ts` |
 | `session-store.ts` | 익명 참여자 세션을 localStorage 에 여러 개 보관(`readSessionStore`, `getActiveSession`, `upsertSession`) | `src/lib/session-store.ts` |
 | `participantToggle` | `ParticipantFilter` 의 참여자 선택 토글(`toggleParticipant`)과, `EventPageClient` 의 실시간 갱신이 선택 목록을 새 참여자 목록에 맞추는 `reconcileSelection` | `src/components/results/participantToggle.ts` |
@@ -102,9 +103,13 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 |-----------|------|------|
 | `EventForm` | Full form | `src/components/event-form/EventForm.tsx` |
 | `EventFormModal` | Modal wrapper | `src/components/event-form/EventFormModal.tsx` |
+| `useEventCreation` | 두 생성 폼의 요청 식별자와 동시 제출 잠금 공유. 실패 후 같은 요청을 재시도 | `src/hooks/useEventCreation.ts` |
 | `DatePicker` | Date selection | `src/components/event-form/DatePicker.tsx` |
 | `DayOfWeekPicker` | Day-of-week selection | `src/components/event-form/DayOfWeekPicker.tsx` |
 | `TimeRangePicker` | Time range selection (uses ui/Select) | `src/components/event-form/TimeRangePicker.tsx` |
+
+**Shared concerns:**
+- 생성 폼은 `useEventCreation`을 사용한다. `request_id`와 정규화된 요청 내용·사용자로 이벤트 id를 결정하고 DB 기본키 충돌 시 기존 id를 반환해 응답 유실·동시 요청에 따른 중복 생성을 막는다. 입력이나 사용자가 바뀌면 별도 이벤트이며, 식별자 없는 기존 클라이언트도 허용한다.
 
 ### Auth Flow
 

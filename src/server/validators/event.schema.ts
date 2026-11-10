@@ -31,6 +31,7 @@ export const eventIdParamsSchema = z.object({
 
 export const createEventSchema = z
   .object({
+    request_id: z.uuid().optional(),
     title: z.string().trim().min(1, '제목과 날짜는 필수입니다').max(200, '제목이 너무 깁니다'),
     dates: datesField,
     time_start: z.number().int().min(0).max(96).optional(),

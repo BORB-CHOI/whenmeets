@@ -58,7 +58,7 @@ export const eventsRepo = {
     const sb = createServerClient();
     const { error } = await sb.from('events').insert(row);
     if (error) {
-      throw new Error(`events.insert failed: ${error.message}`);
+      throw Object.assign(new Error(`events.insert failed: ${error.message}`), { code: error.code });
     }
   },
 

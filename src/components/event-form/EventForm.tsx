@@ -6,11 +6,12 @@ import type { EventMode } from '@/lib/types';
 import SegmentedControl from '@/components/ui/SegmentedControl';
 import DatePicker from './DatePicker';
 import TimeRangePicker from './TimeRangePicker';
-import { eventsApi } from '@/lib/api-client';
 import { ApiClientError } from '@/lib/api-client/client';
+import { useEventCreation } from '@/hooks/useEventCreation';
 
 export default function EventForm() {
   const router = useRouter();
+  const { createEvent } = useEventCreation();
   const [title, setTitle] = useState(() => {
     const now = new Date();
     return `새 이벤트 ${now.getMonth() + 1}/${now.getDate()}`;
@@ -29,6 +30,7 @@ export default function EventForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setTitleError(false);
     setDateError(false);
 
@@ -48,7 +50,7 @@ export default function EventForm() {
 
     let id: string;
     try {
-      const result = await eventsApi.create({
+      const result = await createEvent({
         title: title.trim(),
         dates,
         time_start: dateOnly ? 0 : timeStart,
