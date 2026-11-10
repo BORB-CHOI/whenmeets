@@ -33,10 +33,11 @@ A change to one MUST be reflected in the others.
 | `AvailabilityGrid` | Read-only availability display — integer cellWidth, SVG-wave date-gap separator | `src/components/availability-grid/AvailabilityGrid.tsx` |
 | `MonthCalendarGrid` | Shared month / 요일 grid layout (한국어 day headers, integer cell size, sub-pixel safe) | `src/components/calendar-grid/MonthCalendarGrid.tsx` |
 | `useGridDrag` | 드래그 선택 hook. `DragGrid` 가 사용 | `src/components/drag-grid/useGridDrag.ts` |
+| `useGridTouch` | 시간·날짜 편집 그리드의 공통 터치 처리. 실제 시작 좌표가 셀 안일 때만 이벤트를 소유하며, 식별자·합성 마우스 억제·취소·종료를 관리 | `src/components/drag-grid/useGridTouch.ts` |
 | `HeatmapLegend` | 결과 히트맵 단계 범례. `EventPageClient`, `DemoEventViewer` 가 사용 | `src/components/results/HeatmapLegend.tsx` |
 | `heatmap.ts` | 히트맵 단계와 색 계산(`getStep`, `getStepColor`, `getStepLabels`). `HeatmapGrid`, `CalendarHeatmapGrid`, `HeatmapLegend` 공용 | `src/lib/heatmap.ts` |
 | `types.ts` | 공용 타입(`Availability`, `AvailabilityLevel`, `Event`, `Participant`). 컴포넌트, hook, 서버 계층이 폭넓게 import | `src/lib/types.ts` |
-| `constants.ts` | 그리드 상수와 슬롯 유틸(`CELL_HEIGHT`, `SLOTS_PER_HOUR`, `slotToTime`, `generateSlots`, `formatDateCompact`, `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey`). 입력 그리드와 결과 그리드가 공유 | `src/lib/constants.ts` |
+| `constants.ts` | 그리드 상수와 슬롯 유틸(`CELL_HEIGHT`, `CELL_HEIGHT_MOBILE`, `TIME_COL_WIDTH_DESKTOP`, `TIME_COL_WIDTH_MOBILE`, `SLOTS_PER_HOUR`, `slotToTime`, `generateSlots`, `formatDateCompact`, `DAY_OF_WEEK_LABELS`, `isDayOfWeekKey`). 입력 그리드와 결과 그리드가 공유 | `src/lib/constants.ts` |
 
 **Shared concerns:**
 - Cell height/width must be consistent between input and results grids
@@ -58,17 +59,24 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `SidebarCount` | 사이드바 응답 수. `SidebarCountHandle.updateForSlot` 으로 호버/홀드한 슬롯 기준 갱신 | `src/components/event-page/SidebarCount.tsx` |
 | `HoverPopoverPortal` | 데스크탑 시간 그리드의 호버/홀드 popover 를 Portal 로 렌더 | `src/components/event-page/HoverPopoverPortal.tsx` |
 | `MobileBottomBar` | 모바일 하단 고정 바(z-40) | `src/components/event-page/MobileBottomBar.tsx` |
-| `CalendarImportButton` | Google 캘린더 일정을 가져와 응답으로 채움. `EventPageClient`, `GridEditor`, `MobileBottomBar` 가 사용 | `src/components/event-page/CalendarImportButton.tsx` |
+| `EventActions` | 편집·완료·취소·복사의 동일 크기 버튼. PC sticky 사이드바와 `MobileBottomBar` 공용 | `src/components/event-page/EventActions.tsx` |
+| `CalendarImportButton` | Google 캘린더 일정을 가져와 응답으로 채움. `EventPageClient`, `GridEditor`가 사용 | `src/components/event-page/CalendarImportButton.tsx` |
 | `calendar.ts` | Google Calendar API 호출(`fetchCalendarEvents`)과 응답 변환(`calendarEventsToAvailability`) | `src/lib/calendar.ts` |
 | `useEvent` | `EventPageClient` 는 React Query 키(`eventQueryKey`)만 import 해서 씀. 같은 파일의 `useEvent`, `useResults`, `useInvalidateEvent` 는 호출처가 없음 | `src/hooks/useEvent.ts` |
 | `useAvailabilitySave` | 가용성 저장 hook. 성공 여부·오류·중복 요청 잠금 제공. 실패 시 `EventPageClient`는 편집 내용과 모드 유지 | `src/hooks/useAvailabilitySave.ts` |
 | `applySavedAvailability` | 저장이 확인된 신규·기존 참여자의 응답을 조회 없이 결과에 반영. `EventPageClient`가 사용 | `src/lib/event-availability.ts` |
 | `useRealtimeSync` | Supabase Realtime(`postgres_changes`) 구독으로 다른 참여자의 변경을 반영 | `src/hooks/useRealtimeSync.ts` |
 | `session-store.ts` | 익명 참여자 세션을 localStorage 에 여러 개 보관(`readSessionStore`, `getActiveSession`, `upsertSession`) | `src/lib/session-store.ts` |
-| `participantToggle` | `ParticipantFilter` 의 참여자 선택 토글(`toggleParticipant`) | `src/components/results/participantToggle.ts` |
+| `event-edit-draft.ts` | OAuth 이동 전 시간 선택을 sessionStorage에 보관·복원. 이벤트 날짜·모드 변경과 24시간 만료를 검사하고 저장·취소 시 제거 | `src/lib/event-edit-draft.ts` |
+| `participantToggle` | `ParticipantFilter` 의 참여자 선택 토글(`toggleParticipant`)과, `EventPageClient` 의 실시간 갱신이 선택 목록을 새 참여자 목록에 맞추는 `reconcileSelection` | `src/components/results/participantToggle.ts` |
 
 **Shared concerns:**
 - Event title/description display style
+- 익명 신규 참여자는 먼저 편집하고 완료 시 이름·로그인을 안내한다. 이름 확인과 저장 사이에 draft를 덮어쓰지 않으며, 기존 참여자로 저장 대상이 바뀌면 확인한다. 로그인 왕복 뒤 자동 저장하지 않고 편집 화면을 복원한다.
+- 저장 대상은 `useAuthUser`의 로그인 상태와 프로필 조회 완료를 확인해 결정한다. OAuth 사용자 식별을 이름 유무로 판단하지 않는다.
+- `AvailabilityGrid` 날짜 헤더는 모든 화면 폭에서 sticky이며, 모바일·태블릿의 셀 높이와 양옆 스크롤 여백은 편집·결과가 공유한다. 루트는 `touch-pan-y`이며 셀에 `touch-action: none`을 지정하지 않는다. 브라우저가 손가락 범위 때문에 숫자·여백 터치 대상을 가까운 셀로 바꿀 수 있으므로 `useGridTouch`에서 실제 좌표로 선택 시작을 판별한다.
+- 편집 셀에서 시작한 단일 터치만 native `touchstart`/`touchmove`의 기본 동작을 막는다. 여백에서 시작한 터치는 셀 안으로 이동해도 스크롤로 유지한다. 시간 사각형 선택과 날짜 자유 선택의 칠하기 로직은 각각 `useGridDrag`와 `CalendarDragGrid`에 둔다.
+- `MonthCalendarGrid`의 요일 헤더도 모든 화면 폭에서 sticky다. 날짜 전용 셀은 기존 정사각형을 유지하고, 편집 중 터치 취소와 마지막 이동 좌표는 `CalendarDragGrid`에서 처리한다.
 - Participant count/list display format
 - Date formatting
 - Responsive breakpoints
@@ -120,11 +128,11 @@ The event page (`/e/[id]`) hosts both the heatmap results and the editing surfac
 | `PasswordForm` | Event password | `src/components/event-page/PasswordForm.tsx` |
 | `auth-client.ts` | Client auth | `src/lib/supabase/auth-client.ts` |
 | `auth-server.ts` | Server auth | `src/lib/supabase/auth-server.ts` |
-| `proxy.ts` | 세션 갱신(`/dashboard`, `/mypage`, `/auth`)과 POST 속도 제한(이벤트 생성, 참여, 비밀번호 확인, 폴더 생성). Next 16 에서 `middleware.ts` 가 `proxy.ts` 로 바뀜 | `src/proxy.ts` |
-| `/auth/callback` | OAuth 로그인 뒤 돌아오는 라우트(`GET`). `code` 를 세션으로 바꾸고(Supabase `@supabase/ssr`) 사이트 주소(`NEXT_PUBLIC_SITE_URL`, 로컬은 요청 origin) 기준으로 `next` 로 보냄. `proxy.ts` 의 세션 갱신 대상 경로 | `src/app/auth/callback/route.ts` |
+| `proxy.ts` | 현재 프로젝트의 로그인 세션 쿠키가 있는 HTML 페이지에서 렌더 전 세션 갱신·정리. OAuth 콜백은 코드 교환이 먼저이므로 제외. 쿠키 변경 시 SDK 캐시 금지 헤더 전달. 기존 POST 속도 제한 유지 | `src/proxy.ts` |
+| `/auth/callback` | OAuth 로그인 뒤 돌아오는 라우트(`GET`). `code` 를 세션으로 바꾸고(Supabase `@supabase/ssr`) 사이트 주소(`NEXT_PUBLIC_SITE_URL`, 로컬은 요청 origin) 기준으로 `next` 로 보냄. PKCE verifier 보존을 위해 프록시에서 이전 세션을 갱신하지 않음 | `src/app/auth/callback/route.ts` |
 | `rateLimit` | 요청 횟수 제한. 인스턴스 메모리의 `Map` 에 쌓으므로 서버리스 인스턴스끼리 공유되지 않음. `proxy.ts` 의 `RATE_POLICIES` 가 호출 | `src/lib/rate-limit.ts` |
-| `useAuthUser` | 로그인 사용자 hook. `AuthButton`, `HeaderDashboardLink` 가 사용 | `src/hooks/useAuthUser.ts` |
-| `InAppBrowserModal` | 인앱 브라우저 사용자에게 외부 브라우저로 열도록 안내하는 모달. `AuthButton`, `EventPageClient` 가 띄움 | `src/components/auth/InAppBrowserModal.tsx` |
+| `useAuthUser` | 로그인 사용자 hook. `AuthButton`, `HeaderDashboardLink`, `EventPageClient` 가 사용 | `src/hooks/useAuthUser.ts` |
+| `InAppBrowserModal` | 인앱 브라우저 사용자에게 외부 브라우저로 열도록 안내하는 모달. `AuthButton`이 띄움. 시간 선택 후 저장하는 `EventPageClient`는 선택 유실 방지를 위해 이름 저장을 안내 | `src/components/auth/InAppBrowserModal.tsx` |
 | `inAppBrowser.ts` | 인앱 브라우저 판별(`detectInAppBrowser`)과 외부 브라우저 열기(`openInExternalBrowser`). `AuthButton`, `InAppBrowserModal`, `EventPageClient` 가 사용 | `src/lib/inAppBrowser.ts` |
 | `auth.ts` | 이벤트 접근 토큰 서명과 검증(`signEventToken`, `verifyEventToken`). API 라우트, `auth-context.ts`, `event-auth.service.ts` 가 사용 | `src/lib/auth.ts` |
 | `createBrowserClient` | 브라우저용 Supabase 클라이언트 | `src/lib/supabase/client.ts` |

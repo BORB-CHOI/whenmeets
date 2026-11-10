@@ -26,7 +26,8 @@ const SidebarCount = forwardRef<SidebarCountHandle, SidebarCountProps>(function 
       slotCountRef.current = slotCount;
       if (!spanRef.current) return;
       const n = slotCount ?? selectedCount;
-      spanRef.current.textContent = `(${n}/${totalCount})`;
+      const text = `(${n}/${totalCount})`;
+      if (spanRef.current.textContent !== text) spanRef.current.textContent = text;
     },
   }), [selectedCount, totalCount]);
 

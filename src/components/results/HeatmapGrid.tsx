@@ -117,6 +117,7 @@ export default function HeatmapGrid({
   const gridPointerProps = onCellHover || onCellSelect
     ? {
         onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
+          if (!window.matchMedia('(hover: hover)').matches) return;
           if (!onCellHover || selectedCell) return;
           const cell = getEventCell(e.target);
           if (cell) emitHover(cell, e);
@@ -147,6 +148,7 @@ export default function HeatmapGrid({
           const date = cell.dataset.date!;
           const slot = Number(cell.dataset.slot);
           if (e.pointerType === 'mouse') {
+            if (e.button !== 0) return;
             onCellSelect?.(date, slot, true);
             return;
           }

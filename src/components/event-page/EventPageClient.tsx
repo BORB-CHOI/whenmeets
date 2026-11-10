@@ -8,15 +8,17 @@ import SegmentedControl from '@/components/ui/SegmentedControl';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useAvailabilitySave } from '@/hooks/useAvailabilitySave';
 import { generateSlots, slotToTime, isDayOfWeekKey, DAY_OF_WEEK_LABELS, formatDateCompact } from '@/lib/constants';
-import { createAuthBrowserClient } from '@/lib/supabase/auth-client';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { getActiveSession, upsertSession } from '@/lib/session-store';
 import PasswordForm from './PasswordForm';
 import { addEventToHistory } from '@/lib/event-history';
 import { applySavedAvailability } from '@/lib/event-availability';
+import { clearEditDraft, readEditDraft, saveEditDraft } from '@/lib/event-edit-draft';
 import { useQueryClient } from '@tanstack/react-query';
 import { eventQueryKey } from '@/hooks/useEvent';
 import EventFormModal from '@/components/event-form/EventFormModal';
 import ParticipantFilter, { type ParticipantFilterHandle } from '@/components/results/ParticipantFilter';
+import { reconcileSelection } from '@/components/results/participantToggle';
 import SidebarCount, { type SidebarCountHandle } from '@/components/event-page/SidebarCount';
 import HeatmapLegend from '@/components/results/HeatmapLegend';
 import DragGrid from '@/components/drag-grid/DragGrid';
@@ -24,10 +26,10 @@ import CalendarImportButton from './CalendarImportButton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import HoverPopoverPortal, { type HoverPopoverHandle, type HoverPopoverState } from './HoverPopoverPortal';
 import MobileBottomBar from './MobileBottomBar';
+import EventActions from './EventActions';
 import MobileSlotSheet from './MobileSlotSheet';
 import IfNeededLegend, { type IfNeededLegendHandle } from './IfNeededLegend';
-import InAppBrowserModal from '@/components/auth/InAppBrowserModal';
-import { detectInAppBrowser, type InAppBrowserType } from '@/lib/inAppBrowser';
+import { detectInAppBrowser } from '@/lib/inAppBrowser';
 import { eventsApi, participantsApi } from '@/lib/api-client';
 import { ApiClientError } from '@/lib/api-client/client';
 
@@ -60,6 +62,8 @@ interface EventPageClientProps {
 // view = heatmap results (default), edit = drag grid
 type ViewMode = 'view' | 'edit';
 
+type EditingIdentity = { participantId: string; name: string; password: string | null };
+
 function readStoredSession(eventId: string) {
   const active = getActiveSession(eventId);
   if (!active) return null;
@@ -72,8 +76,8 @@ export default function EventPageClient({
   initialState,
 }: EventPageClientProps) {
   const queryClient = useQueryClient();
+  const saveRefreshRevisionRef = useRef(0);
   const [event, setEventState] = useState<EventData>(initialEvent);
-  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserType>(null);
   // Seed the query cache with SSR initial data so cross-page navigation reuses it.
   useEffect(() => {
     queryClient.setQueryData(eventQueryKey(eventId), initialEvent);
@@ -82,6 +86,7 @@ export default function EventPageClient({
   }, [eventId, queryClient]);
   // Mirror local state into the query cache so other consumers get fresh data.
   const setEvent = useCallback((next: EventData | ((prev: EventData) => EventData)) => {
+    saveRefreshRevisionRef.current += 1;
     setEventState((prev) => {
       const value = typeof next === 'function' ? (next as (p: EventData) => EventData)(prev) : next;
       queryClient.setQueryData(eventQueryKey(eventId), value);
@@ -95,12 +100,20 @@ export default function EventPageClient({
   const [nameLoading, setNameLoading] = useState(false);
   const [nameError, setNameError] = useState('');
   const [nameExistingMatch, setNameExistingMatch] = useState(false);
+  const [pendingReplacement, setPendingReplacement] = useState<EditingIdentity | null>(null);
+  const [flowError, setFlowError] = useState('');
+  const [copyError, setCopyError] = useState('');
   const [copied, setCopied] = useState(false);
   const [mobileSlotSheet, setMobileSlotSheet] = useState<{ date: string; slot: number | null } | null>(null);
   const [description, setDescription] = useState(initialEvent.description ?? '');
   const [editingDescription, setEditingDescription] = useState(false);
-  const [authUserName, setAuthUserName] = useState<string | null>(null);
-  const [supabase] = useState(() => createAuthBrowserClient());
+  const { user: authUser, loading: authLoading, supabase } = useAuthUser();
+  const [authProfileName, setAuthProfileName] = useState<{ userId: string; name: string | null } | null>(null);
+  const authProfileResolved = !authUser || authProfileName?.userId === authUser.id;
+  const authUserName = authUser && authProfileResolved
+    ? (authProfileName?.userId === authUser.id ? authProfileName.name : null) ||
+      (authUser.user_metadata?.full_name as string | undefined)?.trim() || authUser.email?.slice(0, 50) || null
+    : null;
   const participantFilterRef = useRef<ParticipantFilterHandle | null>(null);
   const sidebarCountRef = useRef<SidebarCountHandle | null>(null);
   const hoverPopoverRef = useRef<HoverPopoverHandle | null>(null);
@@ -110,6 +123,44 @@ export default function EventPageClient({
   // POST /participants twice. The second POST hits the race window where the
   // first row hasn't committed yet, so the API falls back to numbered names.
   const editClickInProgress = useRef(false);
+  const saveFlowInProgress = useRef(false);
+  const authParticipantIdRef = useRef<string | null>(null);
+  const joinedAuthUserIdRef = useRef<string | null>(null);
+  const restoredDraftRef = useRef(false);
+  const nameModalRef = useRef<HTMLDivElement>(null);
+  const nameBusyRef = useRef(false);
+  nameBusyRef.current = nameLoading;
+
+  useEffect(() => {
+    if (!showNameModal) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !nameBusyRef.current) {
+        e.preventDefault();
+        setShowNameModal(false);
+      }
+      if (e.key !== 'Tab') return;
+      const elements = nameModalRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), [tabindex="0"]');
+      if (!elements?.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [showNameModal]);
 
   const scheduleHoverUpdate = useCallback((fn: () => void) => {
     cancelAnimationFrame(hoverRafRef.current);
@@ -127,23 +178,22 @@ export default function EventPageClient({
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      const name =
-        profile?.display_name?.trim() ||
-        (session.user.user_metadata?.full_name as string | undefined)?.trim() ||
-        null;
-      setAuthUserName(name);
+      if (!authUser) return;
+      let name: string | null = null;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', authUser.id)
+          .maybeSingle();
+        name = profile?.display_name?.trim() || null;
+      } finally {
+        if (!cancelled) setAuthProfileName({ userId: authUser.id, name });
+      }
     }
-    load();
+    load().catch(() => undefined);
     return () => { cancelled = true; };
-  }, [supabase]);
+  }, [supabase, authUser]);
 
   // Debounce name matching for existing participant check
   useEffect(() => {
@@ -209,23 +259,36 @@ export default function EventPageClient({
     participantPassword,
   });
 
+  useEffect(() => {
+    if (restoredDraftRef.current) return;
+    if (initialState.type === 'password' && !passwordVerified) return;
+    restoredDraftRef.current = true;
+    const draft = readEditDraft(event);
+    if (draft === null) return;
+    setAvailability(draft);
+    setViewMode('edit');
+  }, [event, initialState.type, passwordVerified]);
+
   // Realtime sync
+  const knownParticipantIdsRef = useRef<string[]>(initialEvent.participants.map((p) => p.id));
+  useEffect(() => {
+    knownParticipantIdsRef.current = event.participants.map((p) => p.id);
+  }, [event.participants]);
+
   const handleRealtimeUpdate = useCallback(() => {
     eventsApi
       .getDetail(eventId)
       .then((data) => {
         const ev = data as unknown as EventData;
         if (!ev.requires_auth) {
+          const knownIds = knownParticipantIdsRef.current;
+          const incomingIds = ev.participants.map((p) => p.id);
           setEvent(ev);
-          setSelectedIds((prev) => {
-            const next = new Set(prev);
-            ev.participants.forEach((p) => next.add(p.id));
-            return next;
-          });
+          setSelectedIds((prev) => reconcileSelection(prev, knownIds, incomingIds));
         }
       })
       .catch(() => undefined);
-  }, [eventId]);
+  }, [eventId, setEvent]);
 
   useRealtimeSync(eventId, viewMode === 'view', handleRealtimeUpdate);
 
@@ -376,6 +439,7 @@ export default function EventPageClient({
       sidebarCountRef.current?.updateForSlot(null);
       ifNeededLegendRef.current?.setVisible(false);
       hoverPopoverRef.current?.update(null);
+      cancelAnimationFrame(hoverRafRef.current);
     }
   }, [isHeld, mobileSlotSheet, mobileSlotAvailability, event.mode, event.date_only, effectiveIncludeIfNeeded, readCellRect]);
 
@@ -459,9 +523,11 @@ export default function EventPageClient({
         return false;
       }
       setParticipantId(data.id);
+      authParticipantIdRef.current = data.id;
+      joinedAuthUserIdRef.current = authUser?.id ?? null;
       setParticipantPassword(null);
       setSession({ participantId: data.id, name: data.name, password: null });
-      upsertSession(eventId, { pid: data.id, name: data.name, password: null });
+      try { upsertSession(eventId, { pid: data.id, name: data.name, password: null }); } catch {}
       if (data.existing) {
         const existingP = event.participants.find((p) => p.id === data.id);
         if (existingP) setAvailability(existingP.availability);
@@ -478,20 +544,24 @@ export default function EventPageClient({
   async function handleEditClick() {
     if (editClickInProgress.current) return;
     editClickInProgress.current = true;
+    saveRefreshRevisionRef.current += 1;
     try {
       hoverPopoverRef.current?.update(null);
       setMobileSlotSheet(null);
+      setFlowError('');
+      clearSaveError();
       if (authUserName) {
         // Logged-in user: ALWAYS auto-join via API which resolves to own (user_id) slot
         // or creates a new numbered slot if name collides with another participant.
         // This prevents editing an anonymous slot with the same display name.
         const ok = await autoJoinWithName(authUserName);
         if (ok) setViewMode('edit');
-        else setShowNameModal(true);
+        else setViewMode('edit');
       } else if (session) {
         setViewMode('edit');
       } else {
-        setShowNameModal(true);
+        setAvailability({});
+        setViewMode('edit');
       }
     } finally {
       editClickInProgress.current = false;
@@ -501,8 +571,9 @@ export default function EventPageClient({
   // Handle name submit (modal)
   async function handleNameSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nameInput.trim()) return;
+    if (!nameInput.trim() || saveFlowInProgress.current) return;
 
+    saveFlowInProgress.current = true;
     setNameLoading(true);
     setNameError('');
     try {
@@ -530,67 +601,128 @@ export default function EventPageClient({
         return;
       }
 
-      setParticipantId(data.id);
-      setParticipantPassword(namePassword || null);
-      setSession({ participantId: data.id, name: data.name, password: namePassword || null });
-      upsertSession(eventId, { pid: data.id, name: data.name, password: namePassword || null });
-
-      if (data.numbered === true) {
-        setNameError('');
-        // Brief info: numbered participant joined (no action needed)
+      const identity = { participantId: data.id, name: data.name, password: namePassword || null };
+      if (data.existing && data.id !== participantId) {
+        setShowNameModal(false);
+        setPendingReplacement(identity);
+        return;
       }
-
-      if (data.existing) {
-        const existingP = event.participants.find((p) => p.id === data.id);
-        if (existingP) setAvailability(existingP.availability);
-      }
-
-      addEventToHistory({
-        id: eventId,
-        title: event.title,
-        dates: event.dates,
-        role: 'participant',
-        participantCount: event.participants.length,
-        lastVisited: new Date().toISOString(),
-      });
-
-      setShowNameModal(false);
-      setNameInput('');
-      setNamePassword('');
-      setViewMode('edit');
+      await finishSaving(identity);
     } finally {
+      saveFlowInProgress.current = false;
       setNameLoading(false);
     }
   }
 
   function handleAvailabilityChange(newAvailability: Availability) {
-    if (saving) return;
+    if (saving || nameLoading) return;
+    clearSaveError();
     setAvailability(newAvailability);
     // No auto-save here — saving happens only on 편집 완료
   }
 
   function handleCancelEditing() {
+    if (saving || saveFlowInProgress.current) return;
     clearSaveError();
+    setFlowError('');
+    clearEditDraft(eventId);
     const savedAvailability = event.participants.find((p) => p.id === participantId)?.availability ?? {};
     setAvailability(savedAvailability);
     setViewMode('view');
   }
 
-  async function handleFinishEditing() {
-    if (!(await saveNow(availability))) return;
-    if (participantId) {
-      setEvent(applySavedAvailability(event, { id: participantId, name: session?.name ?? authUserName ?? '' }, availability));
-      setSelectedIds((prev) => new Set([...prev, participantId]));
+  async function finishSaving(identity: EditingIdentity) {
+    setParticipantId(identity.participantId);
+    setParticipantPassword(identity.password);
+    setSession(identity);
+    if (authUser) {
+      authParticipantIdRef.current = identity.participantId;
+      joinedAuthUserIdRef.current = authUser.id;
     }
+    try { upsertSession(eventId, { pid: identity.participantId, name: identity.name, password: identity.password }); } catch {}
+    setShowNameModal(false);
+    if (!(await saveNow(availability, { participantId: identity.participantId, participantPassword: identity.password }))) return;
+    setEvent((prev) => applySavedAvailability(prev, { id: identity.participantId, name: identity.name }, availability));
+    setSelectedIds((prev) => new Set([...prev, identity.participantId]));
+    clearEditDraft(eventId);
+    setNameInput('');
+    setNamePassword('');
+    setFlowError('');
     setViewMode('view');
+    addEventToHistory({
+      id: eventId, title: event.title, dates: event.dates, role: 'participant',
+      participantCount: event.participants.length, lastVisited: new Date().toISOString(),
+    });
     // Refresh event data to show updated heatmap and participant list
-    try {
-      const data = (await eventsApi.getDetail(eventId)) as unknown as EventData;
-      if (data.requires_auth || !data.participants) return;
+    const revision = ++saveRefreshRevisionRef.current;
+    eventsApi.getDetail(eventId).then((response) => {
+      const data = response as unknown as EventData;
+      if (saveRefreshRevisionRef.current !== revision || data.requires_auth || !data.participants) return;
       setEvent(data);
-      setSelectedIds(new Set(data.participants.map((p: { id: string }) => p.id)));
+      setSelectedIds((prev) => reconcileSelection(prev, [...event.participants.map((p) => p.id), identity.participantId], data.participants.map((p) => p.id)));
+    }).catch(() => undefined);
+  }
+
+  async function handleFinishEditing() {
+    if (saveFlowInProgress.current || saving || authLoading || !authProfileResolved) return;
+    setFlowError('');
+    if ((!participantId && !authUserName) || (authUser && !authUserName)) {
+      setNameError('');
+      setShowNameModal(true);
+      return;
+    }
+    saveFlowInProgress.current = true;
+    setNameLoading(true);
+    try {
+      if (authUserName && (!participantId || authParticipantIdRef.current !== participantId || joinedAuthUserIdRef.current !== authUser?.id)) {
+        const data = await participantsApi.join(eventId, authUserName);
+        const identity = { participantId: data.id, name: data.name, password: null };
+        if (data.existing && data.id !== participantId) {
+          setPendingReplacement(identity);
+          return;
+        }
+        await finishSaving(identity);
+      } else if (participantId) {
+        await finishSaving({ participantId, name: session?.name ?? authUserName ?? '', password: participantPassword });
+      }
+    } catch (err) {
+      setFlowError(err instanceof ApiClientError ? err.message : '저장하지 못했습니다. 선택한 시간은 유지되니 다시 시도해 주세요.');
+    } finally {
+      saveFlowInProgress.current = false;
+      setNameLoading(false);
+    }
+  }
+
+  function closeNameModal() {
+    if (nameLoading) return;
+    setShowNameModal(false);
+    setNameError('');
+  }
+
+  async function handleDraftLogin() {
+    if (nameLoading || saveFlowInProgress.current) return;
+    const detected = detectInAppBrowser();
+    if (detected) {
+      setNameError('인앱 브라우저에서는 이름으로 먼저 저장해 주세요. Google 로그인은 외부 브라우저에서 이용할 수 있습니다.');
+      return;
+    }
+    if (!saveEditDraft(event, availability)) {
+      setNameError('이 브라우저에서는 로그인 중 선택을 보관할 수 없습니다. 이름으로 저장해 주세요.');
+      return;
+    }
+    saveFlowInProgress.current = true;
+    setNameLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
+      });
+      if (error) throw error;
     } catch {
-      // ignore
+      setNameError('로그인을 시작하지 못했습니다. 다시 시도하거나 이름으로 저장해 주세요.');
+    } finally {
+      saveFlowInProgress.current = false;
+      setNameLoading(false);
     }
   }
 
@@ -620,11 +752,14 @@ export default function EventPageClient({
 
   async function handleCopyLink() {
     const url = `${window.location.origin}/e/${eventId}`;
+    setCopyError('');
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* */ }
+    } catch {
+      setCopyError('링크를 복사하지 못했습니다. 브라우저 주소창의 주소를 복사해 주세요.');
+    }
   }
 
   async function saveDescription() {
@@ -667,61 +802,7 @@ export default function EventPageClient({
                 className="text-teal-600 hover:text-teal-800 cursor-pointer"
               >이벤트 수정</span>
             )}
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              aria-label={copied ? '링크 복사됨' : '링크 복사'}
-              className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 sm:hidden"
-            >
-              {copied ? (
-                <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-                </svg>
-              )}
-            </button>
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyLink}
-            className="hidden sm:flex h-[38px] px-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer items-center gap-1.5"
-          >
-            {copied ? '복사됨!' : '링크 복사'}
-            {!copied && (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-              </svg>
-            )}
-          </button>
-          {viewMode === 'view' ? (
-            <button
-              onClick={handleEditClick}
-              className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer items-center"
-            >
-              편집
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleCancelEditing}
-                disabled={saving}
-                className="hidden lg:inline-flex h-[38px] px-4 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleFinishEditing}
-                disabled={saving}
-                className="hidden lg:inline-flex h-[38px] px-5 text-sm font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed items-center"
-              >
-                {saving ? '저장 중...' : saveError ? '다시 저장' : '편집 완료'}
-              </button>
-            </>
-          )}
         </div>
       </div>
 
@@ -779,7 +860,7 @@ export default function EventPageClient({
           {viewMode === 'edit' ? (
             <>
               {/* Guide banner — centered bold, sticky on mobile */}
-              <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold sticky top-14 z-20 lg:static ${
+              <div className={`mb-4 py-3 rounded-lg text-center text-sm font-bold ${
                 event.mode === 'unavailable'
                   ? 'bg-red-50 text-red-700 border border-red-200'
                   : 'bg-teal-50 text-teal-700 border border-teal-200'
@@ -816,7 +897,7 @@ export default function EventPageClient({
                   }
                   applySlotPreview(date, slotNum);
                 }}
-                disabled={saving}
+                disabled={saving || nameLoading}
               />
             </>
           ) : event.date_only ? (
@@ -864,7 +945,14 @@ export default function EventPageClient({
         </div>
 
         {/* Right: Sidebar (PC: sticky right column; Mobile: stacked below grid) */}
-        <div className="w-full lg:w-60 shrink-0 lg:pt-10 lg:pl-5 lg:border-l lg:border-gray-100 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto custom-scrollbar mt-6 lg:mt-0">
+        <div className="w-full lg:w-60 shrink-0 lg:pl-5 lg:border-l lg:border-gray-100 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto custom-scrollbar mt-6 lg:mt-0">
+          <div className="hidden lg:block lg:sticky lg:top-0 lg:z-30 lg:bg-white mb-5 pb-3">
+            <EventActions
+              editing={viewMode === 'edit'} busy={saving || nameLoading || authLoading || !authProfileResolved} saveFailed={!!saveError || !!flowError}
+              copied={copied} onEdit={handleEditClick} onFinish={handleFinishEditing}
+              onCancel={handleCancelEditing} onCopy={handleCopyLink}
+            />
+          </div>
           {viewMode === 'edit' ? (
             <>
               {/* Mode selector toggle + highlight (PC only — mobile has fixed toggle bar) */}
@@ -1064,21 +1152,28 @@ export default function EventPageClient({
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm"
             onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.bd = '1'; }}
-            onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') { setShowNameModal(false); setNameInput(''); setNamePassword(''); } (e.currentTarget as HTMLElement).dataset.bd = ''; }}
+            onClick={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.bd === '1') closeNameModal(); (e.currentTarget as HTMLElement).dataset.bd = ''; }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4"
+              ref={nameModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="save-name-title"
+              aria-describedby="save-name-description"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 h-[min(36rem,calc(100dvh-2rem))] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-2">
-                <h2 className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
+                <h2 id="save-name-title" className="text-lg font-bold text-gray-900">내 시간 입력하기</h2>
                 <button
-                  onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
+                  onClick={closeNameModal}
+                  disabled={nameLoading}
+                  aria-label="닫기"
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1088,14 +1183,17 @@ export default function EventPageClient({
               </div>
 
               {/* Body */}
-              <div className="px-6 py-4">
-                <p className="text-sm text-gray-500 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
+              <div className="px-6 py-4 min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+                <p id="save-name-description" className="text-sm text-gray-500 mb-4">이름을 입력하거나 Google 계정으로 로그인하세요.</p>
 
-                <form onSubmit={handleNameSubmit}>
+                <form id="save-name-form" onSubmit={handleNameSubmit}>
                   <input
                     type="text"
                     value={nameInput}
-                    onChange={(e) => { setNameInput(e.target.value); if (nameError) setNameError(''); }}
+                    onChange={(e) => { setNameInput(e.target.value); setNamePassword(''); if (nameError) setNameError(''); }}
+                    aria-label="저장할 이름"
+                    autoComplete="nickname"
+                    disabled={nameLoading}
                     placeholder="이름 입력"
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-teal-600 transition-all"
                     autoFocus
@@ -1118,13 +1216,16 @@ export default function EventPageClient({
                     <input
                       type="password"
                       value={namePassword}
+                      aria-label="응답 비밀번호 (선택)"
+                      autoComplete="off"
+                      disabled={nameLoading}
                       onChange={(e) => setNamePassword(e.target.value)}
                       placeholder="비밀번호 (선택사항)"
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-md focus:border-teal-600 transition-all"
                     />
                     <p className="text-xs text-gray-400 mt-1.5">설정하면 다른 사람이 내 응답을 수정할 수 없습니다</p>
                   </div>
-                  {nameError && <p className="text-sm text-red-500 mt-2">{nameError}</p>}
+                  {nameError && <p role="alert" className="text-sm text-red-500 mt-2">{nameError}</p>}
                 </form>
 
                 <div className="flex items-center gap-3 my-4">
@@ -1136,18 +1237,8 @@ export default function EventPageClient({
                 {/* Google login button */}
                 <button
                   type="button"
-                  onClick={async () => {
-                    const detected = detectInAppBrowser();
-                    if (detected) {
-                      setInAppBrowser(detected);
-                      return;
-                    }
-                    const supabase = createAuthBrowserClient();
-                    await supabase.auth.signInWithOAuth({
-                      provider: 'google',
-                      options: { redirectTo: `${window.location.origin}/auth/callback?next=/e/${eventId}` },
-                    });
-                  }}
+                  onClick={handleDraftLogin}
+                  disabled={nameLoading}
                   className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer text-sm font-medium text-gray-700"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24">
@@ -1161,18 +1252,20 @@ export default function EventPageClient({
               </div>
 
               {/* Footer */}
-              <div className="flex justify-end gap-2 px-6 pb-5 pt-2">
+              <div className="grid grid-cols-2 gap-2 px-6 pb-5 pt-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => { setShowNameModal(false); setNameInput(''); setNamePassword(''); }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={closeNameModal}
+                  disabled={nameLoading}
+                  className="h-11 px-3 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   취소
                 </button>
                 <button
-                  onClick={handleNameSubmit}
+                  type="submit"
+                  form="save-name-form"
                   disabled={nameLoading || !nameInput.trim()}
-                  className="px-5 py-2 text-sm font-semibold bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
+                  className="h-11 px-3 text-sm font-semibold bg-teal-600 text-white rounded-md hover:bg-teal-700 shadow-[var(--shadow-primary)] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {nameLoading ? '참여 중...' : nameExistingMatch ? '수정하기' : '참여하기'}
                 </button>
@@ -1181,6 +1274,24 @@ export default function EventPageClient({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={pendingReplacement !== null}
+        title="기존 응답을 바꿀까요?"
+        message={`${pendingReplacement?.name ?? ''} 이름으로 저장된 응답을 지금 선택한 시간으로 바꿉니다. 본인의 응답인지 확인해 주세요.`}
+        confirmLabel="선택한 시간으로 저장"
+        cancelLabel="계속 편집"
+        onConfirm={async () => {
+          if (!pendingReplacement || saveFlowInProgress.current) return;
+          const identity = pendingReplacement;
+          saveFlowInProgress.current = true;
+          setPendingReplacement(null);
+          setNameLoading(true);
+          try { await finishSaving(identity); }
+          finally { saveFlowInProgress.current = false; setNameLoading(false); }
+        }}
+        onCancel={() => setPendingReplacement(null)}
+      />
 
       <ConfirmModal
         open={showDeleteConfirm}
@@ -1211,12 +1322,10 @@ export default function EventPageClient({
         isEditMode={viewMode === 'edit'}
         onToggleMode={viewMode === 'edit' ? handleFinishEditing : handleEditClick}
         onCancelEdit={handleCancelEditing}
-        saving={saving}
-        saveFailed={!!saveError}
-        dates={event.dates}
-        timeStart={event.time_start}
-        timeEnd={event.time_end}
-        onCalendarImport={handleAvailabilityChange}
+        saving={saving || nameLoading || authLoading || !authProfileResolved}
+        saveFailed={!!saveError || !!flowError}
+        copied={copied}
+        onCopy={handleCopyLink}
         eventMode={event.mode}
         activeMode={activeMode}
         onActiveModeChange={setActiveMode}
@@ -1245,7 +1354,7 @@ export default function EventPageClient({
 
       {/* Toast for copy */}
       <AnimatePresence>
-        {viewMode === 'edit' && saveError && (
+        {((viewMode === 'edit' && (saveError || flowError)) || copyError) && (
           <motion.div
             role="alert"
             initial={{ opacity: 0, y: 20 }}
@@ -1254,8 +1363,15 @@ export default function EventPageClient({
             transition={{ duration: 0.2 }}
             className="fixed bottom-40 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg lg:bottom-6"
           >
-            <p>{saveError}</p>
-            <p className="mt-1">입력 내용은 유지됩니다. 다시 저장을 눌러 주세요.</p>
+            <p>{copyError || saveError || flowError}</p>
+            {!copyError && (
+              <>
+                <p className="mt-1">입력 내용은 유지됩니다. 다시 저장을 눌러 주세요.</p>
+                <button className="mt-2 underline cursor-pointer" onClick={() => { setNameInput(session?.name ?? ''); setShowNameModal(true); }}>
+                  이름·로그인 다시 확인
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1290,10 +1406,6 @@ export default function EventPageClient({
         />
       )}
 
-      <InAppBrowserModal
-        type={inAppBrowser}
-        onClose={() => setInAppBrowser(null)}
-      />
     </div>
   );
 }
@@ -1326,7 +1438,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
   }
 
   return (
-    <div className="whitespace-nowrap">
+    <div className="space-y-1">
       <div className="font-semibold text-[11px] tabular-nums">
         {dateLabel} · {timeLabel}
       </div>
@@ -1348,7 +1460,7 @@ function SlotHoverInfo({ date, slot, participants = [], selectedIds = new Set<st
             <Row dotClass="bg-amber-300" label={`If Needed ${ifNeeded.length}명`} names={ifNeeded} />
           )}
           {(filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)) > 0 && (
-            <div className="text-[11px] text-white/55">
+            <div className="text-[11px] text-gray-500">
               나머지 {filtered.length - available.length - (includeIfNeeded ? ifNeeded.length : 0)}명 무응답/불가
             </div>
           )}
@@ -1378,10 +1490,10 @@ function Row({ dotClass, label, names }: { dotClass: string; label: string; name
   return (
     <div>
       <div className="flex items-center gap-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-        <span className="text-[11px] font-medium text-white/85">{label}</span>
+        <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${dotClass}`} />
+        <span className="text-[11px] font-medium text-gray-700">{label}</span>
       </div>
-      <div className="text-[11px] text-white/70 ml-3 leading-tight">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
+      <div className="text-[11px] text-gray-600 ml-3 leading-relaxed break-words">{names.slice(0, 5).join(', ')}{names.length > 5 ? ` 외 ${names.length - 5}명` : ''}</div>
     </div>
   );
 }

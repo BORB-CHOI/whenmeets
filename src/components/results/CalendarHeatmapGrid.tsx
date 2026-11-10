@@ -133,6 +133,7 @@ export default function CalendarHeatmapGrid({
           const date = cell?.dataset.calDate;
           if (!date) return;
           if (e.pointerType === 'mouse') {
+            if (e.button !== 0) return;
             onCellSelect?.(date);
             return;
           }
@@ -156,6 +157,10 @@ export default function CalendarHeatmapGrid({
           if (ts && ts.pid === e.pointerId && !touchMoved.current) {
             onCellSelect?.(ts.date);
           }
+          touchMoved.current = false;
+        },
+        onPointerCancel: () => {
+          touchStart.current = null;
           touchMoved.current = false;
         },
       }}

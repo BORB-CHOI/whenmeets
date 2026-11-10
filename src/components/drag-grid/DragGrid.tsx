@@ -128,7 +128,6 @@ export default function DragGrid({
         timeStart={timeStart}
         timeEnd={timeEnd}
         columnsProps={gridProps}
-        disableTouchScroll
         renderCell={(date, slot, indices) => {
           const overlayCount = overlayTotal > 0 ? getOverlayCount(date, String(slot)) : 0;
           return (

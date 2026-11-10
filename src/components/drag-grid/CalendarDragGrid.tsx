@@ -5,6 +5,7 @@ import { Availability, AvailabilityLevel, EventMode } from '@/lib/types';
 import { isDayOfWeekKey, DAY_OF_WEEK_LABELS } from '@/lib/constants';
 import { getCellColorClass, getCellCssColor } from './GridCell';
 import MonthCalendarGrid from '@/components/calendar-grid/MonthCalendarGrid';
+import useGridTouch from './useGridTouch';
 
 interface CalendarDragGridProps {
   dates: string[];
@@ -54,9 +55,16 @@ export default function CalendarDragGrid({
   const isDragging = useRef(false);
   const erasing = useRef(false);
   const draftRef = useRef<Availability>({});
-  const lastTouchEndAt = useRef(0);
+  const paintedDates = useRef(new Set<string>());
   const [tappedDate, setTappedDate] = useState<string | null>(null);
   const dateSet = useMemo(() => new Set(dates), [dates]);
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+
+  const getCellAtPoint = useCallback((x: number, y: number) => {
+    const element = document.elementFromPoint(x, y);
+    if (!element || !rootEl?.contains(element)) return null;
+    return element.closest<HTMLElement>('[data-cal-date]');
+  }, [rootEl]);
 
   function getCellValue(date: string): AvailabilityLevel | -1 {
     const val = availability[date]?.['all_day'];
@@ -64,16 +72,17 @@ export default function CalendarDragGrid({
   }
 
   // Paint cell DOM directly during drag (no React re-render)
-  function paintCell(date: string, value: AvailabilityLevel | -1) {
+  const paintCell = useCallback((date: string, value: AvailabilityLevel | -1) => {
     const el = document.querySelector(`[data-cal-date="${date}"]`) as HTMLElement | null;
     if (!el) return;
     el.classList.remove(...COLOR_CLASSES_TO_REMOVE);
     const cls = getCellColorClass(value, eventMode);
     if (cls) el.classList.add(...cls.split(' '));
-  }
+  }, [eventMode]);
 
-  function applyToDate(date: string) {
+  const applyToDate = useCallback((date: string) => {
     if (!dateSet.has(date)) return;
+    paintedDates.current.add(date);
     const draft = draftRef.current;
     if (erasing.current) {
       if (draft[date]) {
@@ -87,12 +96,12 @@ export default function CalendarDragGrid({
       draft[date] = { ...draft[date], all_day: activeMode };
       paintCell(date, activeMode);
     }
-  }
+  }, [activeMode, dateSet, paintCell]);
 
   function handlePointerDown(date: string) {
-    if (disabled) return;
-    if (!dateSet.has(date)) return;
+    if (disabled || isDragging.current || !dateSet.has(date)) return false;
     isDragging.current = true;
+    paintedDates.current.clear();
     const clone: Availability = {};
     for (const d in availability) {
       clone[d] = { ...availability[d] };
@@ -100,64 +109,61 @@ export default function CalendarDragGrid({
     draftRef.current = clone;
     erasing.current = availability[date]?.['all_day'] === activeMode;
     applyToDate(date);
+    return true;
   }
 
   const rafId = useRef(0);
 
-  function handlePointerMoveAt(clientX: number, clientY: number) {
+  const applyAtPoint = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging.current) return;
+    const cell = getCellAtPoint(clientX, clientY);
+    if (cell) applyToDate(cell.dataset.calDate!);
+  }, [getCellAtPoint, applyToDate]);
+
+  const handlePointerMoveAt = useCallback((clientX: number, clientY: number) => {
     if (!isDragging.current) return;
     cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => {
-      const el = document.elementFromPoint(clientX, clientY);
-      if (!el) return;
-      const cell = el.closest('[data-cal-date]') as HTMLElement | null;
-      if (!cell) return;
-      applyToDate(cell.dataset.calDate!);
-    });
-  }
+    rafId.current = requestAnimationFrame(() => applyAtPoint(clientX, clientY));
+  }, [applyAtPoint]);
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((commit = true) => {
+    cancelAnimationFrame(rafId.current);
     if (isDragging.current) {
-      onAvailabilityChange({ ...draftRef.current });
+      if (commit) onAvailabilityChange({ ...draftRef.current });
+      else for (const date of paintedDates.current) paintCell(date, availability[date]?.all_day ?? -1);
     }
     isDragging.current = false;
     erasing.current = false;
-  }, [onAvailabilityChange]);
+    paintedDates.current.clear();
+    setTappedDate(null);
+  }, [onAvailabilityChange, availability, paintCell]);
+
+  const ignoreMouse = useGridTouch({
+    container: rootEl,
+    disabled,
+    onStart: (x, y) => {
+      const date = getCellAtPoint(x, y)?.dataset.calDate;
+      if (!date || !handlePointerDown(date)) return false;
+      setTappedDate(date);
+      return true;
+    },
+    onMove: applyAtPoint,
+    onEnd: (x, y) => { applyAtPoint(x, y); handlePointerUp(); },
+    onCancel: () => handlePointerUp(false),
+  });
 
   useEffect(() => {
-    function onMouseEnd() { if (isDragging.current) handlePointerUp(); }
-    function onTouchEnd() {
-      lastTouchEndAt.current = Date.now();
-      if (isDragging.current) handlePointerUp();
+    function onMouseEnd(e: MouseEvent) {
+      if (!isDragging.current) return;
+      applyAtPoint(e.clientX, e.clientY);
+      handlePointerUp();
     }
     window.addEventListener('mouseup', onMouseEnd);
-    window.addEventListener('touchend', onTouchEnd);
-    window.addEventListener('touchcancel', onTouchEnd);
     return () => {
       window.removeEventListener('mouseup', onMouseEnd);
-      window.removeEventListener('touchend', onTouchEnd);
-      window.removeEventListener('touchcancel', onTouchEnd);
+      cancelAnimationFrame(rafId.current);
     };
-  }, [handlePointerUp]);
-
-  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
-
-  // Native (non-passive) touchmove so preventDefault works on mobile.
-  useEffect(() => {
-    if (!rootEl) return;
-    function onTouchMoveNative(e: TouchEvent) {
-      if (!isDragging.current) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      if (!touch) return;
-      handlePointerMoveAt(touch.clientX, touch.clientY);
-    }
-    rootEl.addEventListener('touchmove', onTouchMoveNative, { passive: false });
-    return () => {
-      rootEl.removeEventListener('touchmove', onTouchMoveNative);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rootEl]);
+  }, [handlePointerUp, applyAtPoint]);
 
   return (
     <MonthCalendarGrid
@@ -178,7 +184,6 @@ export default function CalendarDragGrid({
           lastHoveredDate.current = null;
           onCellHover(null);
         },
-        style: { touchAction: 'pan-y' },
       }}
       renderCell={(dateStr, isActive) => {
         if (!dateStr) {
@@ -199,13 +204,9 @@ export default function CalendarDragGrid({
           <div
             data-cal-date={dateStr}
             onMouseDown={(e) => {
-              if (Date.now() - lastTouchEndAt.current < 500) return;
+              if (e.button !== 0 || disabled) return;
+              if (ignoreMouse()) return;
               e.preventDefault();
-              handlePointerDown(dateStr);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              setTappedDate(dateStr);
               handlePointerDown(dateStr);
             }}
             className={`aspect-square flex items-center justify-center text-sm relative ${getCellColorClass(value, eventMode)} cursor-pointer hover:outline-2 hover:outline-dashed hover:outline-gray-900 hover:-outline-offset-2 ${value >= 1 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}

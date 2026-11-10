@@ -63,6 +63,12 @@ describe('가용성 저장 복구', () => {
     expect(await hook.saveNow(availability)).toBe(false);
     expect(api.save).not.toHaveBeenCalled();
   });
+  it('이름 확인 직후에는 새 참여자와 비밀번호로 선택한 시간을 저장한다', async () => {
+    api.save.mockResolvedValue({ ok: true });
+    const hook = renderSave(null);
+    expect(await hook.saveNow(availability, { participantId: 'joined', participantPassword: 'secret' })).toBe(true);
+    expect(api.save).toHaveBeenCalledWith('event', 'joined', availability, 'secret');
+  });
   it('실패를 알리고 같은 입력으로 다시 저장할 수 있다', async () => {
     api.save.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce({ ok: true });
     const hook = renderSave();
