@@ -1,0 +1,29 @@
+{
+  "description": "DayMeet: reuse Claude guards for Codex Bash and apply_patch tools",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('node:fs'),path=require('node:path');let p=process.cwd();while(!fs.existsSync(path.join(p,'scripts/codex-hook.mjs'))){const q=path.dirname(p);if(q===p)throw Error('DayMeet hook not found');p=q;}import(require('node:url').pathToFileURL(path.join(p,'scripts/codex-hook.mjs')).href).then(m=>m.runStdin())\"",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('node:fs'),path=require('node:path');let p=process.cwd();while(!fs.existsSync(path.join(p,'scripts/codex-hook.mjs'))){const q=path.dirname(p);if(q===p)throw Error('DayMeet hook not found');p=q;}import(require('node:url').pathToFileURL(path.join(p,'scripts/codex-hook.mjs')).href).then(m=>m.runStdin())\"",
+            "timeout": 90
+          }
+        ]
+      }
+    ]
+  }
+}
